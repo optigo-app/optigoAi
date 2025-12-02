@@ -1,0 +1,352 @@
+"use client";
+
+import { useEffect, useState, useRef } from "react";
+import {
+    Box,
+    IconButton,
+    Paper,
+    TextField,
+    Tooltip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+} from "@mui/material";
+import { Image as ImageIcon, X, Send, ArrowUp, Filter, ImagePlus, Settings } from "lucide-react";
+import "../Style/chatInput.scss";
+import useCustomToast from "@/hook/useCustomToast";
+import FilterDrawer from "./FilterDrawer";
+import CustomSlider from "./CustomSlider";
+
+export default function ModernSearchBar({ onSubmit }) {
+    const { showSuccess, showError } = useCustomToast();
+    const fileRef = useRef(null);
+    const textFieldRef = useRef(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
+    const [text, setText] = useState("");
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isMultiline, setIsMultiline] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [numResults, setNumResults] = useState(10);
+    const [accuracy, setAccuracy] = useState(50);
+
+    const handleUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const handlePaste = (e) => {
+        for (const item of e.clipboardData.items) {
+            if (item.type.startsWith("image/")) {
+                const file = item.getAsFile();
+                setImageFile(file);
+                setImagePreview(URL.createObjectURL(file));
+            }
+        }
+    };
+
+    const processDroppedFiles = (files) => {
+        const fileList = Array.from(files || []);
+        const image = fileList.find((file) => file.type.startsWith("image/"));
+
+        if (!image) {
+            if (fileList.length) {
+                showError("Please drop an image file", "warning");
+            }
+            return;
+        }
+
+        setImageFile(image);
+        setImagePreview(URL.createObjectURL(image));
+        if (fileRef.current) {
+            fileRef.current.value = "";
+        }
+
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        processDroppedFiles(e.dataTransfer?.files);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    };
+
+    useEffect(() => {
+        const handleWindowDragOver = (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = "copy";
+            }
+            setIsDragging(true);
+        };
+
+        const handleWindowDragLeave = (e) => {
+            e.preventDefault();
+            // Only hide overlay when leaving window (not when entering children)
+            if (e.target === document.documentElement || e.target === document.body) {
+                setIsDragging(false);
+            }
+        };
+
+        const handleWindowDrop = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            processDroppedFiles(e.dataTransfer?.files);
+            setIsDragging(false);
+        };
+
+        window.addEventListener("dragover", handleWindowDragOver);
+        window.addEventListener("dragleave", handleWindowDragLeave);
+        window.addEventListener("drop", handleWindowDrop);
+
+        return () => {
+            window.removeEventListener("dragover", handleWindowDragOver);
+            window.removeEventListener("dragleave", handleWindowDragLeave);
+            window.removeEventListener("drop", handleWindowDrop);
+        };
+    }, []);
+
+    const getFlag = () => {
+        if (text.trim() && imageFile) return 3;
+        if (imageFile) return 2;
+        return 1;
+    };
+
+    const handleSend = () => {
+        if (!text.trim() && !imageFile) {
+            showError('Please enter a message or upload an image', 'warning');
+            return;
+        }
+
+        const payload = {
+            text: text.trim(),
+            image: imageFile || null,
+            isSearchFlag: getFlag(),
+            numResults: numResults.toString(),
+            accuracy: accuracy.toString(),
+        };
+
+        console.log("SEND =>", payload);
+        if (onSubmit) onSubmit(payload);
+        const message = imageFile
+            ? text.trim()
+                ? 'Searching with image and text...'
+                : 'Searching with image...'
+            : 'Searching...';
+
+        showSuccess(message, 'success');
+
+        // reset
+        setText("");
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileRef.current) {
+            fileRef.current.value = "";
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter" && e.shiftKey) return;
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    const handleFilter = () => {
+        setIsFilterOpen(true);
+    };
+
+    const handleCloseFilter = () => {
+        setIsFilterOpen(false);
+    };
+
+    return (
+        <>
+            {isDragging && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 1300,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        pointerEvents: "none",
+                        background:
+                            "radial-gradient(circle at center, rgba(115,103,240,0.12) 0, rgba(15,23,42,0.7) 60%)",
+                        transition: "opacity 0.2s ease",
+                    }}
+                >
+                    <Box
+                        sx={{
+                            border: "2px dashed rgba(255,255,255,0.7)",
+                            borderRadius: 3,
+                            px: 4,
+                            py: 3,
+                            color: "#fff",
+                            textAlign: "center",
+                            backdropFilter: "blur(6px)",
+                            bgcolor: "rgba(15,23,42,0.35)",
+                        }}
+                    >
+                        <Box sx={{ mb: 1 }}>
+                            <ImageIcon size={35} />
+                        </Box>
+                        <Box component="p" sx={{ m: 0, fontWeight: 600 }}>
+                            Drop your jewelry image anywhere
+                        </Box>
+                    </Box>
+                </Box>
+            )}
+            <Paper
+                className="chat-input-container"
+                onPaste={handlePaste}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+            >
+
+                {imagePreview && (
+                    <Box className="image-preview-wrapper">
+                        <Box className="image-preview">
+                            <img src={imagePreview} alt="preview" />
+                            <Tooltip title="Remove image">
+                                <IconButton
+                                    size="small"
+                                    className="remove-image"
+                                    onClick={() => {
+                                        setImagePreview(null);
+                                        setImageFile(null);
+                                    }}
+                                >
+                                    <X size={14} />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Box>
+                )}
+
+                <Box className={isMultiline ? "chat-input-inline-multi" : "chat-input-inline-single"}>
+                    <Box className="text-row">
+                        {!isMultiline && (
+                            <>
+                                <Tooltip title="Upload image">
+                                    <IconButton onClick={() => fileRef.current.click()} className="upload-btn">
+                                        <ImagePlus size={22} />
+                                    </IconButton>
+                                </Tooltip>
+                                <input
+                                    ref={fileRef}
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: "none" }}
+                                    onChange={handleUpload}
+                                />
+                            </>
+                        )}
+                        <TextField
+                            placeholder="Ask anything…"
+                            variant="standard"
+                            fullWidth={!isMultiline}
+                            sx={{ width: isMultiline ? '100% !important' : '370px !important' }}
+                            multiline
+                            maxRows={10}
+                            value={text}
+                            onChange={(e) => {
+                                setText(e.target.value);
+                                setIsMultiline(e.target.value.includes('\n') || e.target.value.length > 42);
+                            }}
+                            onKeyDown={handleKeyDown}
+                            className="chat-textarea"
+                            inputRef={textFieldRef}
+                            InputProps={{ disableUnderline: true }}
+                        />
+                    </Box>
+                    <Box className="buttons-row">
+                        {isMultiline && (
+                            <div className="upload-btn-div">
+                                <input
+                                    ref={fileRef}
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: "none" }}
+                                    onChange={handleUpload}
+                                />
+                                <Tooltip title="Upload image">
+                                    <IconButton onClick={() => fileRef.current.click()} className="upload-btn">
+                                        <ImagePlus size={22} />
+                                    </IconButton>
+                                </Tooltip>
+                            </div>
+                        )}
+                        <div className="btns-row-div">
+                            <Tooltip title="Settings">
+                                <IconButton className="settings-btn" sx={{ color: 'text.secondary' }} onClick={() => setIsSettingsOpen(true)}>
+                                    <Settings size={22} />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Filter">
+                                <IconButton className="filter-btn" onClick={handleFilter}>
+                                    <Filter size={22} />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Send">
+                                <IconButton className="send-btn" onClick={handleSend}>
+                                    {/* <Send size={18} /> */}
+                                    <ArrowUp size={20} />
+                                </IconButton>
+                            </Tooltip>
+                        </div>
+                    </Box>
+                </Box>
+            </Paper>
+
+            <FilterDrawer isOpen={isFilterOpen} onClose={handleCloseFilter} />
+
+            <Dialog
+                open={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Search Settings</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <CustomSlider
+                            label="Number of Results"
+                            value={numResults}
+                            onChange={setNumResults}
+                            min={1}
+                            max={20}
+                            step={1}
+                        />
+                        <CustomSlider
+                            label="Search Accuracy"
+                            value={accuracy}
+                            onChange={setAccuracy}
+                            min={0}
+                            max={100}
+                            step={5}
+                            unit="%"
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsSettingsOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+        </>
+    );
+}
+

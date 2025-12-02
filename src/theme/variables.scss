@@ -1,0 +1,144 @@
+$primary-gradient: linear-gradient(270deg, rgba(115, 103, 240, 0.7) 0%, #7367f0 100%);
+$text-gradient: linear-gradient(135deg, #7367f0 0%, #9c27b0 100%);
+$primary-color: #7367f0;
+$primary-light: rgba(115, 103, 240, 0.7);
+$primary-dark: #5e56d6;
+
+$font-family: "Poppins", sans-serif !important;
+
+// Secondary colors (for gradient)
+$secondary-color: #9c27b0;
+$secondary-light: #ba68c8;
+$secondary-dark: #7b1fa2;
+
+// Text secondary colors
+$text-secondary-color: #82868b;
+$text-secondary-light: #a8aaae;
+$text-secondary-dark: #6e7278;
+
+// Neutral colors
+$white: #ffffff;
+$black: #000000;
+$gray-50: #fafafa;
+$gray-100: #f5f5f5;
+$gray-200: #eeeeee;
+$gray-300: #e0e0e0;
+$gray-400: #bdbdbd;
+$gray-500: #9e9e9e;
+$gray-600: #757575;
+$gray-700: #616161;
+$gray-800: #424242;
+$gray-900: #212121;
+
+// Success colors
+$success-color: #28a745;
+$success-light: #d4edda;
+$success-dark: #155724;
+
+// Warning colors
+$warning-color: #ffc107;
+$warning-light: #fff3cd;
+$warning-dark: #856404;
+
+// Error colors
+$error-color: #dc3545;
+$error-light: #f8d7da;
+$error-dark: #721c24;
+
+// Info colors
+$info-color: #17a2b8;
+$info-light: #d1ecf1;
+$info-dark: #0c5460;
+
+// Background colors
+$background-primary: $white;
+$background-secondary: $gray-50;
+$background-paper: $white;
+
+// Text colors
+$text-primary-color: #212121;
+$text-secondary-color: #757575;
+$text-placeholder-color: #9e9e9e;
+$text-disabled-color: #bdbdbd;
+
+$text-primary: $text-primary-color;
+$text-secondary: $text-secondary-color;
+$text-disabled: $text-disabled-color;
+
+// Border colors
+$border-color: $gray-300;
+$border-light: $gray-200;
+$border-dark: $gray-400;
+
+// Shadow colors
+$shadow-light: rgba(0, 0, 0, 0.1);
+$shadow-medium: rgba(0, 0, 0, 0.15);
+$shadow-dark: rgba(0, 0, 0, 0.25);
+
+// ========================================
+// Typography Variables
+// ========================================
+$font-family-primary: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
+// Font weights
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Font sizes
+$font-size-xs: 0.75rem; // 12px
+$font-size-sm: 0.875rem; // 14px
+$font-size-base: 1rem; // 16px
+$font-size-lg: 1.125rem; // 18px
+$font-size-xl: 1.25rem; // 20px
+$font-size-2xl: 1.5rem; // 24px
+$font-size-3xl: 1.875rem; // 30px
+$font-size-4xl: 2.25rem; // 36px
+$font-size-5xl: 3rem; // 48px
+
+// Line heights
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// ========================================
+// Spacing Variables
+// ========================================
+$spacing-xs: 0.25rem; // 4px
+$spacing-sm: 0.5rem; // 8px
+$spacing-md: 1rem; // 16px
+$spacing-lg: 1.5rem; // 24px
+$spacing-xl: 2rem; // 32px
+$spacing-2xl: 3rem; // 48px
+$spacing-3xl: 4rem; // 64px
+
+// ========================================
+// Border Radius Variables
+// ========================================
+$border-radius-sm: 0.25rem; // 4px
+$border-radius-md: 0.5rem; // 8px
+$border-radius-lg: 0.75rem; // 12px
+$border-radius-xl: 1rem; // 16px
+$border-radius-full: 9999px;
+
+// ========================================
+// Breakpoints
+// ========================================
+$breakpoint-xs: 0px;
+$breakpoint-sm: 600px;
+$breakpoint-md: 900px;
+$breakpoint-lg: 1200px;
+$breakpoint-xl: 1536px;
+
+// ========================================
+// Z-index Variables
+// ========================================
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;

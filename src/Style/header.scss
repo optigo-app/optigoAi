@@ -1,0 +1,60 @@
+@import "../theme/variables.scss";
+
+.header {
+    .container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 50px !important;
+    }
+
+    .header-link {
+        position: relative;
+        padding: 0 !important;
+        font-weight: 500;
+        text-transform: none;
+        box-shadow: none !important;
+
+        // Remove MUI hover background
+        background-color: transparent !important;
+
+        &::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -3px; // distance from text
+            width: 0%;
+            height: 2px;
+            background: $primary-gradient;
+            transition: width 0.25s ease;
+        }
+
+        &:hover {
+            color: $primary-color !important; // Change text color on hover
+            background: transparent !important;
+
+            &::after {
+                width: 100%;
+            }
+        }
+    }
+
+    .header-title {
+        cursor: pointer;
+
+        &::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -4px;
+            width: 0%;
+            height: 3px;
+            background: $primary-gradient;
+            transition: width 0.25s ease;
+        }
+
+        &:hover::after {
+            width: 100%;
+        }
+    }
+}

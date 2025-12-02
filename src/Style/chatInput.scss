@@ -1,0 +1,179 @@
+@import "../theme/variables.scss";
+
+.chat-input-container {
+    border-radius: 20px !important;
+    border: 2px solid transparent;
+    background: $white;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: 12px;
+    transition: height 0.2s ease;
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px !important;
+    position: relative;
+    padding: 10px 15px;
+
+    &:focus-within {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    }
+}
+
+/* ---------- Image Preview ---------- */
+.image-preview-wrapper {
+    width: 100%;
+    display: flex;
+}
+
+.image-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    animation: fadeIn 0.25s ease;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #f9fafb;
+    }
+
+    .remove-image {
+        position: absolute !important;
+        top: 6px;
+        right: 6px;
+        width: 26px !important;
+        height: 26px !important;
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        transition: 0.15s ease;
+        padding: 4px;
+
+        &:hover {
+            background: #dc2626 !important;
+            /* Red */
+            border-color: #b91c1c !important;
+            color: white !important;
+            transform: scale(1.12);
+            box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3);
+        }
+    }
+}
+
+/* ---------- Input Row (Inline Layout) ---------- */
+.chat-input-inline-single {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+    padding-bottom: 0px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.chat-input-inline-multi {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 0px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.text-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.buttons-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: space-between;
+
+    .btns-row-div {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+.upload-btn {
+    color: $text-secondary-color !important;
+    transition: 0.2s ease;
+
+    &:hover {
+        background: $gray-100 !important;
+        transform: scale(1.05);
+    }
+}
+
+/* Input */
+.chat-textarea {
+    font-size: 16px;
+
+    textarea {
+        resize: none !important;
+        line-height: 1.4 !important;
+        max-height: 220px !important; // grows until this height
+        overflow-y: auto !important; // scroll inside textarea
+        padding-right: 5px;
+        transition: max-height 0.2s ease;
+    }
+}
+
+
+/* Send button */
+.send-btn {
+    background: var(--primary-color, #7367f0) !important;
+    color: white !important;
+    border-radius: 50% !important;
+    padding: 10px !important;
+    transition: 0.2s ease;
+
+    &:hover {
+        background: var(--primary-color, #7367f0) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.24);
+    }
+}
+
+/* Micro instruction */
+.micro-hint {
+    font-size: 12px;
+    color: $text-placeholder-color;
+    text-align: right;
+    margin-top: -4px;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Rotating colorful borders animation */
+@keyframes rotateColors {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}

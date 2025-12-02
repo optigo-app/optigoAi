@@ -1,0 +1,131 @@
+.product-card {
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.product-image-box {
+  width: 100%;
+  height: clamp(180px, 22vw, 300px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fafafa;
+  padding: 10px;
+}
+
+.product-image {
+  width: auto;
+  height: auto;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: #4caf50;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(115, 103, 240, 0.85), rgba(180, 180, 180, 0.85));
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  padding: 14px;
+  text-align: center;
+  overflow: hidden;
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+.card-title {
+  font-size: clamp(1rem, 1.2vw, 1.3rem);
+  font-weight: 600;
+  color: white;
+  margin-bottom: 6px;
+}
+
+.design-chip {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+
+.card-desc {
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  color: #fff;
+  opacity: 0.9;
+  margin-bottom: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+
+  button {
+    border-radius: 8px;
+    font-weight: 700;
+    text-transform: none;
+    padding: 6px 12px;
+    min-width: 90px;
+  }
+
+  .view-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: #7367f0;
+    border-color: rgba(255, 255, 255, 0.8);
+
+    &:hover {
+      background: white;
+    }
+  }
+
+  .cart-btn {
+    background: #7367f0;
+    color: white;
+    box-shadow: 0 4px 10px rgba(115, 103, 240, 0.35);
+
+    &:hover {
+      background: #5e56d6;
+      box-shadow: 0 6px 14px rgba(115, 103, 240, 0.55);
+    }
+
+    &.in-cart {
+      background: #4caf50 !important;
+    }
+  }
+}

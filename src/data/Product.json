@@ -1,0 +1,190 @@
+[
+  {
+    "id": 1,
+    "image": "images/emerald-necklace-with-matching-earrings.jpg",
+    "type": "Necklace & Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 2,
+    "image": "images/sapphire-chandelier-earrings.jpg",
+    "type": "Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 3,
+    "image": "images/amethyst-diamond-necklace.jpg",
+    "type": "Necklace & Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 4,
+    "image": "images/yellow-topaz-diamond-necklace.jpg",
+    "type": "Necklace",
+    "design_no": "E0012"
+  },
+  {
+    "id": 5,
+    "image": "images/emerald-diamond-necklace.jpg",
+    "type": "Necklace & Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 6,
+    "image": "images/diamond-bangle-bracelet.jpg",
+    "type": "Bracelet",
+    "design_no": "E0012"
+  },
+  {
+    "id": 7,
+    "image": "images/emerald-and-diamond-bracelet.jpg",
+    "type": "Bracelet & Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 8,
+    "image": "images/emerald-necklace-with-pearls.jpg",
+    "type": "Necklace & Earrings",
+    "design_no": "E0013"
+  },
+  {
+    "id": 9,
+    "image": "images/yellow-topaz-chandelier-earrings.jpg",
+    "type": "Earrings",
+    "design_no": "E0013"
+  },
+  {
+    "id": 10,
+    "image": "images/diamond-cocktail-earrings.jpg",
+    "type": "Earrings",
+    "design_no": "D0345"
+  },
+  {
+    "id": 11,
+    "image": "images/green-emerald-necklace-luxury.jpg",
+    "type": "Necklace & Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 12,
+    "image": "images/womans-face-with-emerald-earrings.jpg",
+    "type": "Portrait",
+    "design_no": "D0345"
+  },
+  {
+    "id": 13,
+    "image": "images/emerald-necklace-with-matching-earrings.jpg",
+    "type": "Necklace & Earrings",
+    "design_no": "E0012"
+  },
+  {
+    "id": 14,
+    "image": "images/sapphire-chandelier-earrings.jpg",
+    "type": "Earrings"
+  },
+  {
+    "id": 15,
+    "image": "images/amethyst-diamond-necklace.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 16,
+    "image": "images/yellow-topaz-diamond-necklace.jpg",
+    "type": "Necklace"
+  },
+  {
+    "id": 17,
+    "image": "images/emerald-diamond-necklace.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 18,
+    "image": "images/diamond-bangle-bracelet.jpg",
+    "type": "Bracelet"
+  },
+  {
+    "id": 19,
+    "image": "images/emerald-and-diamond-bracelet.jpg",
+    "type": "Bracelet & Earrings"
+  },
+  {
+    "id": 20,
+    "image": "images/emerald-necklace-with-pearls.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 21,
+    "image": "images/yellow-topaz-chandelier-earrings.jpg",
+    "type": "Earrings"
+  },
+  {
+    "id": 22,
+    "image": "images/diamond-cocktail-earrings.jpg",
+    "type": "Earrings"
+  },
+  {
+    "id": 23,
+    "image": "images/green-emerald-necklace-luxury.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 24,
+    "image": "images/womans-face-with-emerald-earrings.jpg",
+    "type": "Portrait"
+  },
+  {
+    "id": 25,
+    "image": "images/emerald-necklace-with-matching-earrings.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 26,
+    "image": "images/sapphire-chandelier-earrings.jpg",
+    "type": "Earrings"
+  },
+  {
+    "id": 27,
+    "image": "images/amethyst-diamond-necklace.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 28,
+    "image": "images/yellow-topaz-diamond-necklace.jpg",
+    "type": "Necklace"
+  },
+  {
+    "id": 29,
+    "image": "images/emerald-diamond-necklace.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 30,
+    "image": "images/diamond-bangle-bracelet.jpg",
+    "type": "Bracelet"
+  },
+  {
+    "id": 31,
+    "image": "images/emerald-and-diamond-bracelet.jpg",
+    "type": "Bracelet & Earrings"
+  },
+  {
+    "id": 32,
+    "image": "images/emerald-necklace-with-pearls.jpg",
+    "type": "Necklace & Earrings"
+  },
+  {
+    "id": 33,
+    "image": "images/yellow-topaz-chandelier-earrings.jpg",
+    "type": "Earrings"
+  },
+  {
+    "id": 34,
+    "image": "images/diamond-cocktail-earrings.jpg",
+    "type": "Earrings"
+  },
+  {
+    "id": 35,
+    "image": "images/green-emerald-necklace-luxury.jpg",
+    "type": "Necklace & Earrings"
+  }
+]
