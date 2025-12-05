@@ -36,7 +36,7 @@ const CustomSlider = React.memo(function CustomSlider({
           )}
         </Box>
       )}
-      
+
       <Slider
         value={value}
         onChange={(e, newValue) => onChange?.(newValue)}

@@ -1,33 +1,10 @@
 'use client';
-import React, { useEffect, useRef } from 'react';
-import { Grid, Box, CircularProgress, Typography, Button } from '@mui/material';
+import React from 'react';
+import { Grid, Box, Typography, Button } from '@mui/material';
 import { SearchX } from 'lucide-react';
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ designData, loadMore, hasMore, loadingMore, appliedFilters, clearAllFilters }) {
-  const sentinelRef = useRef(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          loadMore();
-        }
-      },
-      { threshold: 1.0 }
-    );
-
-    if (sentinelRef.current) {
-      observer.observe(sentinelRef.current);
-    }
-
-    return () => {
-      if (sentinelRef.current) {
-        observer.unobserve(sentinelRef.current);
-      }
-    };
-  }, [loadMore, hasMore, loadingMore]);
-
+export default function ProductGrid({ designData, appliedFilters, clearAllFilters }) {
   if (designData.length === 0 && appliedFilters.length > 0) {
     return (
       <Box
@@ -90,29 +67,21 @@ export default function ProductGrid({ designData, loadMore, hasMore, loadingMore
   }
 
   return (
-    <>
-      <Grid container spacing={2} sx={{ justifyContent: 'start' }}>
-        {designData?.map((product, index) => (
-          <Grid
-            key={`${product.id}-${index}`}
-            size={{
-              xs: 6,
-              sm: 4,
-              md: 3,
-              lg: 3,
-              xl: 2,
-            }}
-          >
-            <ProductCard product={product} />
-          </Grid>
-        ))}
-      </Grid>
-      {loadingMore && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <CircularProgress disableShrink />
-        </Box>
-      )}
-      <div ref={sentinelRef} style={{ height: '1px' }} />
-    </>
+    <Grid container spacing={2} sx={{ justifyContent: 'start' }}>
+      {designData?.map((product, index) => (
+        <Grid
+          key={`${product.id}-${index}`}
+          size={{
+            xs: 6,
+            sm: 4,
+            md: 3,
+            lg: 3,
+            xl: 2,
+          }}
+        >
+          <ProductCard product={product} />
+        </Grid>
+      ))}
+    </Grid>
   );
 }

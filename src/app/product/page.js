@@ -6,19 +6,24 @@ import {
   Button,
   ToggleButton,
   ToggleButtonGroup,
-  Chip,
   Typography,
+  Fade,
+  Popover,
+  IconButton,
 } from "@mui/material";
-import { LayoutGrid, LayoutList, SlidersHorizontal, Image } from "lucide-react";
+import { Maximize2, Filter } from "lucide-react";
+import ImageViewerModal from "@/components/ImageViewerModal";
 import productsData from "@/data/Product.json";
 import ProductGrid from "@/components/ProductGrid";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import FullPageLoader from "@/components/FullPageLoader";
 import FilterDrawer from "@/components/FilterDrawer";
+import PaginationControls from "@/components/PaginationControls";
 import { designCollectionApi } from "@/app/api/designCollectionApi";
 import { searchService } from "@/services/apiService";
 import Fuse from "fuse.js";
+import FilterChips from "@/components/FilterChips";
 
 export default function ProductPage() {
   const [loading, setLoading] = useState(true);
@@ -26,15 +31,48 @@ export default function ProductPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [allDesignCollections, setAllDesignCollections] = useState([]);
-  const [displayedProducts, setDisplayedProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  const [productCount, setProductCount] = useState();
   const [appliedFilters, setAppliedFilters] = useState([]);
   const [urlParamsFlag, setUrlParamsFlag] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Image Preview State
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [popoverContent, setPopoverContent] = useState(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewerImage, setViewerImage] = useState(null);
+
+  // Filter Popover State
+  const [anchorElFilter, setAnchorElFilter] = useState(null);
+  const [filterPopoverItems, setFilterPopoverItems] = useState([]);
+
+  const handlePopoverOpen = (event, content) => {
+    setAnchorEl(event.currentTarget);
+    setPopoverContent(content);
+  };
+
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+    setPopoverContent(null);
+  };
+
+  const handleFilterPopoverOpen = (event, items) => {
+    setAnchorElFilter(event.currentTarget);
+    setFilterPopoverItems(items);
+  };
+
+  const handleFilterPopoverClose = () => {
+    setAnchorElFilter(null);
+    setFilterPopoverItems([]);
+  };
+
+  const handleImageClick = (imageUrl) => {
+    setViewerImage(imageUrl);
+    setIsImageViewerOpen(true);
+    handlePopoverClose();
+  };
 
   useEffect(() => {
     const flag = sessionStorage.getItem("urlParams");
@@ -44,7 +82,7 @@ export default function ProductPage() {
   const [searchResults, setSearchResults] = useState(null);
   const [lastSearchData, setLastSearchData] = useState(null);
 
-  const itemsPerPage = 24;
+  const itemsPerPage = 100;
 
   const baseDataset = useMemo(() => {
     return searchResults !== null ? searchResults : allDesignCollections;
@@ -110,23 +148,20 @@ export default function ProductPage() {
     return temp;
   }, [baseDataset, appliedFilters, searchTerm]);
 
-  useEffect(() => {
-    if (finalFilteredProducts.length === 0) {
-      setDisplayedProducts([]);
-      setHasMore(false);
-      setProductCount(0);
-      return;
-    }
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil(finalFilteredProducts.length / itemsPerPage);
+  }, [finalFilteredProducts.length, itemsPerPage]);
 
-    if (finalFilteredProducts.length <= itemsPerPage) {
-      setDisplayedProducts(finalFilteredProducts);
-      setHasMore(false);
-      setProductCount(finalFilteredProducts.length);
-    } else {
-      setDisplayedProducts(finalFilteredProducts.slice(0, itemsPerPage));
-      setHasMore(true);
-      setProductCount(finalFilteredProducts.length);
-    }
+  // Get current page products (optimized for large datasets)
+  const displayedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return finalFilteredProducts.slice(startIndex, endIndex);
+  }, [finalFilteredProducts, currentPage, itemsPerPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
     setCurrentPage(1);
   }, [finalFilteredProducts]);
 
@@ -167,27 +202,20 @@ export default function ProductPage() {
     setSearchTerm('');
   }, []);
 
-  const loadMoreProducts = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    setTimeout(() => {
-      const source = finalFilteredProducts;
-      const startIndex = currentPage * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const newData = source.slice(startIndex, endIndex);
+  // Pagination handlers
+  const handlePageChange = useCallback((page) => {
+    setIsTransitioning(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      if (!newData || newData.length === 0) {
-        setHasMore(false);
-      } else {
-        setDisplayedProducts((prev) => [...prev, ...newData]);
-        setCurrentPage((prev) => prev + 1);
-        if (endIndex >= source.length) {
-          setHasMore(false);
-        }
-      }
-      setLoadingMore(false);
-    }, 100);
-  }, [loadingMore, hasMore, finalFilteredProducts, currentPage, itemsPerPage]);
+    // Wait for fade out before changing page
+    setTimeout(() => {
+      setCurrentPage(page);
+      // Fade back in
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 50);
+    }, 300);
+  }, []);
 
   function getMatchedDesignCollections(res = [], allDesignCollections = []) {
     if (!Array.isArray(res) || !Array.isArray(allDesignCollections)) return [];
@@ -268,14 +296,26 @@ export default function ProductPage() {
           item: { id: "text-search", name: searchData.text?.trim() || "" },
         };
       } else if (searchData?.isSearchFlag === 2) {
+        const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
         searchChip = {
           category: "Image",
-          item: { id: "image-search", name: "Image Search", icon: true },
+          item: {
+            id: "image-search",
+            name: "Image Search",
+            icon: true,
+            imageUrl: imageUrl
+          },
         };
       } else if (searchData?.isSearchFlag === 3) {
+        const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
         searchChip = {
           category: "Hybrid",
-          item: { id: "hybrid-search", name: "Hybrid Search" },
+          item: {
+            id: "hybrid-search",
+            name: searchData.text?.trim() || "Hybrid Search",
+            imageUrl: imageUrl,
+            text: searchData.text?.trim()
+          },
         };
       }
 
@@ -305,9 +345,6 @@ export default function ProductPage() {
         const allProducts = res?.rd || [];
         if (!mounted) return;
         setAllDesignCollections(allProducts);
-        setDisplayedProducts(allProducts.slice(0, itemsPerPage));
-        setHasMore(allProducts.length > itemsPerPage);
-        setProductCount(allProducts.length);
       } catch (err) {
         console.error(err);
         setError("Failed to load products");
@@ -338,7 +375,7 @@ export default function ProductPage() {
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
             <Button
               variant="text"
-              startIcon={<SlidersHorizontal size={18} />}
+              startIcon={<Filter size={18} />}
               disableRipple
               onClick={() => setIsFilterOpen(true)}
               sx={{
@@ -350,9 +387,20 @@ export default function ProductPage() {
             >
               Filter
             </Button>
+            {/* <IconButton
+              size="small"
+              onClick={() => setIsFilterOpen(true)}
+              sx={{
+                p: 0,
+                color: "text.primary",
+                fontSize: 14,
+              }}
+            >
+              <Filter size={18} />
+            </IconButton> */}
 
             <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
-              {productCount} products
+              {finalFilteredProducts.length} products
             </Typography>
             {searchTerm && (
               <Chip
@@ -363,16 +411,14 @@ export default function ProductPage() {
                 sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText' }}
               />
             )}
-            {appliedFilters.map(({ category, item }) => (
-              <Chip
-                key={item.id}
-                icon={item.icon ? <Image size={14} /> : undefined}
-                label={`${category}: ${item.name}`}
-                size="small"
-                onDelete={() => removeFilter({ item })}
-                sx={item.id && item.id.toString().includes('search') ? { bgcolor: 'primary.main', color: 'primary.contrastText' } : {}}
-              />
-            ))}
+
+            {/* Render Filter Chips with Grouping */}
+            <FilterChips
+              appliedFilters={appliedFilters}
+              onRemoveFilter={removeFilter}
+              onImageChipClick={handlePopoverOpen}
+              onFilterPopoverOpen={handleFilterPopoverOpen}
+            />
 
             {appliedFilters.length > 0 && (
               <Button
@@ -386,22 +432,30 @@ export default function ProductPage() {
             )}
           </Box>
 
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={(e, v) => v && setViewMode(v)}
-            size="small"
-            sx={{
-              padding: '5px 10px'
-            }}
-          >
-            <ToggleButton value="card">
-              <LayoutList size={18} />
-            </ToggleButton>
-            <ToggleButton value="grid">
-              <LayoutGrid size={18} />
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+
+            {/* <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, v) => v && setViewMode(v)}
+              size="small"
+              sx={{
+                padding: '5px 10px'
+              }}
+            >
+              <ToggleButton value="card">
+                <LayoutList size={18} />
+              </ToggleButton>
+              <ToggleButton value="grid">
+                <LayoutGrid size={18} />
+              </ToggleButton>
+            </ToggleButtonGroup> */}
+          </Box>
         </Box>
 
         {error ? (
@@ -430,17 +484,18 @@ export default function ProductPage() {
             </Button>
           </Box>
         ) : (
-          <ProductGrid
-            products={productsData}
-            designData={displayedProducts}
-            loadMore={loadMoreProducts}
-            hasMore={hasMore}
-            loadingMore={loadingMore}
-            appliedFilters={appliedFilters}
-            clearAllFilters={clearAllFilters}
-          />
+          <Fade in={!isTransitioning} timeout={300}>
+            <Box>
+              <ProductGrid
+                products={productsData}
+                designData={displayedProducts}
+                appliedFilters={appliedFilters}
+                clearAllFilters={clearAllFilters}
+              />
+            </Box>
+          </Fade>
         )}
-      </Container>
+      </Container >
 
       <Box className="modernSearchInputBox" sx={{
         position: "fixed",
@@ -451,7 +506,7 @@ export default function ProductPage() {
         zIndex: 1000
       }}>
         <Box sx={{ maxWidth: 600, width: "100%", mx: "auto" }}>
-          <ModernSearchBar onSubmit={handleSubmit} />
+          <ModernSearchBar onSubmit={handleSubmit} onFilterClick={() => setIsFilterOpen(true)} />
         </Box>
         <ScrollToTop />
       </Box>
@@ -463,6 +518,115 @@ export default function ProductPage() {
         appliedFilters={appliedFilters}
         onSearch={handleSearch}
         currentSearchTerm={searchTerm}
+      />
+
+      {/* Image Preview Popover */}
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        PaperProps={{
+          sx: { p: 1, maxWidth: 300 }
+        }}
+      >
+        {popoverContent && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {popoverContent.imageUrl && (
+              <Box
+                sx={{
+                  position: 'relative',
+                  cursor: 'pointer',
+                  '&:hover .overlay': { opacity: 1 }
+                }}
+                onClick={() => handleImageClick(popoverContent.imageUrl)}
+              >
+                <img
+                  src={popoverContent.imageUrl}
+                  alt="Search Preview"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: 200,
+                    objectFit: 'cover',
+                    borderRadius: 4
+                  }}
+                />
+                <Box
+                  className="overlay"
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    bgcolor: 'rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    borderRadius: 1
+                  }}
+                >
+                  <Maximize2 color="white" size={24} />
+                </Box>
+              </Box>
+            )}
+            {popoverContent.text && (
+              <Typography variant="body2" sx={{ px: 1, pb: 0.5 }}>
+                Text: <strong>{popoverContent.text}</strong>
+              </Typography>
+            )}
+          </Box>
+        )}
+      </Popover>
+
+      {/* Filter Details Popover */}
+      <Popover
+        open={Boolean(anchorElFilter)}
+        anchorEl={anchorElFilter}
+        onClose={handleFilterPopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        PaperProps={{
+          sx: { p: 2, maxWidth: 300 }
+        }}
+      >
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {filterPopoverItems.map(({ category, item }) => (
+            <Chip
+              key={item.id}
+              label={`${category}: ${item.name}`}
+              size="small"
+              onDelete={() => {
+                removeFilter({ item });
+                if (filterPopoverItems.length <= 1) {
+                  handleFilterPopoverClose();
+                } else {
+                  setFilterPopoverItems(prev => prev.filter(i => i.item.id !== item.id));
+                }
+              }}
+            />
+          ))}
+        </Box>
+      </Popover>
+
+      {/* Full Screen Image Viewer */}
+      <ImageViewerModal
+        open={isImageViewerOpen}
+        onClose={() => setIsImageViewerOpen(false)}
+        imageUrl={viewerImage}
       />
     </>
   );

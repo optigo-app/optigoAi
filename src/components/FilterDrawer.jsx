@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Drawer,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   Checkbox,
-  FormControlLabel,
   Button,
   Box,
   Typography,
@@ -19,18 +18,126 @@ import "../Style/FilterDrawer.scss";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
 
+const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => (
+  <Box
+    onClick={(e) => onToggle(categoryName, item, e)}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      p: 1,
+      borderRadius: 1,
+      cursor: 'pointer',
+      bgcolor: isSelected ? 'primary.light' : 'transparent',
+      color: isSelected ? 'primary.contrastText' : 'text.primary',
+      transition: 'all 0.2s',
+      '&:hover': {
+        bgcolor: isSelected ? 'primary.light' : 'action.hover',
+      }
+    }}
+  >
+    <Checkbox
+      checked={isSelected}
+      size="small"
+      sx={{
+        p: 0.5,
+        mr: 1,
+        color: isSelected ? 'inherit' : 'action.active',
+        '&.Mui-checked': { color: 'inherit' }
+      }}
+    />
+    <Typography variant="body2" sx={{ fontWeight: isSelected ? 500 : 400 }}>
+      {item?.name}
+    </Typography>
+  </Box>
+));
+FilterItem.displayName = 'FilterItem';
+
+const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordion, selectedFilters, onToggleItem, count }) => {
+  return (
+    <Accordion
+      expanded={expanded}
+      onChange={() => onToggleAccordion(index)}
+      disableGutters
+      className="filterDrawer__accordion"
+      TransitionProps={{ unmountOnExit: true }}
+      sx={{
+        boxShadow: 'none',
+        '&:before': { display: 'none' },
+        mb: 1,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: '8px !important',
+        overflow: 'hidden'
+      }}
+    >
+      <AccordionSummary
+        expandIcon={<ChevronDown size={18} />}
+        sx={{
+          bgcolor: 'background.paper',
+          '&.Mui-expanded': { minHeight: 48 }
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 1 }}>
+          <Typography className="filterDrawer__title">
+            {category.name}
+          </Typography>
+        </Box>
+      </AccordionSummary>
+
+      <AccordionDetails className="filterDrawer__details" sx={{ bgcolor: 'grey.50', p: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {category?.items?.map((item) => (
+            <FilterItem
+              key={item.id}
+              categoryName={category.name}
+              item={item}
+              isSelected={selectedFilters.has(`${category.name}-${item.id}`)}
+              onToggle={onToggleItem}
+            />
+          ))}
+        </Box>
+      </AccordionDetails>
+    </Accordion>
+  );
+}, (prev, next) => {
+  if (prev.expanded !== next.expanded) return false;
+  if (prev.count !== next.count) return false;
+  if (!next.expanded) return true;
+  return prev.selectedFilters === next.selectedFilters;
+});
+FilterCategory.displayName = 'FilterCategory';
+
 export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters = [] }) {
   const [filters, setFilters] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState(new Set());
   const [loadingFilters, setLoadingFilters] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isPending, startTransition] = React.useTransition();
+  const [shouldRenderFilters, setShouldRenderFilters] = useState(false);
+
+  const ignoreNextUpdate = React.useRef(false);
 
   useEffect(() => {
     const fetchFilters = async () => {
+      const cachedFilters = sessionStorage.getItem('filterMasterData');
+      if (cachedFilters) {
+        try {
+          setFilters(JSON.parse(cachedFilters));
+          setHasLoaded(true);
+          return;
+        } catch (e) {
+          console.error('Error parsing cached filters:', e);
+          sessionStorage.removeItem('filterMasterData');
+        }
+      }
+
       setLoadingFilters(true);
       try {
         const data = await filterMasterApi();
         const formattedFilters = formatMasterData(data);
         setFilters(formattedFilters);
+        sessionStorage.setItem('filterMasterData', JSON.stringify(formattedFilters));
+        setHasLoaded(true);
       } catch (error) {
         console.error('Failed to load filters:', error);
       } finally {
@@ -38,49 +145,94 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
       }
     };
 
-    if (isOpen) {
+    if (isOpen && !hasLoaded && !loadingFilters) {
       fetchFilters();
-      setSelectedFilters(new Set(appliedFilters.map(({ category, item }) => `${category}-${item.id}`)));
     }
+  }, [isOpen, hasLoaded, loadingFilters]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRenderFilters(false);
+      ignoreNextUpdate.current = true;
+      setSelectedFilters(new Set(appliedFilters.map(({ category, item }) => `${category}-${item.id}`)));
+
+      const timer = setTimeout(() => {
+        setShouldRenderFilters(true);
+      }, 50);
+
+      return () => clearTimeout(timer);
+    } else {
+      setShouldRenderFilters(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const toggleAccordion = (index) => {
-    const updated = [...filters];
-    updated[index].expanded = !updated[index].expanded;
-    setFilters(updated);
-  };
+  const toggleAccordion = useCallback((index) => {
+    setFilters(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], expanded: !updated[index].expanded };
+      return updated;
+    });
+  }, []);
 
-  const toggleFilterItem = (category, item, e) => {
+  const toggleFilterItem = useCallback((categoryName, item, e) => {
     e.stopPropagation();
-    const key = `${category}-${item.id}`;
-    const next = new Set(selectedFilters);
-    if (next.has(key)) {
-      next.delete(key);
-    } else {
-      next.add(key);
-    }
-    setSelectedFilters(next);
+    const key = `${categoryName}-${item.id}`;
 
-    // Get the new drawer filters
-    const drawerFilters = [];
-    filters.forEach(cat => {
-      cat.items.forEach(it => {
-        if (next.has(`${cat.name}-${it.id}`)) {
-          drawerFilters.push({ category: cat.name, item: it });
+    startTransition(() => {
+      setSelectedFilters(prev => {
+        const next = new Set(prev);
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
         }
+        return next;
       });
     });
+  }, []);
 
-    // Preserve existing search filters (don't include text-search, image-search, hybrid-search from appliedFilters)
-    const searchFilters = appliedFilters.filter(
-      (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
-    );
+  useEffect(() => {
+    if (ignoreNextUpdate.current) {
+      ignoreNextUpdate.current = false;
+      return;
+    }
 
-    // Combine search filters with drawer filters
-    const allAppliedFilters = [...searchFilters, ...drawerFilters];
-    
-    onApply?.(allAppliedFilters);
-  };
+    const timer = setTimeout(() => {
+      const drawerFilters = [];
+      filters.forEach(cat => {
+        cat.items.forEach(it => {
+          if (selectedFilters.has(`${cat.name}-${it.id}`)) {
+            drawerFilters.push({ category: cat.name, item: it });
+          }
+        });
+      });
+
+      const searchFilters = appliedFilters.filter(
+        (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
+      );
+
+      const allAppliedFilters = [...searchFilters, ...drawerFilters];
+      onApply?.(allAppliedFilters);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [selectedFilters, filters, appliedFilters, onApply]);
+
+  const handleClearAll = useCallback(() => {
+    startTransition(() => {
+      setSelectedFilters(new Set());
+    });
+  }, []);
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    selectedFilters.forEach(key => {
+      const category = key.split('-')[0];
+      counts[category] = (counts[category] || 0) + 1;
+    });
+    return counts;
+  }, [selectedFilters]);
 
   return (
     <Drawer
@@ -96,86 +248,35 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
           backgroundColor: 'rgba(255, 255, 255, 0.1)',
         },
       }}
+      ModalProps={{
+        keepMounted: true,
+      }}
     >
-      {/* Header */}
       <Box className="filterDrawer__header">
-        <Typography variant="h6">Filters</Typography>
-        <button className="filterDrawer__closeBtn" onClick={onClose}>
-          <X size={20} />
-        </button>
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Filters</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {selectedFilters.size} items selected
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {selectedFilters.size > 0 && (
+            <Button
+              size="small"
+              onClick={handleClearAll}
+              sx={{ minWidth: 'auto', px: 1 }}
+            >
+              Clear
+            </Button>
+          )}
+          <button className="filterDrawer__closeBtn" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </Box>
       </Box>
 
-      {/* Active Filter Chips */}
-      {selectedFilters.size > 0 && (
-        <Box className="filterDrawer__activeFilters" sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
-            Active Filters:
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {Array.from(selectedFilters).map((filterKey) => {
-              const [category, id] = filterKey.split('-');
-              const filterItem = filters
-                .find(cat => cat.name === category)
-                ?.items.find(item => item.id === id);
-              
-              if (!filterItem) return null;
-              
-              return (
-                <Box
-                  key={filterKey}
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    bgcolor: 'primary.light',
-                    color: 'primary.contrastText',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                  }}
-                >
-                  <span>{filterItem.name}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const next = new Set(selectedFilters);
-                      next.delete(filterKey);
-                      setSelectedFilters(next);
-                      
-                      const applied = [];
-                      filters.forEach(cat => {
-                        cat.items.forEach(it => {
-                          if (next.has(`${cat.name}-${it.id}`)) {
-                            applied.push({ category: cat.name, item: it });
-                          }
-                        });
-                      });
-                      onApply?.(applied);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'inherit',
-                      cursor: 'pointer',
-                      padding: 0,
-                      fontSize: '12px',
-                      lineHeight: 1,
-                    }}
-                  >
-                    ×
-                  </button>
-                </Box>
-              );
-            })}
-          </Box>
-        </Box>
-      )}
-
-      {/* Filters List */}
       <Box className="filterDrawer__content">
-        {loadingFilters ? (
+        {!shouldRenderFilters || (loadingFilters && !hasLoaded) ? (
           <Box>
             {Array.from({ length: 5 }).map((_, index) => (
               <Box key={`skeleton-${index}`} sx={{ mb: 2 }}>
@@ -185,54 +286,32 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
           </Box>
         ) : (
           filters?.map((category, index) => (
-            <Accordion
+            <FilterCategory
               key={`${category.name}-${index}`}
+              category={category}
+              index={index}
               expanded={category.expanded}
-              onChange={() => toggleAccordion(index)}
-              disableGutters
-              className="filterDrawer__accordion"
-            >
-              <AccordionSummary expandIcon={<ChevronDown size={18} />}>
-                <Typography className="filterDrawer__title">
-                  {category.name}
-                </Typography>
-              </AccordionSummary>
-
-              <AccordionDetails className="filterDrawer__details">
-                {category?.items?.map((item) => (
-                  <FormControlLabel
-                    key={item?.id}
-                    control={
-                      <Checkbox
-                        checked={selectedFilters.has(`${category.name}-${item.id}`)}
-                        onChange={(e) => toggleFilterItem(category.name, item, e)}
-                        sx={{
-                          transition: 'all 0.2s ease-in-out',
-                          '&.Mui-checked': {
-                            color: 'primary.main',
-                            transform: 'scale(1.1)',
-                          },
-                          '&:active': {
-                            transform: 'scale(0.95)',
-                          },
-                        }}
-                      />
-                    }
-                    label={item?.name}
-                  />
-                ))}
-              </AccordionDetails>
-            </Accordion>
+              onToggleAccordion={toggleAccordion}
+              selectedFilters={selectedFilters}
+              onToggleItem={toggleFilterItem}
+              count={categoryCounts[category.name] || 0}
+            />
           ))
         )}
       </Box>
 
-      {/* Footer */}
-      <Box className="filterDrawer__footer">
+      <Box className="filterDrawer__footer" sx={{ boxShadow: '0 -4px 12px rgba(0,0,0,0.05)' }}>
         <Button
           variant="contained"
           fullWidth
           onClick={onClose}
+          size="large"
+          sx={{
+            borderRadius: 1,
+            textTransform: 'none',
+            fontWeight: 600,
+            boxShadow: 'none'
+          }}
         >
           Done
         </Button>
@@ -240,4 +319,3 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
     </Drawer>
   );
 }
-

@@ -13,20 +13,18 @@ import {
     DialogActions,
     Button,
 } from "@mui/material";
-import { Image as ImageIcon, X, Send, ArrowUp, Filter, ImagePlus, Settings } from "lucide-react";
+import { Image as ImageIcon, X, ArrowUp, Filter, ImagePlus, Settings } from "lucide-react";
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
-import FilterDrawer from "./FilterDrawer";
 import CustomSlider from "./CustomSlider";
 
-export default function ModernSearchBar({ onSubmit }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [text, setText] = useState("");
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [isMultiline, setIsMultiline] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -165,11 +163,9 @@ export default function ModernSearchBar({ onSubmit }) {
     };
 
     const handleFilter = () => {
-        setIsFilterOpen(true);
-    };
-
-    const handleCloseFilter = () => {
-        setIsFilterOpen(false);
+        if (onFilterClick) {
+            onFilterClick();
+        }
     };
 
     return (
@@ -311,8 +307,6 @@ export default function ModernSearchBar({ onSubmit }) {
                     </Box>
                 </Box>
             </Paper>
-
-            <FilterDrawer isOpen={isFilterOpen} onClose={handleCloseFilter} />
 
             <Dialog
                 open={isSettingsOpen}
