@@ -172,11 +172,6 @@ const CartPageMUI = () => {
                         {cartItems.map((item, index) => (
                             <Grid
                                 key={`${item.id}-${index}`}
-                                xs={12}
-                                sm={6}
-                                md={4}
-                                lg={3}
-                                xl={2}
                                 size={{
                                     xs: 6,
                                     sm: 4,
@@ -240,8 +235,8 @@ const CartPageMUI = () => {
                                     </Box>
 
                                     {/* Product Details */}
-                                    <CardContent>
-                                        <Typography variant="h6" fontWeight="bold" align="center" mb={1}>
+                                    <CardContent sx={{ pb: '0 !important', padding:'10px !important' }}>
+                                        <Typography variant="h6" fontWeight="500" align="center">
                                             {item.designno || item.name}
                                         </Typography>
                                     </CardContent>

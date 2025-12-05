@@ -95,11 +95,6 @@ export default function ProductGrid({ designData, loadMore, hasMore, loadingMore
         {designData?.map((product, index) => (
           <Grid
             key={`${product.id}-${index}`}
-            xs={12}
-            sm={6}
-            md={4}
-            lg={3}
-            xl={2}
             size={{
               xs: 6,
               sm: 4,

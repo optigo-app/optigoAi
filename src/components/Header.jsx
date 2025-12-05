@@ -93,12 +93,11 @@ export default function Header() {
                             borderBottom: '2px solid',
                             borderColor: pathname === '/product' ? 'primary.main' : 'transparent',
                             borderRadius: 0,
-                            pb: 1,
                         }}
                     >
                         Products
                     </Button>
-                    <IconButton sx={{ padding: '3px 10px', margin: '0' }} color="inherit" disableRipple onClick={() => router.push('/cart')}>
+                    <IconButton sx={{ margin: '0' }} color="inherit" disableRipple onClick={() => router.push('/cart')}>
                         <Badge badgeContent={totalCount} color="primary" max={99}>
                             <ShoppingCart size={22} />
                         </Badge>

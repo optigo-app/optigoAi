@@ -8,7 +8,6 @@ import {
   ToggleButtonGroup,
   Chip,
   Typography,
-  Alert,
 } from "@mui/material";
 import { LayoutGrid, LayoutList, SlidersHorizontal, Image } from "lucide-react";
 import productsData from "@/data/Product.json";
@@ -95,7 +94,7 @@ export default function ProductPage() {
       const fuse = new Fuse(temp, {
         keys: [
           'autocode', 'designno', 'categoryname', 'subcategoryname',
-          'collectionname', 'producttype', 'brandname', 'labname', 
+          'collectionname', 'producttype', 'brandname', 'labname',
           'metaltype', 'metalcolor', 'diamondshape'
         ],
         threshold: 0.6,
@@ -132,8 +131,20 @@ export default function ProductPage() {
   }, [finalFilteredProducts]);
 
   const handleApplyFilters = useCallback((applied) => {
-    setAppliedFilters(applied);
-  }, []);
+    // Preserve existing search filters and combine with new drawer filters
+    const searchFilters = appliedFilters.filter(
+      (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
+    );
+
+    // Separate drawer filters from the applied filters
+    const drawerFilters = applied.filter(
+      (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
+    );
+
+    // Combine search filters with drawer filters
+    const allAppliedFilters = [...searchFilters, ...drawerFilters];
+    setAppliedFilters(allAppliedFilters);
+  }, [appliedFilters]);
 
   const handleSearch = useCallback((term) => {
     setSearchTerm(term);
@@ -320,7 +331,7 @@ export default function ProductPage() {
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            mb: 3,
+            mb: 2,
             pt: 2,
           }}
         >

@@ -61,15 +61,25 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
     }
     setSelectedFilters(next);
 
-    const applied = [];
+    // Get the new drawer filters
+    const drawerFilters = [];
     filters.forEach(cat => {
       cat.items.forEach(it => {
         if (next.has(`${cat.name}-${it.id}`)) {
-          applied.push({ category: cat.name, item: it });
+          drawerFilters.push({ category: cat.name, item: it });
         }
       });
     });
-    onApply?.(applied);
+
+    // Preserve existing search filters (don't include text-search, image-search, hybrid-search from appliedFilters)
+    const searchFilters = appliedFilters.filter(
+      (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
+    );
+
+    // Combine search filters with drawer filters
+    const allAppliedFilters = [...searchFilters, ...drawerFilters];
+    
+    onApply?.(allAppliedFilters);
   };
 
   return (
@@ -94,6 +104,74 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
           <X size={20} />
         </button>
       </Box>
+
+      {/* Active Filter Chips */}
+      {selectedFilters.size > 0 && (
+        <Box className="filterDrawer__activeFilters" sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+            Active Filters:
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {Array.from(selectedFilters).map((filterKey) => {
+              const [category, id] = filterKey.split('-');
+              const filterItem = filters
+                .find(cat => cat.name === category)
+                ?.items.find(item => item.id === id);
+              
+              if (!filterItem) return null;
+              
+              return (
+                <Box
+                  key={filterKey}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    bgcolor: 'primary.light',
+                    color: 'primary.contrastText',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                  }}
+                >
+                  <span>{filterItem.name}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = new Set(selectedFilters);
+                      next.delete(filterKey);
+                      setSelectedFilters(next);
+                      
+                      const applied = [];
+                      filters.forEach(cat => {
+                        cat.items.forEach(it => {
+                          if (next.has(`${cat.name}-${it.id}`)) {
+                            applied.push({ category: cat.name, item: it });
+                          }
+                        });
+                      });
+                      onApply?.(applied);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      padding: 0,
+                      fontSize: '12px',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      )}
 
       {/* Filters List */}
       <Box className="filterDrawer__content">
