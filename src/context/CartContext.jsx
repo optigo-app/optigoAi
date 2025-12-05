@@ -1,12 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const saveTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -19,13 +20,31 @@ export function CartProvider({ children }) {
     }
   }, []);
 
+  // Debounced sessionStorage save - only saves after 300ms of no changes
   useEffect(() => {
     if (!hasHydrated) return;
     if (typeof window === "undefined") return;
-    try {
-      sessionStorage.setItem("cartItems", JSON.stringify(items));
-    } catch (e) {
+
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+
+    // Set new timeout to save after 300ms
+    saveTimeoutRef.current = setTimeout(() => {
+      try {
+        sessionStorage.setItem("cartItems", JSON.stringify(items));
+      } catch (e) {
+        console.error("Failed to save cart:", e);
+      }
+    }, 300);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [items, hasHydrated]);
 
   const addToCart = useCallback((product) => {

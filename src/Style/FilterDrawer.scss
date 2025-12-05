@@ -50,12 +50,12 @@
     &__details {
         display: flex !important;
         flex-direction: column !important;
-        background: $gray-50;
+        border-top: 1px solid $gray-300;
         padding-left: 16px;
 
         span {
             font-size: 14px !important;
-            color: $gray-600 !important;
+            color: $gray-600;
             font-weight: 500;
         }
     }

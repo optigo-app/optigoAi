@@ -82,7 +82,7 @@ export default function Header() {
                 </Box>
 
                 {/* Right Section */}
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
+                <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-end' }}>
                     <Button
                         disableRipple
                         className="header-link"
@@ -93,26 +93,26 @@ export default function Header() {
                             borderBottom: '2px solid',
                             borderColor: pathname === '/product' ? 'primary.main' : 'transparent',
                             borderRadius: 0,
+                            p: "0 !important"
                         }}
                     >
                         Products
                     </Button>
-                    <IconButton sx={{ margin: '0' }} color="inherit" disableRipple onClick={() => router.push('/cart')}>
+                    <IconButton sx={{ margin: '0', padding: '0' }} color="inherit" disableRipple onClick={() => router.push('/cart')}>
                         <Badge badgeContent={totalCount} color="primary" max={99}>
                             <ShoppingCart size={22} />
                         </Badge>
                     </IconButton>
-
+                    {/* 
                     {isAuthenticated && (
                         <>
                             <Avatar
-                                sx={{ width: 32, height: 32, cursor: 'pointer', bgcolor: 'primary.main' }}
+                                sx={{ width: 28, height: 28, cursor: 'pointer', bgcolor: 'primary.main' }}
                                 onClick={handleMenu}
                             >
                                 {userName.charAt(0).toUpperCase()}
                             </Avatar>
 
-                            {/* MENU */}
                             <Menu
                                 anchorEl={anchorEl}
                                 open={open}
@@ -122,7 +122,6 @@ export default function Header() {
                                 PaperProps={{
                                     elevation: 2,
                                     sx: {
-                                        mt: .5,
                                         minWidth: 160,
                                         borderRadius: 1,
                                         overflow: 'hidden',
@@ -150,7 +149,7 @@ export default function Header() {
                                 </MenuItem>
                             </Menu>
                         </>
-                    )}
+                    )} */}
                 </Box>
             </Toolbar>
         </AppBar>

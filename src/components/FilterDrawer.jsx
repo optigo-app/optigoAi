@@ -42,7 +42,7 @@ const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => 
         p: 0.5,
         mr: 1,
         color: isSelected ? 'inherit' : 'action.active',
-        '&.Mui-checked': { color: 'inherit' }
+        '&.Mui-checked': { color: isSelected ? 'primary.contrastText' : 'inherit' }
       }}
     />
     <Typography variant="body2" sx={{ fontWeight: isSelected ? 500 : 400 }}>
@@ -84,7 +84,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
         </Box>
       </AccordionSummary>
 
-      <AccordionDetails className="filterDrawer__details" sx={{ bgcolor: 'grey.50', p: 1 }}>
+      <AccordionDetails className="filterDrawer__details" sx={{ p: 1 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           {category?.items?.map((item) => (
             <FilterItem
@@ -158,13 +158,12 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
 
       const timer = setTimeout(() => {
         setShouldRenderFilters(true);
-      }, 50);
+      }, 100);
 
       return () => clearTimeout(timer);
     } else {
       setShouldRenderFilters(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const toggleAccordion = useCallback((index) => {
@@ -187,43 +186,40 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
         } else {
           next.add(key);
         }
+
+        // Apply changes immediately
+        const drawerFilters = [];
+        filters.forEach(cat => {
+          cat.items.forEach(it => {
+            if (next.has(`${cat.name}-${it.id}`)) {
+              drawerFilters.push({ category: cat.name, item: it });
+            }
+          });
+        });
+
+        const searchFilters = appliedFilters.filter(
+          (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
+        );
+
+        const allAppliedFilters = [...searchFilters, ...drawerFilters];
+        onApply?.(allAppliedFilters);
+
         return next;
       });
     });
-  }, []);
-
-  useEffect(() => {
-    if (ignoreNextUpdate.current) {
-      ignoreNextUpdate.current = false;
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      const drawerFilters = [];
-      filters.forEach(cat => {
-        cat.items.forEach(it => {
-          if (selectedFilters.has(`${cat.name}-${it.id}`)) {
-            drawerFilters.push({ category: cat.name, item: it });
-          }
-        });
-      });
-
-      const searchFilters = appliedFilters.filter(
-        (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
-      );
-
-      const allAppliedFilters = [...searchFilters, ...drawerFilters];
-      onApply?.(allAppliedFilters);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, [selectedFilters, filters, appliedFilters, onApply]);
+  }, [filters, appliedFilters, onApply]);
 
   const handleClearAll = useCallback(() => {
     startTransition(() => {
       setSelectedFilters(new Set());
+
+      // Apply clear immediately (preserve search filters)
+      const searchFilters = appliedFilters.filter(
+        (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
+      );
+      onApply?.(searchFilters);
     });
-  }, []);
+  }, [appliedFilters, onApply]);
 
   const categoryCounts = useMemo(() => {
     const counts = {};

@@ -82,7 +82,21 @@ export default function ProductPage() {
   const [searchResults, setSearchResults] = useState(null);
   const [lastSearchData, setLastSearchData] = useState(null);
 
-  const itemsPerPage = 100;
+  // Items per page with sessionStorage persistence
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const saved = sessionStorage.getItem('productsPerPage');
+    return saved ? parseInt(saved, 10) : 100;
+  });
+
+  // Save itemsPerPage to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('productsPerPage', itemsPerPage.toString());
+  }, [itemsPerPage]);
+
+  const handleItemsPerPageChange = useCallback((newValue) => {
+    setItemsPerPage(newValue);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  }, []);
 
   const baseDataset = useMemo(() => {
     return searchResults !== null ? searchResults : allDesignCollections;
@@ -190,6 +204,7 @@ export default function ProductPage() {
       const newApplied = appliedFilters.filter((f) => f.item.id !== item.id);
       if (item && ["text-search", "image-search", "hybrid-search"].includes(item.id)) {
         setSearchResults(null);
+        setError(null);
       }
       setAppliedFilters(newApplied);
     },
@@ -200,21 +215,17 @@ export default function ProductPage() {
     setAppliedFilters([]);
     setSearchResults(null);
     setSearchTerm('');
+    setError(null);
   }, []);
 
-  // Pagination handlers
   const handlePageChange = useCallback((page) => {
     setIsTransitioning(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Wait for fade out before changing page
     setTimeout(() => {
       setCurrentPage(page);
-      // Fade back in
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 50);
-    }, 300);
+      setIsTransitioning(false);
+    }, 200);
   }, []);
 
   function getMatchedDesignCollections(res = [], allDesignCollections = []) {
@@ -331,6 +342,52 @@ export default function ProductPage() {
       console.error("Search Error:", err);
       setError("Search failed. Try again.");
       setSearchResults([]);
+
+      // Create error chip to show failed search
+      let errorChip = null;
+      if (searchData?.isSearchFlag === 1) {
+        errorChip = {
+          category: "Text",
+          item: {
+            id: "text-search",
+            name: searchData.text?.trim() || "",
+            error: true
+          },
+        };
+      } else if (searchData?.isSearchFlag === 2) {
+        const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
+        errorChip = {
+          category: "Image",
+          item: {
+            id: "image-search",
+            name: "Image Search",
+            icon: true,
+            imageUrl: imageUrl,
+            error: true
+          },
+        };
+      } else if (searchData?.isSearchFlag === 3) {
+        const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
+        errorChip = {
+          category: "Hybrid",
+          item: {
+            id: "hybrid-search",
+            name: searchData.text?.trim() || "Hybrid Search",
+            imageUrl: imageUrl,
+            text: searchData.text?.trim(),
+            error: true
+          },
+        };
+      }
+
+      if (errorChip) {
+        setAppliedFilters((prev) => [
+          errorChip,
+          ...prev.filter(
+            (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
+          ),
+        ]);
+      }
     } finally {
       setLoading(false);
     }
@@ -358,6 +415,8 @@ export default function ProductPage() {
       mounted = false;
     };
   }, []);
+
+  console.log("displayedProducts", displayedProducts);
 
   if (loading) return <FullPageLoader open={true} />;
 
@@ -437,6 +496,8 @@ export default function ProductPage() {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
             />
 
             {/* <ToggleButtonGroup
@@ -484,7 +545,7 @@ export default function ProductPage() {
             </Button>
           </Box>
         ) : (
-          <Fade in={!isTransitioning} timeout={300}>
+          <Fade in={!isTransitioning} timeout={200}>
             <Box>
               <ProductGrid
                 products={productsData}

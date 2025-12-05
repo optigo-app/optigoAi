@@ -15,9 +15,8 @@ import { ArrowLeft, Palette, ShoppingBag, Sparkles, ShoppingCart } from "lucide-
 
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
-import { addToQuoteApi } from "@/app/api/addToQuoteApi";
-import { addToStockPurchaseApi } from "@/app/api/addToStockPurchaseApi";
 import { buildQuoteRedirectUrl } from "@/utils/globalFunc";
+import { SaveCartApi } from "../api/SaveCartApi";
 
 /* ----------------------------------------------------
    ACTION CONFIG — Adding new actions requires only this
@@ -26,7 +25,7 @@ const ACTION_CONFIG = {
     quote: {
         title: "Add to Quote",
         description: "Add these items to your quotation for future reference and inspiration",
-        api: addToQuoteApi,
+        api: SaveCartApi,
         successMessage: "Items added to Quotation!",
         postMessageEvent: "Quotation",
         responseKey: "QID",
@@ -41,12 +40,12 @@ const ACTION_CONFIG = {
     },
 
     stock: {
-        title: "Create Purchase Request",
-        description: "Create a purchase request for these items to add them to your inventory",
-        api: addToStockPurchaseApi,
-        successMessage: "Stock purchase request submitted!",
-        postMessageEvent: "StockPurchase",
-        responseKey: "SID",
+        title: "Add to Album",
+        description: "Add these items to your album for future reference and inspiration",
+        api: SaveCartApi,
+        successMessage: "Items added to Album!",
+        postMessageEvent: "Album",
+        responseKey: "QID",
 
         ui: {
             icon: <ShoppingBag size={32} />,
@@ -61,12 +60,12 @@ const ACTION_CONFIG = {
 /* ----------------------------------------------------
    SEPARATE FUNCTION — sends iframe post message
 ---------------------------------------------------- */
-const sendPostMessage = (event, code, url) => {
+const sendPostMessage = (event, code) => {
     window.parent.postMessage(
         {
             type: "ADD_TAB",
             evt: event,
-            payload: { code, url },
+            payload: { code },
         },
         "*"
     );
@@ -178,7 +177,7 @@ const CheckoutPage = () => {
             const code = response?.data?.rd?.[0]?.[config.responseKey];
             const curVersion = cartItems[0]?.cuVer
             const url = buildQuoteRedirectUrl(code, curVersion)
-            if (code) sendPostMessage(config.postMessageEvent, code, url);
+            if (code) sendPostMessage(config.postMessageEvent, code);
 
         } catch (err) {
             console.error(err);

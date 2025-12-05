@@ -33,6 +33,8 @@ export default function FilterChips({
             {/* Render Search Chips (Always Visible) */}
             {searchFilters.map(({ category, item }) => {
                 const isImageSearch = item.id === "image-search" || item.id === "hybrid-search";
+                const isError = item.error === true;
+
                 return (
                     <Chip
                         key={item.id}
@@ -53,12 +55,13 @@ export default function FilterChips({
                         label={item.name}
                         size="small"
                         onDelete={() => onRemoveFilter({ item })}
-                        onClick={isImageSearch ? (e) => onImageChipClick(e, item) : undefined}
+                        onClick={isImageSearch && !isError ? (e) => onImageChipClick(e, item) : undefined}
                         sx={{
-                            bgcolor: 'primary.main',
-                            color: 'primary.contrastText',
+                            bgcolor: isError ? 'error.main' : 'primary.main',
+                            color: isError ? 'error.contrastText' : 'primary.contrastText',
                             maxWidth: '200px',
-                            cursor: isImageSearch ? 'pointer' : 'default',
+                            cursor: isImageSearch && !isError ? 'pointer' : 'default',
+                            opacity: isError ? 0.9 : 1,
                             '& .MuiChip-label': {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -67,7 +70,15 @@ export default function FilterChips({
                             '& .MuiChip-avatar': {
                                 borderColor: 'white',
                                 borderWidth: 1,
-                                borderStyle: 'solid'
+                                borderStyle: 'solid',
+                                opacity: isError ? 0.7 : 1
+                            },
+                            '& .MuiChip-deleteIcon': {
+                                color: isError ? 'error.contrastText' : 'primary.contrastText',
+                                opacity: 0.8,
+                                '&:hover': {
+                                    opacity: 1
+                                }
                             }
                         }}
                     />
@@ -98,7 +109,7 @@ export default function FilterChips({
                         ))}
                         {hiddenItems.length > 0 && (
                             <Chip
-                                label={`+${hiddenItems.length} ${category}`}
+                                label={`+${hiddenItems.length}`}
                                 size="small"
                                 variant="outlined"
                                 onClick={(e) => onFilterPopoverOpen(e, hiddenItems)}

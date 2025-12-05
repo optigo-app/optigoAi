@@ -7,11 +7,6 @@ import {
     Paper,
     TextField,
     Tooltip,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
 } from "@mui/material";
 import { Image as ImageIcon, X, ArrowUp, Filter, ImagePlus, Settings } from "lucide-react";
 import "../Style/chatInput.scss";
@@ -28,8 +23,25 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
     const [isDragging, setIsDragging] = useState(false);
     const [isMultiline, setIsMultiline] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [numResults, setNumResults] = useState(10);
-    const [accuracy, setAccuracy] = useState(50);
+
+    // Initialize from sessionStorage or use defaults
+    const [numResults, setNumResults] = useState(() => {
+        const saved = sessionStorage.getItem('searchNumResults');
+        return saved ? parseInt(saved, 10) : 10;
+    });
+    const [accuracy, setAccuracy] = useState(() => {
+        const saved = sessionStorage.getItem('searchAccuracy');
+        return saved ? parseInt(saved, 10) : 40;
+    });
+
+    // Save to sessionStorage whenever values change
+    useEffect(() => {
+        sessionStorage.setItem('searchNumResults', numResults.toString());
+    }, [numResults]);
+
+    useEffect(() => {
+        sessionStorage.setItem('searchAccuracy', accuracy.toString());
+    }, [accuracy]);
 
     const handleUpload = (e) => {
         const file = e.target.files?.[0];
@@ -98,9 +110,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
 
         const handleWindowDrop = (e) => {
             e.preventDefault();
-            e.stopPropagation();
             processDroppedFiles(e.dataTransfer?.files);
-            setIsDragging(false);
         };
 
         window.addEventListener("dragover", handleWindowDragOver);
@@ -114,37 +124,36 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
         };
     }, []);
 
-    const getFlag = () => {
-        if (text.trim() && imageFile) return 3;
-        if (imageFile) return 2;
-        return 1;
-    };
-
     const handleSend = () => {
-        if (!text.trim() && !imageFile) {
-            showError('Please enter a message or upload an image', 'warning');
+        const trimmedText = text.trim();
+
+        if (!trimmedText && !imageFile) {
+            showError("Please enter text or upload an image", "warning");
             return;
         }
 
-        const payload = {
-            text: text.trim(),
-            image: imageFile || null,
-            isSearchFlag: getFlag(),
-            numResults: numResults.toString(),
-            accuracy: accuracy.toString(),
+        let isSearchFlag = 0;
+        if (trimmedText && imageFile) {
+            isSearchFlag = 3; // Hybrid
+        } else if (imageFile) {
+            isSearchFlag = 2; // Image
+        } else if (trimmedText) {
+            isSearchFlag = 1; // Text
+        }
+
+        const searchData = {
+            text: trimmedText,
+            image: imageFile,
+            isSearchFlag,
+            numResults,
+            accuracy,
         };
 
-        console.log("SEND =>", payload);
-        if (onSubmit) onSubmit(payload);
-        const message = imageFile
-            ? text.trim()
-                ? 'Searching with image and text...'
-                : 'Searching with image...'
-            : 'Searching...';
+        onSubmit(searchData);
+        clearInput();
+    };
 
-        showSuccess(message, 'success');
-
-        // reset
+    const clearInput = () => {
         setText("");
         setImageFile(null);
         setImagePreview(null);
@@ -288,7 +297,14 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
                         )}
                         <div className="btns-row-div">
                             <Tooltip title="Settings">
-                                <IconButton className="settings-btn" sx={{ color: 'text.secondary' }} onClick={() => setIsSettingsOpen(true)}>
+                                <IconButton
+                                    className="settings-btn"
+                                    sx={{
+                                        color: isSettingsOpen ? 'primary.main' : 'text.secondary',
+                                        transition: 'color 0.2s'
+                                    }}
+                                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                >
                                     <Settings size={22} />
                                 </IconButton>
                             </Tooltip>
@@ -299,48 +315,64 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
                             </Tooltip>
                             <Tooltip title="Send">
                                 <IconButton className="send-btn" onClick={handleSend}>
-                                    {/* <Send size={18} /> */}
                                     <ArrowUp size={20} />
                                 </IconButton>
                             </Tooltip>
                         </div>
                     </Box>
                 </Box>
-            </Paper>
 
-            <Dialog
-                open={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle>Search Settings</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                        <CustomSlider
-                            label="Number of Results"
-                            value={numResults}
-                            onChange={setNumResults}
-                            min={1}
-                            max={20}
-                            step={1}
-                        />
-                        <CustomSlider
-                            label="Search Accuracy"
-                            value={accuracy}
-                            onChange={setAccuracy}
-                            min={0}
-                            max={100}
-                            step={5}
-                            unit="%"
-                        />
+                {/* Inline Settings - Expands below input */}
+                {isSettingsOpen && (
+                    <Box
+                        sx={{
+                            borderTop: '1px solid',
+                            borderColor: 'divider',
+                            animation: 'slideDown 0.3s ease-in-out',
+                            '@keyframes slideDown': {
+                                from: {
+                                    opacity: 0,
+                                    transform: 'translateY(-10px)'
+                                },
+                                to: {
+                                    opacity: 1,
+                                    transform: 'translateY(0)'
+                                }
+                            }
+                        }}
+                    >
+                        <Box sx={{
+                            p: 2,
+                            display: 'flex',
+                            flexDirection: 'row',
+                            gap: 3,
+                            alignItems: 'center'
+                        }}>
+                            <Box sx={{ flex: 1 }}>
+                                <CustomSlider
+                                    label="Number of Results"
+                                    value={numResults}
+                                    onChange={setNumResults}
+                                    min={1}
+                                    max={50}
+                                    step={1}
+                                />
+                            </Box>
+                            <Box sx={{ flex: 1 }}>
+                                <CustomSlider
+                                    label="Search Accuracy"
+                                    value={accuracy}
+                                    onChange={setAccuracy}
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    unit="%"
+                                />
+                            </Box>
+                        </Box>
                     </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setIsSettingsOpen(false)}>Close</Button>
-                </DialogActions>
-            </Dialog>
+                )}
+            </Paper>
         </>
     );
 }
-

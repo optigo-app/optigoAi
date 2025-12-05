@@ -1,7 +1,7 @@
 import { getAuthData } from "@/utils/globalFunc";
 import { CommonAPI } from "./config/CommonApi";
 
-export const addToQuoteApi = async (cartItems) => {
+export const SaveCartApi = async (cartItems) => {
     const AuthData = getAuthData();
     try {
         // Transform cart items to the expected format

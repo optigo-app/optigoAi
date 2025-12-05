@@ -85,7 +85,8 @@ export default function ProductCard({ product }) {
                                 left: 0,
                                 width: "100%",
                                 height: "100%",
-                                borderRadius: "4px"
+                                borderRadius: "4px",
+                                bgcolor: 'grey.100'
                             }}
                         />
                     )}
