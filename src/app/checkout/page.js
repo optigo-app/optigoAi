@@ -39,7 +39,7 @@ const ACTION_CONFIG = {
         },
     },
 
-    stock: {
+    album: {
         title: "Add to Album",
         description: "Add these items to your album for future reference and inspiration",
         api: SaveCartApi,
@@ -49,10 +49,27 @@ const ACTION_CONFIG = {
 
         ui: {
             icon: <ShoppingBag size={32} />,
-            iconBg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            cardBg: "linear-gradient(135deg, #fff8f8 0%, #fff0f0 100%)",
-            buttonBg: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-            buttonHover: "linear-gradient(135deg, #e683f0 0%, #e64a60 100%)",
+            iconBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
+            cardBg: "linear-gradient(135deg, #fff7ed 0%, #fff0df 100%)",
+            buttonBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
+            buttonHover: "linear-gradient(135deg, #ff8c1a 0%, #e65b00 100%)",
+        },
+    },
+
+    order: {
+        title: "Add to Order",
+        description: "Add these items to your order for future reference and inspiration",
+        api: SaveCartApi,
+        successMessage: "Items added to Order!",
+        postMessageEvent: "Order",
+        responseKey: "QID",
+
+        ui: {
+            icon: <ShoppingCart size={32} />,
+            iconBg: "linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%)",
+            cardBg: "linear-gradient(135deg, #f0fff7 0%, #e3fff1 100%)",
+            buttonBg: "linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%)",
+            buttonHover: "linear-gradient(135deg, #14c79a 0%, #0f9b77 100%)",
         },
     },
 };

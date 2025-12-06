@@ -4,12 +4,10 @@ import {
   Container,
   Box,
   Button,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
   Fade,
   Popover,
-  IconButton,
+  Chip,
 } from "@mui/material";
 import { Maximize2, Filter } from "lucide-react";
 import ImageViewerModal from "@/components/ImageViewerModal";
@@ -27,7 +25,6 @@ import FilterChips from "@/components/FilterChips";
 
 export default function ProductPage() {
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState("card");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [allDesignCollections, setAllDesignCollections] = useState([]);
@@ -448,18 +445,6 @@ export default function ProductPage() {
             >
               Filter
             </Button>
-            {/* <IconButton
-              size="small"
-              onClick={() => setIsFilterOpen(true)}
-              sx={{
-                p: 0,
-                color: "text.primary",
-                fontSize: 14,
-              }}
-            >
-              <Filter size={18} />
-            </IconButton> */}
-
             <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
               {finalFilteredProducts.length} products
             </Typography>
@@ -501,23 +486,6 @@ export default function ProductPage() {
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
-
-            {/* <ToggleButtonGroup
-              value={viewMode}
-              exclusive
-              onChange={(e, v) => v && setViewMode(v)}
-              size="small"
-              sx={{
-                padding: '5px 10px'
-              }}
-            >
-              <ToggleButton value="card">
-                <LayoutList size={18} />
-              </ToggleButton>
-              <ToggleButton value="grid">
-                <LayoutGrid size={18} />
-              </ToggleButton>
-            </ToggleButtonGroup> */}
           </Box>
         </Box>
 
