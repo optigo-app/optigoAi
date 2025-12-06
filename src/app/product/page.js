@@ -429,6 +429,8 @@ export default function ProductPage() {
             justifyContent: "space-between",
             mb: 2,
             pt: 2,
+
+            borderRadius: 2,
           }}
         >
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
@@ -566,10 +568,10 @@ export default function ProductPage() {
         p: 2,
         zIndex: 1000
       }}>
-        <Box sx={{ maxWidth: 600, width: "100%", mx: "auto" }}>
-          <ModernSearchBar onSubmit={handleSubmit} onFilterClick={() => setIsFilterOpen(true)} />
+        <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
+          <ModernSearchBar onSubmit={handleSubmit} onFilterClick={() => setIsFilterOpen(true)} appliedFilters={appliedFilters} onApply={handleApplyFilters} />
         </Box>
-        <ScrollToTop />
+        <ScrollToTop bottom={urlParamsFlag && urlParamsFlag == 'fe' ? 70 : 24} />
       </Box>
 
       <FilterDrawer

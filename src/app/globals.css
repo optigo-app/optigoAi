@@ -1,3 +1,10 @@
+/* CSS Variables */
+:root {
+  --background-light: #F4F5FA;
+  /* Premium light gray/blue tint */
+  --font-poppins: 'Poppins', sans-serif;
+}
+
 /* Global Reset */
 * {
   box-sizing: border-box;

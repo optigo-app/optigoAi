@@ -7,34 +7,68 @@ import {
     Paper,
     TextField,
     Tooltip,
+    ClickAwayListener,
+    Button,
+    Fade,
+    Zoom,
+    Chip,
 } from "@mui/material";
-import { Image as ImageIcon, X, ArrowUp, Filter, ImagePlus, Settings2 } from "lucide-react";
+import {
+    Image as ImageIcon,
+    X,
+    ArrowUp,
+    ImagePlus,
+    Settings2,
+    Layers,
+    Palette,
+    Users,
+    Check
+} from "lucide-react";
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
 import CustomSlider from "./CustomSlider";
+import { filterMasterApi } from "@/app/api/filterMasterApi";
+import { formatMasterData } from "@/utils/globalFunc";
+import FilterDropdown from "./FilterDropdown";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
+    const containerRef = useRef(null);
+
+    // Original State
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [text, setText] = useState("");
     const [isDragging, setIsDragging] = useState(false);
-    const [isMultiline, setIsMultiline] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isMultiline, setIsMultiline] = useState(false);
 
-    // Initialize from sessionStorage or use defaults
+    // Filter Logic States
+    const [filterData, setFilterData] = useState([]);
+    const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+    const [activeDropdown, setActiveDropdown] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+
+    // Initialize Settings
     const [numResults, setNumResults] = useState(() => {
-        const saved = sessionStorage.getItem('searchNumResults');
-        return saved ? parseInt(saved, 10) : 10;
-    });
-    const [accuracy, setAccuracy] = useState(() => {
-        const saved = sessionStorage.getItem('searchAccuracy');
-        return saved ? parseInt(saved, 10) : 40;
+        if (typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('searchNumResults');
+            return saved ? parseInt(saved, 10) : 10;
+        }
+        return 10;
     });
 
-    // Save to sessionStorage whenever values change
+    const [accuracy, setAccuracy] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('searchAccuracy');
+            return saved ? parseInt(saved, 10) : 40;
+        }
+        return 40;
+    });
+
     useEffect(() => {
         sessionStorage.setItem('searchNumResults', numResults.toString());
     }, [numResults]);
@@ -43,11 +77,53 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
         sessionStorage.setItem('searchAccuracy', accuracy.toString());
     }, [accuracy]);
 
+    // Load Filter Data on Mount (Single Fetch)
+    useEffect(() => {
+        const fetchFilters = async () => {
+            const cachedFilters = sessionStorage.getItem('filterMasterData');
+            if (cachedFilters) {
+                try {
+                    setFilterData(JSON.parse(cachedFilters));
+                    return;
+                } catch (e) {
+                    sessionStorage.removeItem('filterMasterData');
+                }
+            }
+
+            setIsLoadingFilters(true);
+            try {
+                const data = await filterMasterApi();
+                const formatted = formatMasterData(data);
+                setFilterData(formatted);
+                sessionStorage.setItem('filterMasterData', JSON.stringify(formatted));
+            } catch (err) {
+                console.error("Failed to load search filters", err);
+            } finally {
+                setIsLoadingFilters(false);
+            }
+        };
+        fetchFilters();
+    }, []);
+
+    const getItemsForCategory = (categoryName) => {
+        let target = categoryName;
+        if (categoryName === 'Collection') target = 'DesignCollection';
+        if (categoryName === 'Style') target = 'Category';
+        if (categoryName === 'Gender') target = 'Gender';
+
+        const found = filterData.find(c =>
+            c.name.toLowerCase().includes(target.toLowerCase()) ||
+            c.name.toLowerCase().includes(categoryName.toLowerCase())
+        );
+        return found ? found.items : [];
+    };
+
     const handleUpload = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setImageFile(file);
         setImagePreview(URL.createObjectURL(file));
+        setIsExpanded(true);
     };
 
     const handlePaste = (e) => {
@@ -56,6 +132,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
                 const file = item.getAsFile();
                 setImageFile(file);
                 setImagePreview(URL.createObjectURL(file));
+                setIsExpanded(true);
             }
         }
     };
@@ -78,12 +155,12 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
         }
 
         setIsDragging(false);
+        setIsExpanded(true);
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
-
         processDroppedFiles(e.dataTransfer?.files);
     };
 
@@ -98,11 +175,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
                 e.dataTransfer.dropEffect = "copy";
             }
             setIsDragging(true);
+            setIsExpanded(true);
         };
 
         const handleWindowDragLeave = (e) => {
             e.preventDefault();
-            // Only hide overlay when leaving window (not when entering children)
             if (e.target === document.documentElement || e.target === document.body) {
                 setIsDragging(false);
             }
@@ -151,12 +228,15 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
 
         onSubmit(searchData);
         clearInput();
+        setIsExpanded(false);
+        setIsMultiline(false);
     };
 
     const clearInput = () => {
         setText("");
         setImageFile(null);
         setImagePreview(null);
+        setIsMultiline(false);
         if (fileRef.current) {
             fileRef.current.value = "";
         }
@@ -171,208 +251,371 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
         }
     };
 
-    const handleFilter = () => {
-        if (onFilterClick) {
-            onFilterClick();
+    const openDropdown = (type, event) => {
+        setActiveDropdown(type);
+        setAnchorEl(event.currentTarget);
+    };
+
+    const closeDropdown = () => {
+        setActiveDropdown(null);
+        setAnchorEl(null);
+    };
+
+    const handleFilterSelect = (category, item) => {
+        if (!onApply) return;
+        const isCurrentlySelected = appliedFilters.some(f => f.item.id === item.id && f.category === category);
+        let newFilters = appliedFilters.filter(f => f.category !== category);
+        if (!isCurrentlySelected) {
+            newFilters.push({ category, item });
+        }
+        onApply(newFilters);
+        closeDropdown();
+    };
+
+    const handleClickAway = () => {
+        if (!isSettingsOpen && !activeDropdown) {
+            setIsExpanded(false);
         }
     };
 
+    const handleFocus = () => {
+        setIsExpanded(true);
+    };
+
+    const getActiveFilterName = (category) => {
+        const found = appliedFilters.find(f => f.category === category);
+        return found ? found.item.name : category;
+    };
+
+    const hasSelection = (category) => {
+        return appliedFilters.some(f => f.category === category);
+    };
+
     return (
-        <>
-            {isDragging && (
-                <Box
+        <ClickAwayListener onClickAway={handleClickAway}>
+            <Box sx={{ position: 'relative', width: '100%' }}>
+                {isDragging && (
+                    <Box
+                        sx={{
+                            position: "fixed",
+                            inset: 0,
+                            zIndex: 1300,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            pointerEvents: "none",
+                            background:
+                                "radial-gradient(circle at center, rgba(115,103,240,0.12) 0, rgba(15,23,42,0.7) 60%)",
+                            transition: "opacity 0.2s ease",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                border: "2px dashed rgba(255,255,255,0.7)",
+                                borderRadius: 3,
+                                px: 4,
+                                py: 3,
+                                color: "#fff",
+                                textAlign: "center",
+                                backdropFilter: "blur(6px)",
+                                bgcolor: "rgba(15,23,42,0.35)",
+                            }}
+                        >
+                            <Box sx={{ mb: 1 }}>
+                                <ImageIcon size={35} />
+                            </Box>
+                            <Box component="p" sx={{ m: 0, fontWeight: 600 }}>
+                                Drop your jewelry image anywhere
+                            </Box>
+                        </Box>
+                    </Box>
+                )}
+
+                <Paper
+                    ref={containerRef}
+                    elevation={isExpanded ? 12 : 2}
+                    className={`chat-input-container ${isExpanded ? 'expanded' : 'minimized'}`}
+                    onPaste={handlePaste}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
                     sx={{
-                        position: "fixed",
-                        inset: 0,
-                        zIndex: 1300,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        pointerEvents: "none",
-                        background:
-                            "radial-gradient(circle at center, rgba(115,103,240,0.12) 0, rgba(15,23,42,0.7) 60%)",
-                        transition: "opacity 0.2s ease",
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        zIndex: isExpanded ? 1100 : 1,
                     }}
                 >
-                    <Box
-                        sx={{
-                            border: "2px dashed rgba(255,255,255,0.7)",
-                            borderRadius: 3,
-                            px: 4,
-                            py: 3,
-                            color: "#fff",
-                            textAlign: "center",
-                            backdropFilter: "blur(6px)",
-                            bgcolor: "rgba(15,23,42,0.35)",
-                        }}
-                    >
-                        <Box sx={{ mb: 1 }}>
-                            <ImageIcon size={35} />
-                        </Box>
-                        <Box component="p" sx={{ m: 0, fontWeight: 600 }}>
-                            Drop your jewelry image anywhere
-                        </Box>
-                    </Box>
-                </Box>
-            )}
-            <Paper
-                className="chat-input-container"
-                onPaste={handlePaste}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-            >
+                    {/* Top Section: Inputs & Controls */}
+                    <Box className="input-area-wrapper">
+                        {imagePreview && (
+                            <Zoom in={Boolean(imagePreview)}>
+                                <Box className="image-preview-wrapper" sx={{ mb: 1 }}>
+                                    <Box className="image-preview">
+                                        <img src={imagePreview} alt="preview" />
+                                        <Tooltip title="Remove image">
+                                            <IconButton
+                                                size="small"
+                                                className="remove-image"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setImagePreview(null);
+                                                    setImageFile(null);
+                                                }}
+                                            >
+                                                <X size={14} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </Box>
+                            </Zoom>
+                        )}
 
-                {imagePreview && (
-                    <Box className="image-preview-wrapper">
-                        <Box className="image-preview">
-                            <img src={imagePreview} alt="preview" />
-                            <Tooltip title="Remove image">
-                                <IconButton
-                                    size="small"
-                                    className="remove-image"
-                                    onClick={() => {
-                                        setImagePreview(null);
-                                        setImageFile(null);
-                                    }}
-                                >
-                                    <X size={14} />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                    </Box>
-                )}
-
-                <Box className={isMultiline ? "chat-input-inline-multi" : "chat-input-inline-single"}>
-                    <Box className="text-row">
-                        {!isMultiline && (
-                            <>
+                        <Box className="input-flex-row">
+                            {/* Upload Icon */}
+                            {!isMultiline && (
                                 <Tooltip title="Upload image">
-                                    <IconButton onClick={() => fileRef.current.click()} className="upload-btn">
+                                    <IconButton
+                                        onClick={() => fileRef.current.click()}
+                                        className="upload-btn"
+                                        sx={{ p: 1 }}
+                                    >
                                         <ImagePlus size={22} />
                                     </IconButton>
                                 </Tooltip>
-                                <input
-                                    ref={fileRef}
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: "none" }}
-                                    onChange={handleUpload}
-                                />
-                            </>
-                        )}
-                        <TextField
-                            placeholder="Ask anything…"
-                            variant="standard"
-                            fullWidth={!isMultiline}
-                            sx={{ width: isMultiline ? '100% !important' : '370px !important' }}
-                            multiline
-                            maxRows={10}
-                            value={text}
-                            onChange={(e) => {
-                                setText(e.target.value);
-                                setIsMultiline(e.target.value.includes('\n') || e.target.value.length > 42);
-                            }}
-                            onKeyDown={handleKeyDown}
-                            className="chat-textarea"
-                            inputRef={textFieldRef}
-                            InputProps={{ disableUnderline: true }}
-                        />
-                    </Box>
-                    <Box className="buttons-row">
+                            )}
+
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept="image/*"
+                                style={{ display: "none" }}
+                                onChange={handleUpload}
+                            />
+
+                            <TextField
+                                placeholder="Describe your idea, and I'll bring it to life"
+                                variant="standard"
+                                fullWidth
+                                multiline
+                                maxRows={8}
+                                value={text}
+                                onClick={handleFocus}
+                                onFocus={handleFocus}
+                                onChange={(e) => {
+                                    setText(e.target.value);
+                                    if (e.target.value.includes('\n') || e.target.value.length > 50) {
+                                        setIsMultiline(true);
+                                    } else {
+                                        setIsMultiline(false);
+                                    }
+                                }}
+                                onKeyDown={handleKeyDown}
+                                className="chat-textarea"
+                                inputRef={textFieldRef}
+                                InputProps={{
+                                    disableUnderline: true,
+                                    sx: { fontSize: '1.05rem' }
+                                }}
+                            />
+
+                            {/* Actions Group - Inline */}
+                            {!isMultiline && (
+                                <Zoom in={isExpanded || text.length > 0 || Boolean(imagePreview)}>
+                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                        <Tooltip title="Advanced Settings">
+                                            <IconButton
+                                                className="settings-btn"
+                                                size="small"
+                                                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                                sx={{
+                                                    color: isSettingsOpen ? 'primary.main' : 'text.secondary',
+                                                    mr: 0.5
+                                                }}
+                                            >
+                                                <Settings2 size={20} />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        <Tooltip title="Search">
+                                            <IconButton className="send-btn" onClick={handleSend}>
+                                                <ArrowUp size={20} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </Zoom>
+                            )}
+                        </Box>
+
+                        {/* Multiline Bottom Actions Row */}
                         {isMultiline && (
-                            <div className="upload-btn-div">
-                                <input
-                                    ref={fileRef}
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: "none" }}
-                                    onChange={handleUpload}
-                                />
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5 }}>
                                 <Tooltip title="Upload image">
-                                    <IconButton onClick={() => fileRef.current.click()} className="upload-btn">
+                                    <IconButton
+                                        onClick={() => fileRef.current.click()}
+                                        className="upload-btn"
+                                        sx={{ p: 1 }}
+                                    >
                                         <ImagePlus size={22} />
                                     </IconButton>
                                 </Tooltip>
-                            </div>
-                        )}
-                        <div className="btns-row-div">
-                            <Tooltip title="Settings">
-                                <IconButton
-                                    className="settings-btn"
-                                    sx={{
-                                        color: isSettingsOpen ? 'primary.main' : 'text.secondary',
-                                        transition: 'color 0.2s'
-                                    }}
-                                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                                >
-                                    <Settings2 size={22} />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Filter">
-                                <IconButton className="filter-btn" onClick={handleFilter}>
-                                    <Filter size={22} />
-                                </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Send">
-                                <IconButton className="send-btn" onClick={handleSend}>
-                                    <ArrowUp size={20} />
-                                </IconButton>
-                            </Tooltip>
-                        </div>
-                    </Box>
-                </Box>
 
-                {/* Inline Settings - Expands below input */}
-                {isSettingsOpen && (
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                    <Tooltip title="Advanced Settings">
+                                        <IconButton
+                                            className="settings-btn"
+                                            size="small"
+                                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                            sx={{
+                                                color: isSettingsOpen ? 'primary.main' : 'text.secondary',
+                                            }}
+                                        >
+                                            <Settings2 size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+
+                                    <Tooltip title="Search">
+                                        <IconButton className="send-btn" onClick={handleSend}>
+                                            <ArrowUp size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            </Box>
+                        )}
+                    </Box>
+
+                    {/* Bottom Section: expanded filters */}
                     <Box
+                        className="expanded-content"
                         sx={{
-                            borderTop: '1px solid',
-                            borderColor: 'divider',
-                            animation: 'slideDown 0.3s ease-in-out',
-                            '@keyframes slideDown': {
-                                from: {
-                                    opacity: 0,
-                                    transform: 'translateY(-10px)'
-                                },
-                                to: {
-                                    opacity: 1,
-                                    transform: 'translateY(0)'
-                                }
-                            }
+                            display: isExpanded ? 'flex' : 'none',
+                            opacity: isExpanded ? 1 : 0,
+                            flexDirection: 'column',
+                            gap: 1.5,
+                            mt: isExpanded ? 1.5 : 0,
+                            pt: isExpanded ? 1.5 : 0,
+                            borderTop: isExpanded ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                            transition: 'all 0.2s',
                         }}
                     >
-                        <Box sx={{
-                            p: '10px 10px 0px 10px',
-                            display: 'flex',
-                            flexDirection: 'row',
-                            gap: 3,
-                            alignItems: 'center'
-                        }}>
-                            <Box sx={{ flex: 1 }}>
-                                <CustomSlider
-                                    label="Number of Results"
-                                    value={numResults}
-                                    onChange={setNumResults}
-                                    min={1}
-                                    max={50}
-                                    step={1}
+                        {/* Quick Filter Buttons */}
+                        {!isSettingsOpen && (
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.4, alignItems: 'center' }}>
+                                {appliedFilters.length > 0 && (
+                                    <Tooltip title="Clear all filters">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => onApply([])}
+                                            sx={{
+                                                bgcolor: '#ffebee',
+                                                color: '#d32f2f',
+                                                mr: 0.5,
+                                                '&:hover': { bgcolor: '#ffcdd2' }
+                                            }}
+                                        >
+                                            <X size={16} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                                <Chip
+                                    icon={hasSelection('Collection') ? <Check size={14} /> : <Layers size={15} />}
+                                    label={getActiveFilterName('Collection')}
+                                    clickable
+                                    onClick={(e) => openDropdown('Collection', e)}
+                                    variant={hasSelection('Collection') ? "filled" : "outlined"}
+                                    color={hasSelection('Collection') ? "primary" : "default"}
+                                    sx={{
+                                        borderRadius: '8px',
+                                        border: hasSelection('Collection') ? 'none' : '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
                                 />
-                            </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <CustomSlider
-                                    label="Search Accuracy"
-                                    value={accuracy}
-                                    onChange={setAccuracy}
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                    unit="%"
+                                <Chip
+                                    icon={hasSelection('Style') ? <Check size={14} /> : <Palette size={15} />}
+                                    label={getActiveFilterName('Style')}
+                                    clickable
+                                    onClick={(e) => openDropdown('Style', e)}
+                                    variant={hasSelection('Style') ? "filled" : "outlined"}
+                                    color={hasSelection('Style') ? "primary" : "default"}
+                                    sx={{
+                                        borderRadius: '8px',
+                                        border: hasSelection('Style') ? 'none' : '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
                                 />
+                                <Chip
+                                    icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
+                                    label={getActiveFilterName('Gender')}
+                                    clickable
+                                    onClick={(e) => openDropdown('Gender', e)}
+                                    variant={hasSelection('Gender') ? "filled" : "outlined"}
+                                    color={hasSelection('Gender') ? "primary" : "default"}
+                                    sx={{
+                                        borderRadius: '8px',
+                                        border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                />
+
+                                <Box sx={{ flexGrow: 1 }} />
+
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    className="quick-filter-btn"
+                                    onClick={onFilterClick}
+                                    sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600 }}
+                                >
+                                    More Filters
+                                </Button>
                             </Box>
-                        </Box>
+                        )}
+
+                        {/* Dropdown Popover */}
+                        <FilterDropdown
+                            title={activeDropdown || ""}
+                            items={getItemsForCategory(activeDropdown || "")}
+                            anchorEl={anchorEl}
+                            onClose={closeDropdown}
+                            onSelect={handleFilterSelect}
+                            selectedItems={appliedFilters}
+                            isLoading={isLoadingFilters}
+                        />
+
+                        {/* Settings Slider Section (if toggled) */}
+                        {isSettingsOpen && (
+                            <Fade in={isSettingsOpen}>
+                                <Box sx={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: 3,
+                                    alignItems: 'center',
+                                    p: "0px 16px",
+                                }}>
+                                    <Box sx={{ flex: 1 }}>
+                                        <CustomSlider
+                                            label="Number of Results"
+                                            value={numResults}
+                                            onChange={setNumResults}
+                                            min={1}
+                                            max={50}
+                                            step={1}
+                                        />
+                                    </Box>
+                                    <Box sx={{ flex: 1 }}>
+                                        <CustomSlider
+                                            label="Search Accuracy"
+                                            value={accuracy}
+                                            onChange={setAccuracy}
+                                            min={0}
+                                            max={100}
+                                            step={5}
+                                            unit="%"
+                                        />
+                                    </Box>
+                                </Box>
+                            </Fade>
+                        )}
                     </Box>
-                )}
-            </Paper>
-        </>
+                </Paper>
+            </Box>
+        </ClickAwayListener>
     );
 }

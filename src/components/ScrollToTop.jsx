@@ -3,9 +3,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Fab, Zoom } from '@mui/material';
 import { ArrowUp } from 'lucide-react';
 
-const ScrollToTop = React.memo(function ScrollToTop({ 
+const ScrollToTop = React.memo(function ScrollToTop({
   threshold = 100,
-  smooth = true 
+  smooth = true,
+  bottom = 24,
+  right = 24,
 }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -41,8 +43,8 @@ const ScrollToTop = React.memo(function ScrollToTop({
         aria-label="scroll to top"
         sx={{
           position: 'fixed',
-          bottom: 24,
-          right: 24,
+          bottom: bottom,
+          right: right,
           zIndex: 1000,
           background: 'linear-gradient(135deg, #7367f0, #6c5ce7)',
           color: 'white',
