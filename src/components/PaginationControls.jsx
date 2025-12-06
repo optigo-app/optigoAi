@@ -32,7 +32,7 @@ export default function PaginationControls({
             {/* Rows per page selector */}
             {onItemsPerPageChange && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
                         Rows per page:
                     </Typography>
                     <Select
@@ -41,17 +41,21 @@ export default function PaginationControls({
                         size="small"
                         disabled={disabled}
                         sx={{
-                            minWidth: 70,
+                            minWidth: 60,
                             '& .MuiSelect-select': {
                                 py: 0.5,
-                                fontSize: 14,
-                                fontWeight: 600,
+                                fontSize: '0.8rem',
+                                fontWeight: 500,
+                                color: 'text.secondary',
                             },
                             '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'divider',
+                                borderColor: 'transparent',
                             },
                             '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'text.primary',
+                                borderColor: 'divider',
+                            },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'primary.main',
                             },
                         }}
                     >
@@ -76,7 +80,7 @@ export default function PaginationControls({
                     showLastButton
                     siblingCount={1}
                     boundaryCount={1}
-                    size="medium"
+                    size="small"
                     renderItem={(item) => (
                         <PaginationItem
                             slots={{
@@ -90,29 +94,29 @@ export default function PaginationControls({
                     )}
                     sx={{
                         '& .MuiPaginationItem-root': {
-                            typography: 'body2',
-                            fontWeight: 600,
+                            typography: 'caption',
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
                             color: 'text.secondary',
                             border: '1px solid',
-                            borderColor: 'divider',
-                            bgcolor: 'background.paper',
+                            borderColor: 'transparent',
+                            bgcolor: 'transparent',
                             transition: 'all 0.2s ease-in-out',
                             '&:hover': {
                                 bgcolor: 'action.hover',
-                                borderColor: 'text.primary',
-                                transform: 'translateY(-1px)',
+                                borderColor: 'divider',
                             },
                             '&.Mui-selected': {
-                                bgcolor: 'text.primary',
-                                color: 'background.paper',
-                                borderColor: 'text.primary',
+                                bgcolor: 'action.selected',
+                                color: 'primary.main',
+                                fontWeight: 600,
+                                borderColor: 'transparent',
                                 '&:hover': {
-                                    bgcolor: 'text.primary',
+                                    bgcolor: 'action.selected',
                                 },
                             },
                             '&.Mui-disabled': {
-                                opacity: 0.5,
-                                bgcolor: 'action.disabledBackground',
+                                opacity: 0.3,
                             },
                         },
                         '& .MuiPaginationItem-ellipsis': {
@@ -120,7 +124,6 @@ export default function PaginationControls({
                             bgcolor: 'transparent',
                             '&:hover': {
                                 bgcolor: 'transparent',
-                                transform: 'none',
                                 borderColor: 'transparent',
                             },
                         },

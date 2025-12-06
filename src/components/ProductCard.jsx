@@ -108,7 +108,7 @@ export default function ProductCard({ product }) {
                             left: 0,
                             width: "100%",
                             height: "100%",
-                            objectFit: "contain",
+                            objectFit: "cover",
                             opacity: isImageLoaded ? 1 : 0,
                             transition: "opacity 0.3s ease",
                         }}

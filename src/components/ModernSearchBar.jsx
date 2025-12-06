@@ -8,7 +8,7 @@ import {
     TextField,
     Tooltip,
 } from "@mui/material";
-import { Image as ImageIcon, X, ArrowUp, Filter, ImagePlus, Settings } from "lucide-react";
+import { Image as ImageIcon, X, ArrowUp, Filter, ImagePlus, Settings2 } from "lucide-react";
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
 import CustomSlider from "./CustomSlider";
@@ -305,7 +305,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
                                     }}
                                     onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                                 >
-                                    <Settings size={22} />
+                                    <Settings2 size={22} />
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Filter">
@@ -342,7 +342,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick }) {
                         }}
                     >
                         <Box sx={{
-                            p: 2,
+                            p: '10px 10px 0px 10px',
                             display: 'flex',
                             flexDirection: 'row',
                             gap: 3,
