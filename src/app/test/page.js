@@ -1,118 +1,104 @@
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
-import {
-    Box,
-    Grid,
-    Card,
-    CardMedia,
-    CardContent,
-    Typography,
-    Chip,
-} from "@mui/material";
-import products from "../../data/Product.json"
-import { designCollectionApi } from "../api/designCollectionApi";
+// "use client";
+// import { DataGrid } from 'datarix';
 
-export default function JewelryProductGrid() {
-    const [data, setData] = useState([]);
-    const [imageError, setImageError] = useState(false);
+// const columns = [
+//     { id: 'id', label: 'ID', width: 80, frozen: true },
+//     { id: 'name', label: 'Name', width: 200 },
+//     { id: 'email', label: 'Email', width: 250 },
+//     { id: 'phone', label: 'Phone', width: 150 },
+//     { id: 'company', label: 'Company', width: 180 },
+//     { id: 'status', label: 'Status', width: 150 },
+//     { id: 'leadSource', label: 'Lead Source', width: 160 },
+//     { id: 'industry', label: 'Industry', width: 150 },
+//     { id: 'country', label: 'Country', width: 150 },
+//     { id: 'dealValue', label: 'Deal Value', width: 150 },
+//     { id: 'rating', label: 'Rating', width: 120 },
+//     { id: 'lastContact', label: 'Last Contact', width: 150 },
+//     { id: 'createdAt', label: 'Created At', width: 150 },
+//     { id: 'updatedAt', label: 'Updated At', width: 150 }
+// ];
 
-    useEffect(() => {
-        let mounted = true;
-        const fetchData = async () => {
-            try {
-                const res = await designCollectionApi();
-                const allProducts = res?.rd || [];
-                if (!mounted) return;
-                setData(allProducts.slice(0, 50));
-            } catch (err) {
-                console.error(err);
-            }
-        };
+// // interface Column {
+// //   id: string;          // Unique identifier
+// //   label: string;       // Display label
+// //   width: number;       // Column width in pixels
+// //   frozen?: boolean;    // Freeze column to left
+// //   renderCell?: (value, column, row) => ReactNode;  // Custom renderer
+// // }
 
-        fetchData();
-        return () => {
-            mounted = false;
-        };
-    }, []);
+// function generateCRMData(count = 50) {
+//     const firstNames = ["John", "Priya", "Aditi", "Carlos", "Robert", "Neha", "Arjun", "Emily", "Jessica", "Karan", "Amit", "Sonia", "Riya", "David", "Ankit"];
+//     const lastNames = ["Doe", "Sharma", "Verma", "Rodriguez", "Brown", "Patel", "Mehta", "Johnson", "Miller", "Thakur", "Singh", "Shetty", "Kapoor"];
+//     const companies = ["TechGen", "Innovexa", "FalconCorp", "DigiStorm", "Alpha Ventures", "SkyLabs", "NextWave", "CodeSphere", "BrightPath", "Xenovate", "Orbit Labs"];
+//     const leadSources = ["Website", "LinkedIn", "Google Ads", "Referral", "Cold Call", "Email Campaign", "Trade Show"];
+//     const statusList = ["Lead", "Prospect", "Customer", "Follow-Up", "Lost"];
+//     const industries = ["IT", "Finance", "Healthcare", "Retail", "Manufacturing", "Education", "Real Estate"];
+//     const countries = ["India", "USA", "UK", "Canada", "Australia", "Germany", "Singapore"];
 
-    const imageSrc = useMemo(() => {
-        if (imageError) return "/images/image-not-found.jpg";
-        if (data?.ImgUrl) return data.ImgUrl;
-        if (data?.image) return data.image;
-        return "/images/image-not-found.jpg";
-    }, [imageError, data]);
+//     const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+//     const randomPhone = () => "+91 " + Math.floor(6000000000 + Math.random() * 3999999999);
+//     const randomEmail = (name) => name.toLowerCase().replace(" ", ".") + "@example.com";
+
+//     const randomDate = () => {
+//         const start = new Date(2024, 0, 1);
+//         const end = new Date();
+//         return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
+//             .toISOString()
+//             .split("T")[0];
+//     };
+
+//     const data = [];
+
+//     for (let i = 1; i <= count; i++) {
+//         const fname = random(firstNames);
+//         const lname = random(lastNames);
+//         const fullName = `${fname} ${lname}`;
+
+//         data.push({
+//             id: i,
+//             name: fullName,
+//             email: randomEmail(fullName),
+//             phone: randomPhone(),
+//             company: random(companies),
+//             status: random(statusList),
+//             leadSource: random(leadSources),
+//             industry: random(industries),
+//             country: random(countries),
+//             dealValue: Math.floor(Math.random() * 90000) + 5000,
+//             rating: Math.floor(Math.random() * 5) + 1,
+//             lastContact: randomDate(),
+//             createdAt: randomDate(),
+//             updatedAt: randomDate()
+//         });
+//     }
+
+//     return data;
+// }
+
+// const data = generateCRMData(100);
+
+
+
+// function Test() {
+//     return (
+//         <DataGrid
+//             data={data}
+//             columns={columns}
+//             height="600px"
+//         />
+//     );
+// }
+
+// export default Test;
+
+import Home1 from '@/components/home1'
+import React from 'react'
+
+const page = () => {
     return (
-        <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5", py: 5, px: 2 }}>
-            <Box sx={{ maxWidth: 1400, mx: "auto", textAlign: "center", mb: 6 }}>
-                <Typography variant="h3" fontWeight={700} color="text.primary" mb={1}>
-                    Jewelry Collection
-                </Typography>
-                <Typography variant="subtitle1" color="text.secondary">
-                    Discover our exquisite collection of luxury jewelry
-                </Typography>
-            </Box>
-
-            <Grid container spacing={1}>
-                {data.map((product) => (
-                    <Grid
-                        item
-                        key={product.id}
-                        xs={12}
-                        sm={6}
-                        md={4}
-                        lg={3}
-                        xl={2}
-                        size={{
-                            xs: 6,
-                            sm: 4,
-                            md: 3,
-                            lg: 3,
-                            xl: 2,
-                        }}
-                    >
-                        <Card
-                            sx={{
-                                borderRadius: 2,
-                                overflow: "hidden",
-                                transition: "transform 0.3s, box-shadow 0.3s",
-                                "&:hover": {
-                                    transform: "translateY(-8px)",
-                                    boxShadow:
-                                        "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
-                                },
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    position: "relative",
-                                    width: "100%",
-                                    pt: "100%", // 1:1 aspect ratio
-                                    overflow: "hidden",
-                                }}
-                            >
-                                <Box
-                                    component="img"
-                                    src={product.ImgUrl || product.image || "/images/image-not-found.jpg"}
-                                    alt={product.type}
-                                    onError={(e) => (e.currentTarget.src = "/images/image-not-found.jpg")}
-                                    sx={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
-                                        transition: "transform 0.3s",
-                                        "&:hover": { transform: "scale(1.1)" },
-                                    }}
-                                />
-
-                            </Box>
-                        </Card>
-                    </Grid>
-                ))}
-            </Grid>
-        </Box>
-    );
+        <Home1 />
+    )
 }
+
+export default page

@@ -59,6 +59,9 @@ export default function Header() {
     }, [handleClose]);
 
 
+
+    if (pathname === '/' || pathname === '/test') return null;
+
     return (
         <AppBar
             position="static"

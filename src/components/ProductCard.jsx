@@ -221,7 +221,7 @@ export default function ProductCard({ product }) {
 
                 <ProductModal
                     open={openModal}
-                    onClose={() => setOpenModal(false)}
+                    onClose={() => { setOpenModal(false); setIsHovered(false) }}
                     product={product}
                     onAddToCart={() => handleToggleCart(product)}
                     isInCart={isInCart}

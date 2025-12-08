@@ -112,7 +112,10 @@ export default function FilterChips({
                                 label={`+${hiddenItems.length}`}
                                 size="small"
                                 variant="outlined"
-                                onClick={(e) => onFilterPopoverOpen(e, hiddenItems)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onFilterPopoverOpen(e, hiddenItems);
+                                }}
                                 sx={{
                                     borderColor: 'divider',
                                     bgcolor: 'background.paper',

@@ -31,7 +31,7 @@ import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
 import FilterDropdown from "./FilterDropdown";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -42,7 +42,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [imageFile, setImageFile] = useState(null);
     const [text, setText] = useState("");
     const [isDragging, setIsDragging] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isMultiline, setIsMultiline] = useState(false);
 
@@ -56,9 +56,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [numResults, setNumResults] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('searchNumResults');
-            return saved ? parseInt(saved, 10) : 10;
+            return saved ? parseInt(saved, 50) : 50;
         }
-        return 10;
+        return 50;
     });
 
     const [accuracy, setAccuracy] = useState(() => {
@@ -228,7 +228,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
         onSubmit(searchData);
         clearInput();
-        setIsExpanded(false);
+        if (!alwaysExpanded) setIsExpanded(false);
         setIsMultiline(false);
     };
 
@@ -273,6 +273,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     };
 
     const handleClickAway = () => {
+        if (alwaysExpanded) return;
         if (!isSettingsOpen && !activeDropdown) {
             setIsExpanded(false);
         }
@@ -556,15 +557,17 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                                 <Box sx={{ flexGrow: 1 }} />
 
-                                <Button
-                                    variant="text"
-                                    size="small"
-                                    className="quick-filter-btn"
-                                    onClick={onFilterClick}
-                                    sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600 }}
-                                >
-                                    More Filters
-                                </Button>
+                                {showMoreFiltersButton && (
+                                    <Button
+                                        variant="text"
+                                        size="small"
+                                        className="quick-filter-btn"
+                                        onClick={onFilterClick}
+                                        sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600 }}
+                                    >
+                                        More Filters
+                                    </Button>
+                                )}
                             </Box>
                         )}
 

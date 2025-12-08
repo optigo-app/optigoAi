@@ -84,11 +84,11 @@ export default function FilterDropdown({ title, items, anchorEl, onClose, onSele
             anchorEl={anchorEl}
             onClose={onClose}
             anchorOrigin={{
-                vertical: 'top',
+                vertical: 'bottom',
                 horizontal: 'left',
             }}
             transformOrigin={{
-                vertical: 'bottom',
+                vertical: 'top',
                 horizontal: 'left',
             }}
             PaperProps={{

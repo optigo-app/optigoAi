@@ -3,7 +3,8 @@ import React from 'react';
 import { Box, CircularProgress, Backdrop, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 
-const FullPageLoader = ({ open, message = "Loading..." }) => {
+const FullPageLoader = ({ open, message = "Loading...", subtitle }) => {
+
     if (!open) return null;
 
     return (
@@ -24,7 +25,7 @@ const FullPageLoader = ({ open, message = "Loading..." }) => {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <Box
                         sx={{
                             position: 'relative',
@@ -62,13 +63,22 @@ const FullPageLoader = ({ open, message = "Loading..." }) => {
                         variant="subtitle1"
                         color="white"
                         sx={{
-                            mt: 2,
+                            mt: 1,
                             fontWeight: 500,
-                            letterSpacing: '0.5px'
+                            letterSpacing: '0.5px',
                         }}
                     >
                         {message}
                     </Typography>
+                    {subtitle && (
+                        <Typography
+                            variant="body2"
+                            color="rgba(255,255,255,0.8)"
+                            sx={{ mt: 0.5 }}
+                        >
+                            {subtitle}
+                        </Typography>
+                    )}
                 </Box>
             </motion.div>
         </Backdrop>

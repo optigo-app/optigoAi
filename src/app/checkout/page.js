@@ -22,23 +22,6 @@ import { SaveCartApi } from "../api/SaveCartApi";
    ACTION CONFIG — Adding new actions requires only this
 ---------------------------------------------------- */
 const ACTION_CONFIG = {
-    quote: {
-        title: "Add to Quote",
-        description: "Add these items to your quotation for future reference and inspiration",
-        api: SaveCartApi,
-        successMessage: "Items added to Quotation!",
-        postMessageEvent: "Quotation",
-        responseKey: "QID",
-
-        ui: {
-            icon: <Palette size={32} />,
-            iconBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            cardBg: "linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%)",
-            buttonBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            buttonHover: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
-        },
-    },
-
     album: {
         title: "Add to Album",
         description: "Add these items to your album for future reference and inspiration",
@@ -53,6 +36,23 @@ const ACTION_CONFIG = {
             cardBg: "linear-gradient(135deg, #fff7ed 0%, #fff0df 100%)",
             buttonBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
             buttonHover: "linear-gradient(135deg, #ff8c1a 0%, #e65b00 100%)",
+        },
+    },
+
+    quote: {
+        title: "Add to Quote",
+        description: "Add these items to your quotation for future reference and inspiration",
+        api: SaveCartApi,
+        successMessage: "Items added to Quotation!",
+        postMessageEvent: "Quotation",
+        responseKey: "QID",
+
+        ui: {
+            icon: <Palette size={32} />,
+            iconBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            cardBg: "linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%)",
+            buttonBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            buttonHover: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
         },
     },
 

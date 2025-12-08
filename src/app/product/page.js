@@ -22,9 +22,11 @@ import { designCollectionApi } from "@/app/api/designCollectionApi";
 import { searchService } from "@/services/apiService";
 import Fuse from "fuse.js";
 import FilterChips from "@/components/FilterChips";
+import { base64ToFile } from "@/utils/globalFunc";
 
 export default function ProductPage() {
   const [loading, setLoading] = useState(true);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [allDesignCollections, setAllDesignCollections] = useState([]);
@@ -74,7 +76,34 @@ export default function ProductPage() {
   useEffect(() => {
     const flag = sessionStorage.getItem("urlParams");
     setUrlParamsFlag(flag);
-  }, []);
+    const encoded = sessionStorage.getItem("homeSearchData");
+    if (encoded && allDesignCollections.length > 0) {
+      try {
+        const jsonString = decodeURIComponent(escape(atob(encoded)));
+        const searchData = JSON.parse(jsonString);
+        const now = Date.now();
+        const dataAge = now - (searchData.timestamp || 0);
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (dataAge < fiveMinutes) {
+          if (searchData.image && typeof searchData.image === "string" && searchData.image.startsWith("data:")) {
+            searchData.image = base64ToFile(searchData.image, "uploaded-image.png");
+          }
+          console.log("Decoded searchData:", searchData);
+          handleSubmit(searchData);
+          if (Array.isArray(searchData.filters) && searchData.filters.length > 0) {
+            setAppliedFilters(searchData.filters);
+          }
+          sessionStorage.removeItem('homeSearchData');
+        }
+
+      } catch (error) {
+        console.error('Error processing stored search data:', error);
+        sessionStorage.removeItem('homeSearchData');
+      }
+    }
+  }, [allDesignCollections]);
+
 
   const [searchResults, setSearchResults] = useState(null);
   const [lastSearchData, setLastSearchData] = useState(null);
@@ -92,7 +121,7 @@ export default function ProductPage() {
 
   const handleItemsPerPageChange = useCallback((newValue) => {
     setItemsPerPage(newValue);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
   }, []);
 
   const baseDataset = useMemo(() => {
@@ -258,9 +287,10 @@ export default function ProductPage() {
   }
 
   const handleSubmit = useCallback(async (searchData) => {
+    console.log(searchData)
     setLastSearchData(searchData);
     setError(null);
-    setLoading(true);
+    setIsSearchLoading(true);
     try {
       const options = {
         top_k: searchData?.numResults || "10",
@@ -386,7 +416,7 @@ export default function ProductPage() {
         ]);
       }
     } finally {
-      setLoading(false);
+      setIsSearchLoading(false);
     }
   }, [allDesignCollections]);
 
@@ -413,7 +443,6 @@ export default function ProductPage() {
     };
   }, []);
 
-  console.log("displayedProducts", displayedProducts);
 
   if (loading) return <FullPageLoader open={true} />;
 
@@ -631,18 +660,58 @@ export default function ProductPage() {
           horizontal: 'left',
         }}
         PaperProps={{
-          sx: { p: 2, maxWidth: 300 }
+          sx: {
+            p: 2,
+            width: 280,
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          }
         }}
       >
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: 'text.secondary' }}>
+          Active Filters
+        </Typography>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 1,
+          maxHeight: 200,
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '6px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: '#e0e0e0',
+            borderRadius: '3px',
+          }
+        }}>
           {filterPopoverItems.map(({ category, item }) => (
             <Chip
               key={item.id}
-              label={`${category}: ${item.name}`}
+              label={item.name}
               size="small"
+              sx={{
+                maxWidth: '100%',
+                justifyContent: 'space-between',
+                '& .MuiChip-label': {
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'block',
+                  flexGrow: 1,
+                  pr: 0.5,
+                },
+                '& .MuiChip-deleteIcon': {
+                  marginLeft: 'auto',
+                  marginRight: 0,
+                }
+              }}
               onDelete={() => {
                 removeFilter({ item });
-                if (filterPopoverItems.length <= 1) {
+                if (filterPopoverItems.length <= 2) {
                   handleFilterPopoverClose();
                 } else {
                   setFilterPopoverItems(prev => prev.filter(i => i.item.id !== item.id));
@@ -658,6 +727,16 @@ export default function ProductPage() {
         open={isImageViewerOpen}
         onClose={() => setIsImageViewerOpen(false)}
         imageUrl={viewerImage}
+      />
+
+      <FullPageLoader
+        open={isSearchLoading}
+        message="Searching designs..."
+        subtitle={
+          lastSearchData?.text?.trim()
+            ? `Finding matches for "${lastSearchData.text.trim()}"`
+            : "Analyzing your design and matching collections"
+        }
       />
     </>
   );

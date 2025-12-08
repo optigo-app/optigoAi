@@ -121,7 +121,6 @@ const Home = () => {
     const [selectedMode, setSelectedMode] = useState("design");
     const [isLoaded, setIsLoaded] = useState(false);
     const [featureIndex, setFeatureIndex] = useState(0);
-    const [appliedFilters, setAppliedFilters] = useState([]);
 
     useEffect(() => {
         setIsLoaded(true);
@@ -144,8 +143,7 @@ const Home = () => {
             ...searchData,
             image: imageBase64,
             mode: selectedMode,
-            timestamp: Date.now(),
-            filters: appliedFilters,
+            timestamp: Date.now()
         };
         const jsonString = JSON.stringify(searchPayload);
         const encoded = btoa(unescape(encodeURIComponent(jsonString)));
@@ -379,11 +377,9 @@ const Home = () => {
                 >
                     <ModernSearchBar
                         onSubmit={handleSearch}
-                        appliedFilters={appliedFilters}
-                        onApply={setAppliedFilters}
+                        appliedFilters={[]}
                         initialExpanded={true}
                         alwaysExpanded={true}
-                        showMoreFiltersButton={false}
                     />
                 </Box>
 

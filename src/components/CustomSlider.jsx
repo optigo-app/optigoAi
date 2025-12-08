@@ -38,7 +38,7 @@ const CustomSlider = React.memo(function CustomSlider({
       )}
 
       <Slider
-        value={value}
+        value={value ?? 10}
         onChange={(e, newValue) => onChange?.(newValue)}
         min={min}
         max={max}

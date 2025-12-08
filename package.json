@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.5",
     "@mui/material-nextjs": "^7.3.5",
+    "datarix": "^1.0.4",
     "framer-motion": "^12.23.24",
     "fuse.js": "^7.1.0",
     "js-cookie": "^3.0.5",
@@ -23,7 +24,8 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hot-toast": "^2.6.0",
-    "sass": "^1.94.2"
+    "sass": "^1.94.2",
+    "swiper": "^12.0.3"
   },
   "devDependencies": {
     "baseline-browser-mapping": "^2.8.32",
