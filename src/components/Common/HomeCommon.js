@@ -1,5 +1,5 @@
 import { Box, Button } from "@mui/material";
-import {ShoppingBag, Sparkles } from "lucide-react";
+import { ShoppingBag, Sparkles } from "lucide-react";
 
 export const ModeSwitch = ({ selectedMode, onSelect }) => {
     return (
@@ -40,7 +40,7 @@ export const ModeSwitch = ({ selectedMode, onSelect }) => {
                             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                         }}
                     >
-                        {mode === 'design' ? "Design Collection" : "Stock Purchase"}
+                        {mode === 'design' ? "Search by Design" : "Search by Stock"}
                     </Button>
                 );
             })}

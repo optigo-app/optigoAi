@@ -15,7 +15,7 @@ import { ShoppingCart } from 'lucide-react';
 import ProductModal from './ProductModal';
 import { useCart } from '@/context/CartContext';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, products = [], index = 0 }) {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -223,6 +223,8 @@ export default function ProductCard({ product }) {
                     open={openModal}
                     onClose={() => { setOpenModal(false); setIsHovered(false) }}
                     product={product}
+                    products={products}
+                    startIndex={index}
                     onAddToCart={() => handleToggleCart(product)}
                     isInCart={isInCart}
                 />

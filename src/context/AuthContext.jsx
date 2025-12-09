@@ -101,12 +101,12 @@ export const AuthProvider = ({ children }) => {
     return decodedPayload;
   };
 
-  useEffect(() => {
-    if (searchParams.get('FE')) {
-      sessionStorage.setItem("urlParams", 'fe')
-      router.push('/product');
-    }
-  }, [pathname, searchParams, router]);
+  // useEffect(() => {
+  //   if (searchParams.get('FE')) {
+  //     sessionStorage.setItem("urlParams", 'fe')
+  //     router.push('/product');
+  //   }
+  // }, [pathname, searchParams, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

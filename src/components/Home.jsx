@@ -153,7 +153,6 @@ const Home = () => {
         router.push("/product");
     };
 
-
     return (
         <Box
             sx={{
@@ -170,7 +169,7 @@ const Home = () => {
         >
             {/* --- GRID & GRADIENT OVERLAY --- */}
             <GradientWaves />
-            <MouseOrbs count={15} />
+            {/* <MouseOrbs count={15} /> */}
 
             <Box
                 sx={{

@@ -28,7 +28,7 @@ import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
 import CustomSlider from "./CustomSlider";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
-import { formatMasterData } from "@/utils/globalFunc";
+import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./FilterDropdown";
 
 export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true }) {
@@ -77,9 +77,14 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         sessionStorage.setItem('searchAccuracy', accuracy.toString());
     }, [accuracy]);
 
-    // Load Filter Data on Mount (Single Fetch)
+    // Load Filter Data on Mount (Single Fetch, but wait for auth)
     useEffect(() => {
+        let timeoutId;
+        let isMounted = true;
+
         const fetchFilters = async () => {
+            if (!isMounted) return;
+
             const cachedFilters = sessionStorage.getItem('filterMasterData');
             if (cachedFilters) {
                 try {
@@ -94,15 +99,36 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
             try {
                 const data = await filterMasterApi();
                 const formatted = formatMasterData(data);
+                if (!isMounted) return;
                 setFilterData(formatted);
-                sessionStorage.setItem('filterMasterData', JSON.stringify(formatted));
+                if (Array.isArray(formatted) && formatted.length > 0) {
+                    sessionStorage.setItem('filterMasterData', JSON.stringify(formatted));
+                }
             } catch (err) {
                 console.error("Failed to load search filters", err);
             } finally {
-                setIsLoadingFilters(false);
+                if (isMounted) {
+                    setIsLoadingFilters(false);
+                }
             }
         };
-        fetchFilters();
+
+        const waitForAuthAndFetch = () => {
+            if (!isMounted) return;
+            const auth = getAuthData();
+            if (auth && auth.uid) {
+                fetchFilters();
+            } else {
+                timeoutId = setTimeout(waitForAuthAndFetch, 500);
+            }
+        };
+
+        waitForAuthAndFetch();
+
+        return () => {
+            isMounted = false;
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, []);
 
     const getItemsForCategory = (categoryName) => {

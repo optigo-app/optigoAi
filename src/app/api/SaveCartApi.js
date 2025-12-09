@@ -1,38 +1,34 @@
-import { getAuthData } from "@/utils/globalFunc";
-import { CommonAPI } from "./config/CommonApi";
+import { masterApi } from './masterApi';
 
 export const SaveCartApi = async (cartItems) => {
-    const AuthData = getAuthData();
     try {
-        // Transform cart items to the expected format
         const productId = cartItems
             ?.map(item => item.id)
             .filter(Boolean)
             .join(',') || '';
 
-        const combinedValue = JSON.stringify({
+        const pValue = JSON.stringify({
             QueryStringdesignid: productId ?? '',
         });
 
-        const body = {
-            "con": `{\"id\":\"\",\"mode\":\"SaveQueryStringdesignid\",\"appuserid\":\"${AuthData?.uid ?? ''}\",\"FormName\": \"AMaster\"}`,
-            "f": "Task Management (login)",
-            "p": combinedValue,
+        const options = {
+            p: pValue,
+            f: "SaveQueryStringdesignid",
         };
 
-        const response = await CommonAPI(body);
+        const result = await masterApi('SaveQueryStringdesignid', options);
 
-        if (response?.Data?.rd[0]?.MSG == "Success") {
+        if (result.success) {
             return {
                 success: true,
-                message: response.message || "Items added to design collection successfully",
-                data: response.Data
+                message: "Items added to design collection successfully",
+                data: result.data
             };
-        } else {
-            throw new Error(response?.message || "Failed to add items to design collection");
         }
+        throw new Error("An unexpected error occurred.");
+
     } catch (error) {
-        console.error('Add to Design Collection API Error:', error);
+        console.error('SaveCartApi Error:', error);
         throw error;
     }
 };

@@ -79,7 +79,7 @@ export default function ProductGrid({ designData, appliedFilters, clearAllFilter
             xl: 2,
           }}
         >
-          <ProductCard product={product} />
+          <ProductCard product={product} products={designData} index={index} />
         </Grid>
       ))}
     </Grid>

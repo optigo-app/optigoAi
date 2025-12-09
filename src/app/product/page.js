@@ -108,10 +108,13 @@ export default function ProductPage() {
   const [searchResults, setSearchResults] = useState(null);
   const [lastSearchData, setLastSearchData] = useState(null);
 
-  // Items per page with sessionStorage persistence
+  // Items per page with sessionStorage persistence (guarded for SSR)
   const [itemsPerPage, setItemsPerPage] = useState(() => {
-    const saved = sessionStorage.getItem('productsPerPage');
-    return saved ? parseInt(saved, 10) : 100;
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('productsPerPage');
+      return saved ? parseInt(saved, 10) : 100;
+    }
+    return 100;
   });
 
   // Save itemsPerPage to sessionStorage

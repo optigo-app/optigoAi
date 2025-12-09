@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import "../Style/header.scss";
 import {
     AppBar,
@@ -9,56 +9,16 @@ import {
     Button,
     IconButton,
     Badge,
-    Avatar,
-    Menu,
-    MenuItem,
     Typography,
 } from '@mui/material';
-import { ShoppingCart, User, LogOut } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-
-const menuItemBaseStyles = {
-    py: 1,
-    mx: 1,
-    my: .5,
-    borderRadius: 1,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1.5,
-    '&:hover': { backgroundColor: 'action.hover' },
-    '&:active': { backgroundColor: 'action.selected' }
-};
 
 export default function Header() {
     const router = useRouter();
     const pathname = usePathname();
     const { totalCount } = useCart();
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [userName, setUserName] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setUserName(sessionStorage.getItem('optigo-auth-name') || 'User');
-            setIsAuthenticated(sessionStorage.getItem('optigo-auth') === 'true');
-        }
-    }, []);
-
-    const open = Boolean(anchorEl);
-
-    const handleMenu = useCallback((e) => setAnchorEl(e.currentTarget), []);
-    const handleClose = useCallback(() => setAnchorEl(null), []);
-
-    const handleProfile = useCallback(() => {
-        handleClose();
-    }, [handleClose, router]);
-
-    const handleLogout = useCallback(() => {
-        handleClose();
-    }, [handleClose]);
-
-
 
     if (pathname === '/' || pathname === '/test') return null;
 
@@ -106,53 +66,6 @@ export default function Header() {
                             <ShoppingCart size={22} />
                         </Badge>
                     </IconButton>
-                    {/* 
-                    {isAuthenticated && (
-                        <>
-                            <Avatar
-                                sx={{ width: 28, height: 28, cursor: 'pointer', bgcolor: 'primary.main' }}
-                                onClick={handleMenu}
-                            >
-                                {userName.charAt(0).toUpperCase()}
-                            </Avatar>
-
-                            <Menu
-                                anchorEl={anchorEl}
-                                open={open}
-                                onClose={handleClose}
-                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                                PaperProps={{
-                                    elevation: 2,
-                                    sx: {
-                                        minWidth: 160,
-                                        borderRadius: 1,
-                                        overflow: 'hidden',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-                                    }
-                                }}
-                            >
-                                <MenuItem onClick={handleProfile} sx={menuItemBaseStyles}>
-                                    <User size={18} />
-                                    <Typography variant="body2" fontWeight={500}>Profile</Typography>
-                                </MenuItem>
-
-                                <MenuItem
-                                    onClick={handleLogout}
-                                    sx={{
-                                        ...menuItemBaseStyles,
-                                        color: 'error.main',
-                                        '&:hover': { backgroundColor: 'error.dark', color: 'error.contrastText' },
-                                    }}
-                                >
-                                    <LogOut size={18} />
-                                    <Typography variant="body2" fontWeight={500}>Logout</Typography>
-                                </MenuItem>
-                            </Menu>
-                        </>
-                    )} */}
                 </Box>
             </Toolbar>
         </AppBar>
