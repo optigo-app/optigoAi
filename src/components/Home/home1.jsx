@@ -5,13 +5,14 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/context/ToastContext';
-import { ContinuousTypewriter, fileToBase64 } from '@/utils/globalFunc';
-import ModernSearchBar from './ModernSearchBar';
-import InfiniteImageStrip from './InfiniteImageStrip';
-import { Fireflies } from './animation/Fireflies';
-import { MouseOrbs } from './animation/MouseOrbs';
-import { ModeSwitch } from './Common/HomeCommon';
-import { GradientWaves } from './animation/GradientWaves';
+import { fileToBase64 } from '@/utils/globalFunc';
+import ContinuousTypewriter from '../Common/ContinuousTypewriter';
+import ModernSearchBar from '../ModernSearchBar';
+import InfiniteImageStrip from '../InfiniteImageStrip';
+import { Fireflies } from '../animation/Fireflies';
+import { MouseOrbs } from '../animation/MouseOrbs';
+import { ModeSwitch } from '../Common/HomeCommon';
+import { GradientWaves } from '../animation/GradientWaves';
 
 export default function Home1() {
   const router = useRouter();

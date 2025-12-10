@@ -6,7 +6,7 @@ import ThemeProvider from "@/theme/ThemeProvider";
 import { ToastProvider } from "@/context/ToastContext";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
-import Header from "@/components/Header";
+import Header from "@/components/Common/Header";
 
 const poppins = Poppins({
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],

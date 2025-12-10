@@ -14,7 +14,7 @@ import {
     Paper,
     IconButton,
 } from '@mui/material';
-import { ShoppingCart, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, X, ChevronLeft, ChevronRight, ScanSearch } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Navigation, Virtual } from 'swiper/modules';
 import 'swiper/css';
@@ -43,7 +43,7 @@ const swiperStyles = `
   }
 `;
 
-export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, isInCart }) {
+export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, isInCart, onSearchSimilar }) {
     const [activeIndex, setActiveIndex] = useState(startIndex);
 
     useEffect(() => {
@@ -270,7 +270,27 @@ export default function ProductModal({ open, onClose, product, products = [], st
                 </Swiper>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, justifyContent: 'flex-end', backgroundColor: '#f5f5f5' }}>
+            <DialogActions sx={{ p: 3, justifyContent: 'space-between', backgroundColor: '#f5f5f5' }}>
+                {onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) && (
+                    <Button
+                        variant="outlined"
+                        startIcon={<ScanSearch size={18} />}
+                        onClick={() => {
+                            onSearchSimilar(sliderProducts[activeIndex] || product);
+                            onClose();
+                        }}
+                        sx={{
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            '&:hover': {
+                                borderColor: 'primary.dark',
+                                backgroundColor: 'rgba(115, 103, 240, 0.1)',
+                            },
+                        }}
+                    >
+                        Search Similar
+                    </Button>
+                )}
                 <Button
                     variant="contained"
                     startIcon={<ShoppingCart size={18} />}

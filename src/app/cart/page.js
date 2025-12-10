@@ -1,9 +1,9 @@
-import CartComponent from '@/components/CartComponent'
+import CartPageMUI from '@/components/Cart/CartComponent'
 import React from 'react'
 
 const page = () => {
   return (
-    <CartComponent />
+    <CartPageMUI />
   )
 }
 

@@ -8,14 +8,15 @@ import {
     Typography,
     Box,
     Chip,
-    Skeleton
+    Skeleton,
+    IconButton
 } from '@mui/material';
 
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, ScanSearch } from 'lucide-react';
 import ProductModal from './ProductModal';
 import { useCart } from '@/context/CartContext';
 
-export default function ProductCard({ product, products = [], index = 0 }) {
+export default function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true }) {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -143,6 +144,31 @@ export default function ProductCard({ product, products = [], index = 0 }) {
                         </Box>
                     )}
 
+                    {/* SEARCH SIMILAR BUTTON */}
+                    {showSimilarButton && onSearchSimilar && (product?.ImgUrl || product?.image) && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSearchSimilar(product);
+                            }}
+                            sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: isInCart ? 40 : 8,
+                                color: "white",
+                                bgcolor: 'rgba(115, 103, 240, 0.9)',
+                                border: '1px solid white',
+                                '&:hover': {
+                                    bgcolor: 'rgba(115, 103, 240, 1)',
+                                },
+                                zIndex: 2
+                            }}
+                        >
+                            <ScanSearch size={18} />
+                        </IconButton>
+                    )}
+
                     {/* HOVER OVERLAY */}
                     <Box
                         sx={{
@@ -157,65 +183,54 @@ export default function ProductCard({ product, products = [], index = 0 }) {
                             opacity: isHovered ? 1 : 0,
                             transition: 'opacity 0.3s ease',
                             p: 2,
+                            gap: 1.5
                         }}
                         onClick={(e) => {
                             e.stopPropagation();
                             setOpenModal(true);
                         }}
                     >
-                        <Typography
-                            variant="h6"
-                            sx={{ textTransform: 'capitalize', color: 'white', mb: 1 }}
-                        >
-                            {displayTitle}
-                        </Typography>
+                        <Box sx={{ textAlign: 'center' }}>
+                            <Typography
+                                variant="h6"
+                                sx={{ textTransform: 'capitalize', color: 'white', mb: 0.5, lineHeight: 1.2 }}
+                            >
+                                {displayTitle}
+                            </Typography>
+                            <Chip
+                                label={`${displayDesignNo}`}
+                                size="small"
+                                sx={{
+                                    backgroundColor: '#fff',
+                                    fontWeight: 'bold',
+                                    color: '#6b6b6bff',
+                                    height: 24
+                                }}
+                            />
+                        </Box>
 
-                        <Chip
-                            label={`${displayDesignNo}`}
-                            sx={{
-                                mb: 2,
-                                backgroundColor: '#fff',
-                                fontWeight: 'bold',
-                                color: '#6b6b6bff'
-                            }}
-                        />
-                        {/* <Typography
-                        variant="body2"
-                        sx={{
-                            color: 'white',
-                            textAlign: 'center',
-                            mb: 2,
-                            opacity: 0.9,
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', alignItems: 'center' }}>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<ShoppingCart size={16} />}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleCart(product);
+                                }}
+                                sx={{
+                                    backgroundColor: isInCart ? "#f44336" : "#7367f0",
+                                    color: "white",
+                                    width: '80%',
+                                    '&:hover': {
+                                        backgroundColor: isInCart ? "#d32f2f" : "#5e56d6",
+                                    },
+                                }}
+                            >
+                                {isInCart ? "Remove" : "Add to Cart"}
+                            </Button>
 
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                        }}
-                    >
-                        {`${product.metaltype ? product.metaltype : ''} ${product.metalcolor || ''
-                            } ${product.subcategoryname || ''} ${product.categoryname || ''} ${product.collectionname ? `- ${product.collectionname} Collection` : ''
-                            }`.replace(/\s+/g, ' ').trim()}
-                    </Typography> */}
-                        <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<ShoppingCart size={16} />}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleCart(product);
-                            }}
-                            sx={{
-                                backgroundColor: isInCart ? "#f44336" : "#7367f0",
-                                color: "white",
-                                '&:hover': {
-                                    backgroundColor: isInCart ? "#d32f2f" : "#5e56d6",
-                                },
-                            }}
-                        >
-                            {isInCart ? "Remove from Cart" : "Add to Cart"}
-                        </Button>
+                        </Box>
                     </Box>
                 </Box>
 
@@ -227,6 +242,7 @@ export default function ProductCard({ product, products = [], index = 0 }) {
                     startIndex={index}
                     onAddToCart={() => handleToggleCart(product)}
                     isInCart={isInCart}
+                    onSearchSimilar={onSearchSimilar}
                 />
             </Card>
         </Box>

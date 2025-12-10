@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+
 
 export const getAuthData = () => {
     try {
@@ -110,49 +110,6 @@ export const base64ToFile = (base64String, fileName) => {
     return new File([u8arr], fileName, { type: mime });
 };
 
-
-export const ContinuousTypewriter = ({ texts, delay = 0 }) => {
-    const [displayText, setDisplayText] = useState("");
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [loopNum, setLoopNum] = useState(0);
-    const [typingSpeed, setTypingSpeed] = useState(50);
-
-    const textArray = Array.isArray(texts) ? texts : [texts];
-
-    useEffect(() => {
-        let timer;
-        const handleType = () => {
-            const current = loopNum % textArray.length;
-            const fullText = textArray[current];
-
-            setDisplayText(
-                isDeleting
-                    ? fullText.substring(0, displayText.length - 1)
-                    : fullText.substring(0, displayText.length + 1)
-            );
-
-            setTypingSpeed(isDeleting ? 30 : 50);
-
-            if (!isDeleting && displayText === fullText) {
-                setTimeout(() => setIsDeleting(true), 1600);
-            } else if (isDeleting && displayText === "") {
-                setIsDeleting(false);
-                setLoopNum(loopNum + 1);
-            }
-        };
-
-        timer = setTimeout(handleType, typingSpeed);
-        return () => clearTimeout(timer);
-    }, [displayText, isDeleting, loopNum, typingSpeed, textArray]);
-
-    return (
-        <span style={{ borderRight: "2px solid #7367f0", paddingRight: "4px" }}>
-            {displayText}
-        </span>
-    );
-};
-
-
 export const getClientIpAddress = async () => {
     try {
         const cachedIp = sessionStorage.getItem("clientIpAddress");
@@ -168,4 +125,36 @@ export const getClientIpAddress = async () => {
         console.error("Error fetching IP address:", error);
         return "";
     }
+};
+
+export const getMatchedDesignCollections = (res = [], allDesignCollections = []) => {
+    if (!Array.isArray(res) || !Array.isArray(allDesignCollections)) return [];
+    const designMatchMap = {};
+    for (const item of res) {
+        const base = (item.sku || "").split("~")[0].trim().toLowerCase();
+        const percent = Number(item.match_percent) || 0;
+        if (!designMatchMap[base] || designMatchMap[base] < percent) {
+            designMatchMap[base] = percent;
+        }
+    }
+    const matched = allDesignCollections
+        .map((p) => {
+            const designno = (p.designno || "").replace("#", "").trim().toLowerCase();
+            const autocode = (p.autocode || "").trim().toLowerCase();
+
+            const matchPercent = designMatchMap[designno] || designMatchMap[autocode] || 0;
+
+            return {
+                ...p,
+                _matchPercent: matchPercent,
+            };
+        })
+        .filter((p) => p._matchPercent > 0);
+
+    matched.sort((a, b) => b._matchPercent - a._matchPercent);
+
+    return matched.map((p) => {
+        const { _matchPercent, ...rest } = p;
+        return rest;
+    });
 };

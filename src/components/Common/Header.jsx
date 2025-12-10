@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import "../Style/header.scss";
+import "../../Style/header.scss";
 import {
     AppBar,
     Toolbar,

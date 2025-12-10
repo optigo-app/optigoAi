@@ -3,13 +3,13 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, Container, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import ModernSearchBar from "./ModernSearchBar";
+import ModernSearchBar from "../ModernSearchBar";
 import { Sparkles, ShoppingBag, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { fileToBase64 } from "@/utils/globalFunc";
-import { ModeSwitch } from "./Common/HomeCommon";
-import { GradientWaves } from "./animation/GradientWaves";
-import { MouseOrbs } from "./animation/MouseOrbs";
+import { ModeSwitch } from "../Common/HomeCommon";
+import { GradientWaves } from "../animation/GradientWaves";
+import { MouseOrbs } from "../animation/MouseOrbs";
 
 // --- ANIMATION CONFIG ---
 const floatAnimation = {

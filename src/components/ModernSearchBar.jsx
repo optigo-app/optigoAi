@@ -29,7 +29,7 @@ import useCustomToast from "@/hook/useCustomToast";
 import CustomSlider from "./CustomSlider";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData, getAuthData } from "@/utils/globalFunc";
-import FilterDropdown from "./FilterDropdown";
+import FilterDropdown from "./Product/FilterDropdown";
 
 export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true }) {
     const { showSuccess, showError } = useCustomToast();

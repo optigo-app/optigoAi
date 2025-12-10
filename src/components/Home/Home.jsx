@@ -3,13 +3,18 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, Container, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import ModernSearchBar from "./ModernSearchBar";
+import ModernSearchBar from "../ModernSearchBar";
 import { Sparkles, ShoppingBag, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { fileToBase64 } from "@/utils/globalFunc";
-import { ModeSwitch } from "./Common/HomeCommon";
-import { GradientWaves } from "./animation/GradientWaves";
-import { MouseOrbs } from "./animation/MouseOrbs";
+import { ModeSwitch } from "../Common/HomeCommon";
+import dynamic from "next/dynamic";
+import ContinuousTypewriter from "../Common/ContinuousTypewriter";
+
+const GradientWaves = dynamic(
+    () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
+    { ssr: false }
+);
 
 // --- ANIMATION CONFIG ---
 const floatAnimation = {
@@ -67,47 +72,7 @@ const TypewriterText = ({ text }) => {
     );
 };
 
-// Continuous looping typewriter for subtitle
-const ContinuousTypewriter = ({ texts, delay = 0 }) => {
-    const [displayText, setDisplayText] = useState("");
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [loopNum, setLoopNum] = useState(0);
-    const [typingSpeed, setTypingSpeed] = useState(50);
 
-    // Convert single text to array for backward compatibility
-    const textArray = Array.isArray(texts) ? texts : [texts];
-
-    useEffect(() => {
-        let timer;
-        const handleType = () => {
-            const current = loopNum % textArray.length;
-            const fullText = textArray[current];
-
-            setDisplayText(isDeleting
-                ? fullText.substring(0, displayText.length - 1)
-                : fullText.substring(0, displayText.length + 1)
-            );
-
-            setTypingSpeed(isDeleting ? 30 : 50);
-
-            if (!isDeleting && displayText === fullText) {
-                setTimeout(() => setIsDeleting(true), 2000);
-            } else if (isDeleting && displayText === "") {
-                setIsDeleting(false);
-                setLoopNum(loopNum + 1);
-            }
-        };
-
-        timer = setTimeout(handleType, typingSpeed);
-        return () => clearTimeout(timer);
-    }, [displayText, isDeleting, loopNum, typingSpeed, textArray]);
-
-    return (
-        <span style={{ borderRight: "2px solid #7367f0", paddingRight: "4px" }}>
-            {displayText}
-        </span>
-    );
-};
 
 const upcomingFeatures = [
     "AI style recommendations",
@@ -261,6 +226,7 @@ const Home = () => {
                             alt="Hero Image"
                             width={60}
                             height={60}
+                            priority
                             style={{
                                 maxWidth: '100%',
                                 height: 'auto',

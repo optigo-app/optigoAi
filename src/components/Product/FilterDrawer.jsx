@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { X, ChevronDown } from "lucide-react";
 
-import "../Style/FilterDrawer.scss";
+import "../../Style/FilterDrawer.scss";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
 
