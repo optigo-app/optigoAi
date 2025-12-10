@@ -11,7 +11,7 @@ import {
     Button,
     Fade
 } from '@mui/material';
-import { X, SearchX, ArrowLeft, Maximize2, Minimize2 } from 'lucide-react';
+import { X, SearchX, ArrowLeft, Minimize, Maximize } from 'lucide-react';
 import ProductCard from './ProductCard';
 import { searchService } from '@/services/apiService';
 import { getMatchedDesignCollections } from '@/utils/globalFunc';
@@ -23,19 +23,16 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
     const [showContent, setShowContent] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    // Cache to store search results by product ID
     const searchCacheRef = useRef({});
 
     useEffect(() => {
         if (open && baseProduct) {
-            // Trigger fade out
             setShowContent(false);
 
-            // Wait for fade out, then fetch and fade in
             setTimeout(() => {
                 fetchSimilarProducts();
                 setShowContent(true);
-            }, 200);
+            }, 50);
         }
     }, [open, baseProduct]);
 
@@ -47,11 +44,8 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             setError("No image available for this product.");
             return;
         }
-
-        // Check cache first
         const cacheKey = baseProduct.id || baseProduct.designno;
         if (searchCacheRef.current[cacheKey]) {
-            console.log('Using cached results for:', cacheKey);
             setSimilarProducts(searchCacheRef.current[cacheKey]);
             return;
         }
@@ -147,12 +141,12 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                     <IconButton
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         size="small"
-                        sx={{ color: theme => theme.palette.grey[500] }}
+                        sx={{ color: theme => theme.palette.grey[500], padding: 1 }}
                     >
-                        {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                        {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                     </IconButton>
-                    <IconButton onClick={onClose} sx={{ color: theme => theme.palette.grey[500] }}>
-                        <X />
+                    <IconButton onClick={onClose} sx={{ color: theme => theme.palette.grey[500], padding: 1 }}>
+                        <X size={20} />
                     </IconButton>
                 </Box>
             </DialogTitle>

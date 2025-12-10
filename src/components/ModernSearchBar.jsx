@@ -56,10 +56,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [numResults, setNumResults] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('searchNumResults');
-            return saved ? parseInt(saved, 50) : 50;
+            return saved ? Number(saved) || 50 : 50;
         }
         return 50;
     });
+
 
     const [accuracy, setAccuracy] = useState(() => {
         if (typeof window !== 'undefined') {

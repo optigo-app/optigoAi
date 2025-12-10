@@ -66,13 +66,16 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                     position: 'relative',
                     overflow: 'hidden',
                     cursor: 'pointer',
-                    borderRadius: '16px', // Explicit radius for better aesthetics
-                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)', // Bouncier transition
+                    borderRadius: '16px',
+                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     transform: isHovered ? 'translateY(-8px)' : 'none',
-                    boxShadow: isHovered
-                        ? '0 20px 40px rgba(0,0,0,0.12)'
-                        : '0 4px 12px rgba(0,0,0,0.03)',
+                    boxShadow: isInCart
+                        ? '0 0 0 1px #7367f0, 0 12px 24px rgba(115, 103, 240, 0.2)'
+                        : isHovered
+                            ? '0 20px 40px rgba(0,0,0,0.12)'
+                            : '0 4px 12px rgba(0,0,0,0.03)',
                     height: '100%',
+                    bgcolor: isInCart ? '#f8f7ff' : '#fff',
                 }}
             >
                 <Box sx={{ position: 'relative', overflow: 'hidden' }}>
@@ -122,27 +125,7 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                     </Box>
 
                     {/* CART TICK */}
-                    {isInCart && (
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                top: 8,
-                                right: 8,
-                                bgcolor: '#4caf50',
-                                color: 'white',
-                                borderRadius: '50%',
-                                width: 24,
-                                height: 24,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                            }}
-                        >
-                            ✓
-                        </Box>
-                    )}
+
 
                     {/* SEARCH SIMILAR BUTTON */}
                     {showSimilarButton && onSearchSimilar && (product?.ImgUrl || product?.image) && (
@@ -155,7 +138,7 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                             sx={{
                                 position: 'absolute',
                                 top: 8,
-                                right: isInCart ? 40 : 8,
+                                right: 8,
                                 color: "white",
                                 bgcolor: 'rgba(115, 103, 240, 0.9)',
                                 border: '1px solid white',

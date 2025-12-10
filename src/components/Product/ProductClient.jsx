@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
     Container,
     Box,
@@ -8,8 +9,10 @@ import {
     Fade,
     Popover,
     Chip,
+    IconButton,
+    Badge,
 } from "@mui/material";
-import { Maximize2, Filter } from "lucide-react";
+import { Maximize2, Filter, ShoppingCart, ArrowLeft } from "lucide-react";
 import ImageViewerModal from "@/components/Common/ImageViewerModal";
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
@@ -24,11 +27,15 @@ import FilterChips from "@/components/Product/FilterChips";
 import { base64ToFile } from "@/utils/globalFunc";
 import ProductGrid from "./ProductGrid";
 import SimilarProductsModal from "./SimilarProductsModal";
+import { useCart } from '@/context/CartContext';
+import { useRouter } from 'next/navigation';
 
 export default function ProductClient() {
     const [loading, setLoading] = useState(true);
     const [isSearchLoading, setIsSearchLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const { totalCount } = useCart();
+    const router = useRouter();
 
     const [allDesignCollections, setAllDesignCollections] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
@@ -144,6 +151,13 @@ export default function ProductClient() {
 
     const [searchResults, setSearchResults] = useState(null);
     const [lastSearchData, setLastSearchData] = useState(null);
+
+    // Import GradientWaves dynamically
+    const GradientWaves = useMemo(() => dynamic(
+        () => import("@/components/animation/GradientWaves").then((mod) => mod.GradientWaves),
+        { ssr: false }
+    ), []);
+
 
     // Items per page with sessionStorage persistence (guarded for SSR)
     const [itemsPerPage, setItemsPerPage] = useState(() => {
@@ -486,9 +500,49 @@ export default function ProductClient() {
 
     if (loading) return <FullPageLoader open={true} />;
 
+    if (loading) return <FullPageLoader open={true} />;
+
     return (
-        <>
-            <Container maxWidth={false} sx={{ px: 2, pb: 12 }} disableGutters>
+        <Box
+            sx={{
+                minHeight: "100vh",
+                background: "#f8f9fa",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                position: "relative",
+                overflow: "hidden",
+            }}
+        >
+            <Box
+                sx={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundImage: "linear-gradient(rgba(115, 103, 240, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(115, 103, 240, 0.03) 1px, transparent 1px)",
+                    backgroundSize: "40px 40px",
+                    width: "100%",
+                    height: "100%",
+                    zIndex: 0,
+                    pointerEvents: "none"
+                }}
+            />
+            {/* Center Glow */}
+            <Box sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "70vw",
+                height: "70vw",
+                opacity: 0.5,
+                background: "radial-gradient(circle, rgba(115,103,240,0.18) 0%, transparent 60%)",
+                filter: "blur(100px)",
+                zIndex: 0
+            }} />
+
+
+            <Container maxWidth={false} sx={{ px: 2, pb: 12, position: "relative", zIndex: 2 }} disableGutters>
                 <Box
                     sx={{
                         display: "flex",
@@ -500,7 +554,13 @@ export default function ProductClient() {
                     }}
                 >
                     <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
-                        <Button
+                        <IconButton
+                            onClick={() => router.push('/')}
+                            sx={{ color: 'text.primary' }}
+                        >
+                            <ArrowLeft size={24} />
+                        </IconButton>
+                        {/* <Button
                             variant="text"
                             startIcon={<Filter size={18} />}
                             disableRipple
@@ -513,7 +573,7 @@ export default function ProductClient() {
                             }}
                         >
                             Filter
-                        </Button>
+                        </Button> */}
                         <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                             {finalFilteredProducts.length} products
                         </Typography>
@@ -555,6 +615,20 @@ export default function ProductClient() {
                             itemsPerPage={itemsPerPage}
                             onItemsPerPageChange={handleItemsPerPageChange}
                         />
+                        <IconButton
+                            color="primary"
+                            onClick={() => router.push('/cart')}
+                            sx={{
+                                bgcolor: 'rgba(115, 103, 240, 0.1)',
+                                '&:hover': {
+                                    bgcolor: 'rgba(115, 103, 240, 0.2)',
+                                }
+                            }}
+                        >
+                            <Badge badgeContent={totalCount} color="primary" max={99}>
+                                <ShoppingCart size={22} />
+                            </Badge>
+                        </IconButton>
                     </Box>
                 </Box>
 
@@ -790,6 +864,6 @@ export default function ProductClient() {
                         : "Analyzing your design and matching collections"
                 }
             />
-        </>
+        </Box>
     );
 }

@@ -12,6 +12,7 @@ import {
     CircularProgress,
 } from "@mui/material";
 import { ArrowLeft, Palette, ShoppingBag, Sparkles, ShoppingCart } from "lucide-react";
+import dynamic from "next/dynamic";
 
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -205,8 +206,47 @@ const CheckoutClient = () => {
     };
 
     return (
-        <Box sx={{ pb: 3 }}>
-            <Container maxWidth="false">
+        <Box
+            sx={{
+                minHeight: "100vh",
+                background: "#f8f9fa",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                position: "relative",
+                overflow: "hidden",
+                pb: 3
+            }}
+        >
+
+            <Box
+                sx={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundImage: "linear-gradient(rgba(115, 103, 240, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(115, 103, 240, 0.03) 1px, transparent 1px)",
+                    backgroundSize: "40px 40px",
+                    width: "100%",
+                    height: "100%",
+                    zIndex: 0,
+                    pointerEvents: "none"
+                }}
+            />
+            {/* Center Glow */}
+            <Box sx={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "70vw",
+                height: "70vw",
+                opacity: 0.5,
+                background: "radial-gradient(circle, rgba(115,103,240,0.18) 0%, transparent 60%)",
+                filter: "blur(100px)",
+                zIndex: 0
+            }} />
+
+            <Container maxWidth="false" sx={{ position: "relative", zIndex: 2 }}>
                 {/* Header */}
                 <Box sx={{ mb: 6 }}>
                     <Box

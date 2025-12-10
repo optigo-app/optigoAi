@@ -1,75 +1,75 @@
 'use client';
-import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Grid, Box, Typography, Button } from '@mui/material';
 import { SearchX } from 'lucide-react';
 import ProductCard from './ProductCard';
 
-const ProductGrid = memo(function ProductGrid({ designData, appliedFilters, clearAllFilters, onSearchSimilar }) {
-  const [visibleCount, setVisibleCount] = useState(24);
+const ProductGrid = memo(function ProductGrid({
+  designData,
+  appliedFilters,
+  clearAllFilters,
+  onSearchSimilar
+}) {
+  const ITEMS_PER_LOAD = 24;
+
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
   const sentinelRef = useRef(null);
   const loadingRef = useRef(false);
 
-  const ITEMS_PER_LOAD = 24;
-
+  // Slice visible items
   const visibleItems = useMemo(() => {
     return designData.slice(0, visibleCount);
   }, [designData, visibleCount]);
 
   const hasMore = visibleCount < designData.length;
 
-  const loadMore = () => {
+  // Load more items (24 at a time)
+  const loadMore = useCallback(() => {
     if (loadingRef.current || !hasMore) return;
 
     loadingRef.current = true;
-    setTimeout(() => {
-      setVisibleCount(prev => Math.min(prev + ITEMS_PER_LOAD, designData.length));
-      loadingRef.current = false;
-    }, 0);
-  };
 
+    requestAnimationFrame(() => {
+      setVisibleCount(prev =>
+        Math.min(prev + ITEMS_PER_LOAD, designData.length)
+      );
+      loadingRef.current = false;
+    });
+  }, [hasMore, designData.length]);
+
+  // Intersection Observer optimized
   useEffect(() => {
+    if (!hasMore) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+        if (entries[0].isIntersecting && !loadingRef.current) {
           loadMore();
         }
       },
       {
         threshold: 0,
-        rootMargin: '400px'
+        rootMargin: '800px'   // 👈 load before reaching end
       }
     );
 
-    const currentSentinel = sentinelRef.current;
-    if (currentSentinel) {
-      observer.observe(currentSentinel);
-    }
+    const node = sentinelRef.current;
+    if (node) observer.observe(node);
 
-    return () => {
-      if (currentSentinel) {
-        observer.unobserve(currentSentinel);
-      }
-    };
-  }, [hasMore]);
+    return () => observer.disconnect();
+  }, [loadMore, hasMore]);
 
+
+  // Reset when data changes
   useEffect(() => {
-    setVisibleCount(24);
+    setVisibleCount(ITEMS_PER_LOAD);
     loadingRef.current = false;
   }, [designData]);
 
+  // Empty result UI
   if (designData.length === 0 && appliedFilters.length > 0) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 8,
-          px: 4,
-          textAlign: 'center',
-        }}
-      >
+      <Box display="flex" flexDirection="column" alignItems="center" py={8}>
         <Box
           sx={{
             width: 120,
@@ -84,34 +84,16 @@ const ProductGrid = memo(function ProductGrid({ designData, appliedFilters, clea
         >
           <SearchX size={60} color="#9e9e9e" />
         </Box>
-        <Typography
-          variant="h5"
-          color="text.primary"
-          fontWeight="medium"
-          sx={{ mb: 2 }}
-        >
+
+        <Typography variant="h5" fontWeight="medium" mb={2}>
           No products found
         </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ mb: 4, maxWidth: 400 }}
-        >
+
+        <Typography variant="body1" color="text.secondary" mb={4}>
           Try adjusting your filters to see more results.
         </Typography>
-        <Button
-          variant="contained"
-          size="large"
-          onClick={clearAllFilters}
-          sx={{
-            px: 4,
-            py: 1.5,
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 'bold',
-            fontSize: '1.1rem'
-          }}
-        >
+
+        <Button variant="contained" size="large" onClick={clearAllFilters}>
           Clear All Filters
         </Button>
       </Box>
@@ -120,17 +102,11 @@ const ProductGrid = memo(function ProductGrid({ designData, appliedFilters, clea
 
   return (
     <Box>
-      <Grid container spacing={2} sx={{ justifyContent: 'start' }}>
+      <Grid container spacing={2}>
         {visibleItems.map((product, index) => (
           <Grid
             key={`${product.id}-${index}`}
-            size={{
-              xs: 6,
-              sm: 4,
-              md: 3,
-              lg: 3,
-              xl: 2,
-            }}
+            size={{ xs: 6, sm: 4, md: 3, lg: 3, xl: 2 }}
           >
             <ProductCard
               product={product}
@@ -142,19 +118,16 @@ const ProductGrid = memo(function ProductGrid({ designData, appliedFilters, clea
         ))}
       </Grid>
 
-      {/* Sentinel for infinite scroll */}
+      {/* Single sentinel – clean & stable */}
       {hasMore && (
         <Box
           ref={sentinelRef}
-          sx={{
-            height: '1px',
-            width: '100%',
-            mt: 2
-          }}
+          sx={{ height: '1px', width: '100%' }}
         />
       )}
     </Box>
   );
 });
 
+ProductGrid.displayName = 'ProductGrid';
 export default ProductGrid;
