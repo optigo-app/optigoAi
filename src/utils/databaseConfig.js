@@ -37,5 +37,5 @@ export const getCurrentDatabaseToken = () => {
   if (sessionToken) {
     return sessionToken;
   }
-  return 'token_secret_key_miaora';
+  return 'token_client1_secret_key_12345';
 };

@@ -9,14 +9,16 @@ import {
     Typography,
     CircularProgress,
     Button,
-    Fade
+    Fade,
+    Popover
 } from '@mui/material';
-import { X, SearchX, ArrowLeft, Minimize, Maximize } from 'lucide-react';
+import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize } from 'lucide-react';
 import ProductCard from './ProductCard';
+import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 import { searchService } from '@/services/apiService';
 import { getMatchedDesignCollections } from '@/utils/globalFunc';
 
-export default function SimilarProductsModal({ open, onClose, baseProduct, allProducts, performanceConfig, onSearchSimilar, onBack, canGoBack }) {
+export default function SimilarProductsModal({ open, onClose, baseProduct, allProducts, onSearchSimilar, onBack, onForward, canGoBack, canGoForward }) {
     const [loading, setLoading] = useState(false);
     const [similarProducts, setSimilarProducts] = useState([]);
     const [error, setError] = useState(null);
@@ -77,10 +79,11 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             }
 
             const file = new File([blob], `${baseProduct.sku || baseProduct.id}-search.jpg`, { type: fileType });
-
+            const searchAccuracy = sessionStorage.getItem("searchAccuracy");
+            const searchNumResults = sessionStorage.getItem("searchNumResults");
             const options = {
-                top_k: performanceConfig?.apiRequestLimit || 20,
-                min_percent: 70
+                top_k: searchNumResults || 50,
+                min_percent: searchAccuracy || 40
             };
             const results = await searchService.searchByImage(file, options);
             const matched = getMatchedDesignCollections(results || [], allProducts);
@@ -98,7 +101,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
         } finally {
             setLoading(false);
         }
-    }, [baseProduct, allProducts, performanceConfig]);
+    }, [baseProduct, allProducts]);
 
     return (
         <Dialog
@@ -109,28 +112,76 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             fullScreen={isFullscreen}
             PaperProps={{
                 sx: {
-                    height: isFullscreen ? '100vh' : '90vh',
-                    maxHeight: isFullscreen ? '100vh' : '90vh',
+                    height: isFullscreen ? '100%' : 'calc(90vh - 70px)',
+                    maxHeight: isFullscreen ? '100%' : 'calc(90vh - 70px)',
                     borderRadius: isFullscreen ? 0 : 3,
                     m: isFullscreen ? 0 : 2
+                }
+            }}
+            sx={{
+                '& .MuiDialog-container': {
+                    height: isFullscreen ? '100%' : '94%',
+                    maxHeight: isFullscreen ? '100%' : '94%'
                 }
             }}
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {canGoBack && (
-                        <IconButton onClick={onBack} size="small" sx={{ mr: 1, border: '1px solid #e0e0e0' }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton
+                            onClick={onBack}
+                            disabled={!canGoBack}
+                            size="small"
+                            sx={{
+                                border: '1px solid #e0e0e0',
+                                opacity: canGoBack ? 1 : 0.3,
+                                pointerEvents: canGoBack ? 'auto' : 'none'
+                            }}
+                        >
                             <ArrowLeft size={18} />
                         </IconButton>
-                    )}
+                        <IconButton
+                            onClick={onForward}
+                            disabled={!canGoForward}
+                            size="small"
+                            sx={{
+                                border: '1px solid #e0e0e0',
+                                mr: 1,
+                                opacity: canGoForward ? 1 : 0.3,
+                                pointerEvents: canGoForward ? 'auto' : 'none'
+                            }}
+                        >
+                            <ArrowRight size={18} />
+                        </IconButton>
+                    </Box>
                     <Typography variant="h6" fontWeight="bold">Similar Products</Typography>
                     {baseProduct && (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, bgcolor: 'grey.100', borderRadius: 2 }}>
-                            <img
-                                src={baseProduct.ImgUrl || baseProduct.image}
-                                alt="Base"
-                                style={{ width: 30, height: 30, borderRadius: 4, objectFit: 'cover' }}
-                            />
+                            <ImageHoverPreview
+                                imageSrc={baseProduct.ImgUrl || baseProduct.image}
+                                altText="Base Large"
+                                triggerMode="hover"
+                            >
+                                <Box
+                                    component="img"
+                                    src={baseProduct.ImgUrl || baseProduct.image}
+                                    alt="Base"
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 1,
+                                        objectFit: 'cover',
+                                        cursor: 'pointer',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s',
+                                        '&:hover': {
+                                            transform: 'scale(1.15)',
+                                            boxShadow: 4
+                                        }
+                                    }}
+                                />
+                            </ImageHoverPreview>
                             <Typography variant="body2" color="text.secondary">
                                 Based on: {baseProduct.designno}
                             </Typography>
@@ -192,6 +243,6 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                     </Fade>
                 )}
             </DialogContent>
-        </Dialog >
+        </Dialog>
     );
 }

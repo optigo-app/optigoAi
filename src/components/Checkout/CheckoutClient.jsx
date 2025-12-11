@@ -252,11 +252,11 @@ const CheckoutClient = () => {
                     <Box
                         sx={{
                             display: "flex",
-                            alignItems: "start",
+                            alignItems: "center",
                             justifyContent: "center",
                             position: "relative",
-                            py: 2,
-                            mb: 2,
+                            py: 1,
+                            mb: 1,
                             borderBottom: 1,
                             borderColor: "grey.200",
                         }}

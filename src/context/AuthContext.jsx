@@ -188,7 +188,7 @@ export const AuthProvider = ({ children }) => {
     const decoded = jwtDecode(token);
     const decodedPayload = {
       ...decoded,
-      uid: decodeBase64(decoded.uid),
+      uid: decodeBase64(decoded.uid)
     };
 
     if (decodedPayload) {
@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }) => {
       if (!Cookies.get('skey')) {
         const hostname = window.location.hostname;
         const isAllowedHost = hostname === 'localhost' || hostname.includes('nzen') || hostname.includes('optigoai.web');
-        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NDMzMDkzMywidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZmMyVmpjbVYwWDJ0bGVWOXRhV0Z2Y21FPSJ9.Q1wI4B8llVZ5SC1V7Zyg3wVjo7SNcvkEzZ_EHePexvA';
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NTQ0MTczOCwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZlkyeHBaVzUwTVY5elpXTnlaWFJmYTJWNVh6RXlNelExIiwiY3V2ZXIiOiJSNTBCMyJ9.Kfx8ylk2omd2zmjP7SwnhN_vjcesCG83jV7M8Nr3ufU';
         if (isAllowedHost) {
           const isHttps = window.location.protocol === 'https:';
           Cookies.set('skey', token, isHttps ? { sameSite: 'None', secure: true } : { sameSite: 'Lax' });
@@ -228,5 +228,5 @@ export const AuthProvider = ({ children }) => {
     getQueryParams();
   }, []);
 
-  return <AuthContext.Provider>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ getQueryParams }}>{children}</AuthContext.Provider>;
 };

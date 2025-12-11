@@ -10,7 +10,7 @@ async function apiCall(endpoint, options = {}) {
   try {
     const url = `${API_BASE_URL}${endpoint}`;
     const token = getCurrentDatabaseToken();
-    const authHeader = token ? { Authorization: `Bearer token_client1_secret_key_12345` } : {};
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
     const response = await fetch(url, {
       ...options,

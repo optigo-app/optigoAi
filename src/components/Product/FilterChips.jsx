@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { Chip, Avatar } from '@mui/material';
+import { Chip, Avatar, Box } from '@mui/material';
 import { Image as ImageIcon } from 'lucide-react';
+import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 
 export default function FilterChips({
     appliedFilters,
@@ -35,7 +35,7 @@ export default function FilterChips({
                 const isImageSearch = item.id === "image-search" || item.id === "hybrid-search";
                 const isError = item.error === true;
 
-                return (
+                const chipContent = (
                     <Chip
                         key={item.id}
                         avatar={
@@ -55,7 +55,6 @@ export default function FilterChips({
                         label={item.name}
                         size="small"
                         onDelete={() => onRemoveFilter({ item })}
-                        onClick={isImageSearch && !isError ? (e) => onImageChipClick(e, item) : undefined}
                         sx={{
                             bgcolor: isError ? 'error.main' : 'primary.main',
                             color: isError ? 'error.contrastText' : 'primary.contrastText',
@@ -83,6 +82,22 @@ export default function FilterChips({
                         }}
                     />
                 );
+
+                if (isImageSearch && item.imageUrl && !isError) {
+                    return (
+                        <ImageHoverPreview
+                            key={item.id}
+                            imageSrc={item.imageUrl}
+                            altText="Search Image"
+                            triggerMode="click"
+                            maxWidth={300}
+                        >
+                            {chipContent}
+                        </ImageHoverPreview>
+                    );
+                }
+
+                return chipContent;
             })}
 
             {/* Render Grouped Drawer Chips */}

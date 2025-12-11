@@ -139,11 +139,12 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                                 position: 'absolute',
                                 top: 8,
                                 right: 8,
-                                color: "white",
-                                bgcolor: 'rgba(115, 103, 240, 0.9)',
-                                border: '1px solid white',
+                                color: "#555",
+                                bgcolor: 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(4px)',
                                 '&:hover': {
-                                    bgcolor: 'rgba(115, 103, 240, 1)',
+                                    bgcolor: 'rgba(255, 255, 255, 1)',
+                                    color: "#7367f0",
                                 },
                                 zIndex: 2
                             }}

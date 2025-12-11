@@ -13,7 +13,6 @@ import {
     Badge,
 } from "@mui/material";
 import { Maximize2, Filter, ShoppingCart, ArrowLeft } from "lucide-react";
-import ImageViewerModal from "@/components/Common/ImageViewerModal";
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -46,30 +45,16 @@ export default function ProductClient() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [isTransitioning, setIsTransitioning] = useState(false);
 
-    // Image Preview State
-    const [anchorEl, setAnchorEl] = useState(null);
-    const [popoverContent, setPopoverContent] = useState(null);
-    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-    const [viewerImage, setViewerImage] = useState(null);
+    // Similar Product Search State
 
     // Similar Product Search State
-    // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
+    const [similarProductCurrentIndex, setSimilarProductCurrentIndex] = useState(-1);
     const [isSimilarModalOpen, setIsSimilarModalOpen] = useState(false);
 
     // Filter Popover State
     const [anchorElFilter, setAnchorElFilter] = useState(null);
     const [filterPopoverItems, setFilterPopoverItems] = useState([]);
-
-    const handlePopoverOpen = (event, content) => {
-        setAnchorEl(event.currentTarget);
-        setPopoverContent(content);
-    };
-
-    const handlePopoverClose = () => {
-        setAnchorEl(null);
-        setPopoverContent(null);
-    };
 
     const handleFilterPopoverOpen = (event, items) => {
         setAnchorElFilter(event.currentTarget);
@@ -81,32 +66,30 @@ export default function ProductClient() {
         setFilterPopoverItems([]);
     };
 
-    const handleImageClick = (imageUrl) => {
-        setViewerImage(imageUrl);
-        setIsImageViewerOpen(true);
-        handlePopoverClose();
-    };
-
     const handleSearchSimilar = useCallback((product) => {
-        setSimilarProductHistory(prev => [...prev, product]);
+        setSimilarProductHistory(prev => {
+            const newHistory = prev.slice(0, similarProductCurrentIndex + 1);
+            return [...newHistory, product];
+        });
+        setSimilarProductCurrentIndex(prev => prev + 1);
         setIsSimilarModalOpen(true);
-    }, []);
+    }, [similarProductCurrentIndex]);
 
     const handleSimilarModalClose = useCallback(() => {
         setIsSimilarModalOpen(false);
         setSimilarProductHistory([]);
+        setSimilarProductCurrentIndex(-1);
     }, []);
 
     const handleSimilarBack = useCallback(() => {
-        setSimilarProductHistory(prev => {
-            if (prev.length <= 1) return prev;
-            return prev.slice(0, -1);
-        });
+        setSimilarProductCurrentIndex(prev => Math.max(0, prev - 1));
     }, []);
 
-    const currentSimilarProduct = similarProductHistory.length > 0
-        ? similarProductHistory[similarProductHistory.length - 1]
-        : null;
+    const handleSimilarForward = useCallback(() => {
+        setSimilarProductCurrentIndex(prev => Math.min(similarProductHistory.length - 1, prev + 1));
+    }, [similarProductHistory.length]);
+
+    const currentSimilarProduct = similarProductHistory[similarProductCurrentIndex] || null;
 
     useEffect(() => {
         const flag = sessionStorage.getItem("urlParams");
@@ -151,13 +134,6 @@ export default function ProductClient() {
 
     const [searchResults, setSearchResults] = useState(null);
     const [lastSearchData, setLastSearchData] = useState(null);
-
-    // Import GradientWaves dynamically
-    const GradientWaves = useMemo(() => dynamic(
-        () => import("@/components/animation/GradientWaves").then((mod) => mod.GradientWaves),
-        { ssr: false }
-    ), []);
-
 
     // Items per page with sessionStorage persistence (guarded for SSR)
     const [itemsPerPage, setItemsPerPage] = useState(() => {
@@ -547,8 +523,8 @@ export default function ProductClient() {
                     sx={{
                         display: "flex",
                         justifyContent: "space-between",
-                        mb: 2,
-                        pt: 2,
+                        mb: 1.5,
+                        pt: 1,
 
                         borderRadius: 2,
                     }}
@@ -588,10 +564,10 @@ export default function ProductClient() {
                         )}
 
                         {/* Render Filter Chips with Grouping */}
+                        {/* Render Filter Chips with Grouping */}
                         <FilterChips
                             appliedFilters={appliedFilters}
                             onRemoveFilter={removeFilter}
-                            onImageChipClick={handlePopoverOpen}
                             onFilterPopoverOpen={handleFilterPopoverOpen}
                         />
 
@@ -674,7 +650,7 @@ export default function ProductClient() {
 
             <Box className="modernSearchInputBox" sx={{
                 position: "fixed",
-                bottom: urlParamsFlag && urlParamsFlag == 'fe' ? 120 : 50,
+                bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 120 : 50,
                 left: 0,
                 right: 0,
                 p: 2,
@@ -683,7 +659,7 @@ export default function ProductClient() {
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
                     <ModernSearchBar onSubmit={handleSubmit} onFilterClick={() => setIsFilterOpen(true)} appliedFilters={appliedFilters} onApply={handleApplyFilters} />
                 </Box>
-                <ScrollToTop bottom={urlParamsFlag && urlParamsFlag == 'fe' ? 70 : 24} />
+                <ScrollToTop bottom={urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 70 : 24} />
             </Box>
 
             <FilterDrawer
@@ -695,71 +671,7 @@ export default function ProductClient() {
                 currentSearchTerm={searchTerm}
             />
 
-            {/* Image Preview Popover */}
-            <Popover
-                open={Boolean(anchorEl)}
-                anchorEl={anchorEl}
-                onClose={handlePopoverClose}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'center',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'center',
-                }}
-                PaperProps={{
-                    sx: { p: 1, maxWidth: 300 }
-                }}
-            >
-                {popoverContent && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {popoverContent.imageUrl && (
-                            <Box
-                                sx={{
-                                    position: 'relative',
-                                    cursor: 'pointer',
-                                    '&:hover .overlay': { opacity: 1 }
-                                }}
-                                onClick={() => handleImageClick(popoverContent.imageUrl)}
-                            >
-                                <img
-                                    src={popoverContent.imageUrl}
-                                    alt="Search Preview"
-                                    style={{
-                                        width: '100%',
-                                        height: 'auto',
-                                        maxHeight: 200,
-                                        objectFit: 'cover',
-                                        borderRadius: 4
-                                    }}
-                                />
-                                <Box
-                                    className="overlay"
-                                    sx={{
-                                        position: 'absolute',
-                                        inset: 0,
-                                        bgcolor: 'rgba(0,0,0,0.3)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        opacity: 0,
-                                        transition: 'opacity 0.2s',
-                                        borderRadius: 1
-                                    }}
-                                >
-                                    <Maximize2 color="white" size={24} />
-                                </Box>
-                            </Box>
-                        )}
-                        {popoverContent.text && (
-                            <Typography variant="body2" sx={{ px: 1, pb: 0.5 }}>
-                                Text: <strong>{popoverContent.text}</strong>
-                            </Typography>
-                        )}
-                    </Box>
-                )}
-            </Popover>
+
 
             {/* Filter Details Popover */}
             <Popover
@@ -838,11 +750,11 @@ export default function ProductClient() {
             </Popover>
 
             {/* Full Screen Image Viewer */}
-            <ImageViewerModal
+            {/* <ImageViewerModal
                 open={isImageViewerOpen}
                 onClose={() => setIsImageViewerOpen(false)}
                 imageUrl={viewerImage}
-            />
+            /> */}
 
             {/* Similar Products Modal */}
             <SimilarProductsModal
@@ -852,7 +764,9 @@ export default function ProductClient() {
                 allProducts={allDesignCollections}
                 onSearchSimilar={handleSearchSimilar}
                 onBack={handleSimilarBack}
-                canGoBack={similarProductHistory.length > 1}
+                onForward={handleSimilarForward}
+                canGoBack={similarProductCurrentIndex > 0}
+                canGoForward={similarProductCurrentIndex < similarProductHistory.length - 1}
             />
 
             <FullPageLoader

@@ -138,10 +138,10 @@ const CartPageMUI = () => {
             <Container maxWidth="false" sx={{ position: "relative", zIndex: 2 }}>
                 <Box
                     sx={{
-                        mb: 2,
+                        mb: 1,
                         borderBottom: 1,
                         borderColor: 'grey.200',
-                        py: 2,
+                        py: 1,
                     }}
                 >
                     <Box

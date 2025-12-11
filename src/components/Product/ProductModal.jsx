@@ -270,7 +270,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                 </Swiper>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, justifyContent: 'space-between', backgroundColor: '#f5f5f5' }}>
+            <DialogActions sx={{ p: 3, justifyContent: onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) ? 'space-between' : 'flex-end', backgroundColor: '#f5f5f5' }}>
                 {onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) && (
                     <Button
                         variant="outlined"
