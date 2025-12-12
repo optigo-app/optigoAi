@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { Chip, Avatar, Box } from '@mui/material';
 import { Image as ImageIcon } from 'lucide-react';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';

@@ -318,6 +318,13 @@ export default function ProductClient() {
 
     const handleSubmit = useCallback(async (searchData) => {
         console.log(searchData)
+
+        // If no search input (isSearchFlag = 0), just navigate without API call
+        if (!searchData?.isSearchFlag || searchData.isSearchFlag === 0) {
+            console.log('No search criteria provided, showing all products');
+            return;
+        }
+
         setLastSearchData(searchData);
         setError(null);
         setIsSearchLoading(true);

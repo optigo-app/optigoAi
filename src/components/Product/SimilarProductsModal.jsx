@@ -3,14 +3,14 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
+    DialogActions,
     IconButton,
     Grid,
     Box,
     Typography,
     CircularProgress,
     Button,
-    Fade,
-    Popover
+    Skeleton
 } from '@mui/material';
 import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize } from 'lucide-react';
 import ProductCard from './ProductCard';
@@ -24,6 +24,10 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
     const [error, setError] = useState(null);
     const [showContent, setShowContent] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [slideDirection, setSlideDirection] = useState('none'); // 'left', 'right', or 'none'
+    const [isNavigating, setIsNavigating] = useState(false);
+    const [cacheDetected, setCacheDetected] = useState(false);
+    const [cachedDesignKey, setCachedDesignKey] = useState(null);
 
     const searchCacheRef = useRef({});
 
@@ -38,7 +42,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
         }
     }, [open, baseProduct]);
 
-    const fetchSimilarProducts = useCallback(async () => {
+    const fetchSimilarProducts = useCallback(async (forceFresh = false) => {
         if (!baseProduct) return;
 
         const imageUrl = baseProduct.ImgUrl || baseProduct.image;
@@ -47,8 +51,18 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             return;
         }
         const cacheKey = baseProduct.id || baseProduct.designno;
-        if (searchCacheRef.current[cacheKey]) {
-            setSimilarProducts(searchCacheRef.current[cacheKey]);
+
+        // Check if cached and not forcing fresh search
+        if (searchCacheRef.current[cacheKey] && !forceFresh) {
+            // If navigating, just load from cache
+            if (isNavigating) {
+                setSimilarProducts(searchCacheRef.current[cacheKey]);
+                setIsNavigating(false);
+                return;
+            }
+            // If not navigating (fresh search attempt), show cache detection dialog
+            setCachedDesignKey(cacheKey);
+            setCacheDetected(true);
             return;
         }
 
@@ -100,149 +114,267 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             setSimilarProducts([]);
         } finally {
             setLoading(false);
+            setIsNavigating(false);
         }
-    }, [baseProduct, allProducts]);
+    }, [baseProduct, allProducts, isNavigating]);
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth={isFullscreen ? false : "lg"}
-            fullWidth
-            fullScreen={isFullscreen}
-            PaperProps={{
-                sx: {
-                    height: isFullscreen ? '100%' : 'calc(90vh - 70px)',
-                    maxHeight: isFullscreen ? '100%' : 'calc(90vh - 70px)',
-                    borderRadius: isFullscreen ? 0 : 3,
-                    m: isFullscreen ? 0 : 2
-                }
-            }}
-            sx={{
-                '& .MuiDialog-container': {
-                    height: isFullscreen ? '100%' : '94%',
-                    maxHeight: isFullscreen ? '100%' : '94%'
-                }
-            }}
-        >
-            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <>
+            <Dialog
+                open={open}
+                onClose={onClose}
+                maxWidth={isFullscreen ? false : "lg"}
+                fullWidth
+                fullScreen={isFullscreen}
+                PaperProps={{
+                    sx: {
+                        height: isFullscreen ? '100%' : 'calc(90vh - 70px)',
+                        maxHeight: isFullscreen ? '100%' : 'calc(90vh - 70px)',
+                        borderRadius: isFullscreen ? 0 : 3,
+                        m: isFullscreen ? 0 : 2
+                    }
+                }}
+                sx={{
+                    '& .MuiDialog-container': {
+                        height: isFullscreen ? '100%' : '94%',
+                        maxHeight: isFullscreen ? '100%' : '94%'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <IconButton
+                                onClick={() => {
+                                    setIsNavigating(true);
+                                    setSlideDirection('right');
+                                    setShowContent(false);
+                                    setTimeout(() => {
+                                        onBack();
+                                    }, 200);
+                                }}
+                                disabled={!canGoBack}
+                                size="small"
+                                sx={{
+                                    border: '1px solid #e0e0e0',
+                                    opacity: canGoBack ? 1 : 0.3,
+                                    pointerEvents: canGoBack ? 'auto' : 'none'
+                                }}
+                            >
+                                <ArrowLeft size={18} />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => {
+                                    setIsNavigating(true);
+                                    setSlideDirection('left');
+                                    setShowContent(false);
+                                    setTimeout(() => {
+                                        onForward();
+                                    }, 200);
+                                }}
+                                disabled={!canGoForward}
+                                size="small"
+                                sx={{
+                                    border: '1px solid #e0e0e0',
+                                    mr: 1,
+                                    opacity: canGoForward ? 1 : 0.3,
+                                    pointerEvents: canGoForward ? 'auto' : 'none'
+                                }}
+                            >
+                                <ArrowRight size={18} />
+                            </IconButton>
+                        </Box>
+                        <Typography variant="h6" fontWeight="bold">Similar Products</Typography>
+                        {baseProduct && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, bgcolor: 'grey.100', borderRadius: 2 }}>
+                                <ImageHoverPreview
+                                    imageSrc={baseProduct.ImgUrl || baseProduct.image}
+                                    altText="Base Large"
+                                    triggerMode="hover"
+                                >
+                                    <Box
+                                        component="img"
+                                        src={baseProduct.ImgUrl || baseProduct.image}
+                                        alt="Base"
+                                        sx={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 1,
+                                            objectFit: 'cover',
+                                            cursor: 'pointer',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s',
+                                            '&:hover': {
+                                                transform: 'scale(1.15)',
+                                                boxShadow: 4
+                                            }
+                                        }}
+                                    />
+                                </ImageHoverPreview>
+                                <Typography variant="body2" color="text.secondary">
+                                    Based on: {baseProduct.designno}
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <IconButton
-                            onClick={onBack}
-                            disabled={!canGoBack}
+                            onClick={() => setIsFullscreen(!isFullscreen)}
                             size="small"
-                            sx={{
-                                border: '1px solid #e0e0e0',
-                                opacity: canGoBack ? 1 : 0.3,
-                                pointerEvents: canGoBack ? 'auto' : 'none'
-                            }}
+                            sx={{ color: theme => theme.palette.grey[500], padding: 1 }}
                         >
-                            <ArrowLeft size={18} />
+                            {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                         </IconButton>
-                        <IconButton
-                            onClick={onForward}
-                            disabled={!canGoForward}
-                            size="small"
-                            sx={{
-                                border: '1px solid #e0e0e0',
-                                mr: 1,
-                                opacity: canGoForward ? 1 : 0.3,
-                                pointerEvents: canGoForward ? 'auto' : 'none'
-                            }}
-                        >
-                            <ArrowRight size={18} />
+                        <IconButton onClick={onClose} sx={{ color: theme => theme.palette.grey[500], padding: 1 }}>
+                            <X size={20} />
                         </IconButton>
                     </Box>
-                    <Typography variant="h6" fontWeight="bold">Similar Products</Typography>
-                    {baseProduct && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, bgcolor: 'grey.100', borderRadius: 2 }}>
-                            <ImageHoverPreview
-                                imageSrc={baseProduct.ImgUrl || baseProduct.image}
-                                altText="Base Large"
-                                triggerMode="hover"
-                            >
-                                <Box
-                                    component="img"
-                                    src={baseProduct.ImgUrl || baseProduct.image}
-                                    alt="Base"
-                                    sx={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: 1,
-                                        objectFit: 'cover',
-                                        cursor: 'pointer',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s',
-                                        '&:hover': {
-                                            transform: 'scale(1.15)',
-                                            boxShadow: 4
-                                        }
-                                    }}
-                                />
-                            </ImageHoverPreview>
-                            <Typography variant="body2" color="text.secondary">
-                                Based on: {baseProduct.designno}
-                            </Typography>
-                        </Box>
-                    )}
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <IconButton
-                        onClick={() => setIsFullscreen(!isFullscreen)}
-                        size="small"
-                        sx={{ color: theme => theme.palette.grey[500], padding: 1 }}
-                    >
-                        {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                    </IconButton>
-                    <IconButton onClick={onClose} sx={{ color: theme => theme.palette.grey[500], padding: 1 }}>
-                        <X size={20} />
-                    </IconButton>
-                </Box>
-            </DialogTitle>
-            <DialogContent dividers sx={{ p: 3, bgcolor: '#f9f9fa' }}>
-                {loading ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
-                        <CircularProgress size={40} sx={{ mb: 2 }} />
-                        <Typography color="text.secondary">Finding visual matches...</Typography>
-                    </Box>
-                ) : error ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
-                        <Typography color="error">{error}</Typography>
-                        <Button onClick={fetchSimilarProducts} sx={{ mt: 2 }}>Try Again</Button>
-                    </Box>
-                ) : similarProducts.length === 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
-                        <SearchX size={60} color="#9e9e9e" />
-                        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>No similar products found</Typography>
-                    </Box>
-                ) : (
-                    <Fade in={showContent} timeout={300}>
+                </DialogTitle>
+                <DialogContent dividers sx={{ p: 3, bgcolor: '#f9f9fa' }}>
+                    {!showContent ? (
                         <Grid container spacing={2}>
-                            {similarProducts.map((product, index) => (
+                            {[...Array(isFullscreen ? 12 : 8)].map((_, index) => (
                                 <Grid
-                                    key={`${product.id}-${index}`}
+                                    key={`skeleton-${index}`}
                                     size={{
                                         xs: 6,
                                         sm: 4,
                                         md: 3,
                                         lg: isFullscreen ? 2 : 3,
                                         xl: isFullscreen ? 2 : 3,
-                                    }}>
-                                    <ProductCard
-                                        product={product}
-                                        products={similarProducts}
-                                        index={index}
-                                        onSearchSimilar={onSearchSimilar}
-                                        showSimilarButton={true}
-                                    />
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            bgcolor: 'white',
+                                            borderRadius: 2,
+                                            overflow: 'hidden',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                            animation: 'fadeIn 0.3s ease-in',
+                                            animationDelay: `${index * 0.03}s`,
+                                            animationFillMode: 'backwards',
+                                            '@keyframes fadeIn': {
+                                                from: {
+                                                    opacity: 0,
+                                                    transform: 'translateY(10px)',
+                                                },
+                                                to: {
+                                                    opacity: 1,
+                                                    transform: 'translateY(0)',
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        <Skeleton
+                                            variant="rectangular"
+                                            width="100%"
+                                            height={280}
+                                            animation="wave"
+                                        />
+                                    </Box>
                                 </Grid>
                             ))}
                         </Grid>
-                    </Fade>
-                )}
-            </DialogContent>
-        </Dialog>
+                    ) : loading && !isNavigating ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
+                            <CircularProgress size={40} sx={{ mb: 2 }} />
+                            <Typography color="text.secondary">Finding visual matches...</Typography>
+                        </Box>
+                    ) : error ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
+                            <Typography color="error">{error}</Typography>
+                            <Button onClick={fetchSimilarProducts} sx={{ mt: 2 }}>Try Again</Button>
+                        </Box>
+                    ) : similarProducts.length === 0 ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
+                            <SearchX size={60} color="#9e9e9e" />
+                            <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>No similar products found</Typography>
+                        </Box>
+                    ) : (
+                        <Box
+                            sx={{
+                                opacity: showContent ? 1 : 0,
+                                transform: showContent
+                                    ? 'translateX(0) scale(1)'
+                                    : slideDirection === 'left'
+                                        ? 'translateX(30px) scale(0.95)'
+                                        : slideDirection === 'right'
+                                            ? 'translateX(-30px) scale(0.95)'
+                                            : 'translateY(20px) scale(0.95)',
+                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            }}
+                        >
+                            <Grid container spacing={2}>
+                                {similarProducts.map((product, index) => (
+                                    <Grid
+                                        key={`${product.id}-${index}`}
+                                        size={{
+                                            xs: 6,
+                                            sm: 4,
+                                            md: 3,
+                                            lg: isFullscreen ? 2 : 3,
+                                            xl: isFullscreen ? 2 : 3,
+                                        }}>
+                                        <ProductCard
+                                            product={product}
+                                            products={similarProducts}
+                                            index={index}
+                                            onSearchSimilar={onSearchSimilar}
+                                            showSimilarButton={true}
+                                        />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Cache Detection Dialog */}
+            <Dialog
+                open={cacheDetected}
+                onClose={() => setCacheDetected(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 'bold' }}>
+                    Design Already Searched
+                </DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        You previously searched this design. Would you like to view the cached results from your history or perform a fresh search?
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <Button
+                        onClick={() => {
+                            setCacheDetected(false);
+                            // Load from cache and show it
+                            if (cachedDesignKey && searchCacheRef.current[cachedDesignKey]) {
+                                setSimilarProducts(searchCacheRef.current[cachedDesignKey]);
+                                setShowContent(true);
+                            }
+                        }}
+                        variant="outlined"
+                        sx={{ flex: 1 }}
+                    >
+                        Go to History
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setCacheDetected(false);
+                            // Perform fresh search
+                            fetchSimilarProducts(true);
+                        }}
+                        variant="contained"
+                        sx={{ flex: 1 }}
+                    >
+                        Search Fresh
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 }
+

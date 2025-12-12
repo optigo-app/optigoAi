@@ -61,7 +61,6 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         return 50;
     });
 
-
     const [accuracy, setAccuracy] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('searchAccuracy');
@@ -133,14 +132,13 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     }, []);
 
     const getItemsForCategory = (categoryName) => {
+        console.log("categoryName", categoryName);
         let target = categoryName;
-        if (categoryName === 'Collection') target = 'DesignCollection';
-        if (categoryName === 'Style') target = 'Category';
+        if (categoryName === 'Category') target = 'Category';
         if (categoryName === 'Gender') target = 'Gender';
 
         const found = filterData.find(c =>
-            c.name.toLowerCase().includes(target.toLowerCase()) ||
-            c.name.toLowerCase().includes(categoryName.toLowerCase())
+            c.name.toLowerCase().includes(target.toLowerCase())
         );
         return found ? found.items : [];
     };
@@ -231,11 +229,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const handleSend = () => {
         const trimmedText = text.trim();
 
-        if (!trimmedText && !imageFile) {
-            showError("Please enter text or upload an image", "warning");
-            return;
-        }
-
+        // Allow empty search - just navigate to product page
         let isSearchFlag = 0;
         if (trimmedText && imageFile) {
             isSearchFlag = 3; // Hybrid
@@ -244,6 +238,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         } else if (trimmedText) {
             isSearchFlag = 1; // Text
         }
+        // isSearchFlag = 0 means no search, just navigate
 
         const searchData = {
             text: trimmedText,
@@ -543,19 +538,19 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     </Tooltip>
                                 )}
                                 <Chip
-                                    icon={hasSelection('Collection') ? <Check size={14} /> : <Layers size={15} />}
-                                    label={getActiveFilterName('Collection')}
+                                    icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
+                                    label={getActiveFilterName('Category')}
                                     clickable
-                                    onClick={(e) => openDropdown('Collection', e)}
-                                    variant={hasSelection('Collection') ? "filled" : "outlined"}
-                                    color={hasSelection('Collection') ? "primary" : "default"}
+                                    onClick={(e) => openDropdown('Category', e)}
+                                    variant={hasSelection('Category') ? "filled" : "outlined"}
+                                    color={hasSelection('Category') ? "primary" : "default"}
                                     sx={{
                                         borderRadius: '8px',
-                                        border: hasSelection('Collection') ? 'none' : '1px solid #e0e0e0',
+                                        border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
                                         transition: 'all 0.2s'
                                     }}
                                 />
-                                <Chip
+                                {/* <Chip
                                     icon={hasSelection('Style') ? <Check size={14} /> : <Palette size={15} />}
                                     label={getActiveFilterName('Style')}
                                     clickable
@@ -567,7 +562,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         border: hasSelection('Style') ? 'none' : '1px solid #e0e0e0',
                                         transition: 'all 0.2s'
                                     }}
-                                />
+                                /> */}
                                 <Chip
                                     icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
                                     label={getActiveFilterName('Gender')}
