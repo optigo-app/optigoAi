@@ -6,6 +6,7 @@ import ThemeProvider from "@/theme/ThemeProvider";
 import { ToastProvider } from "@/context/ToastContext";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ProductDataProvider } from "@/context/ProductDataContext";
 
 const poppins = Poppins({
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
@@ -45,9 +46,11 @@ export default function RootLayout({ children }) {
               <Suspense>
                 <AuthProvider>
                   <CartProvider>
-                    <Suspense>
-                    </Suspense>
-                    {children}
+                    <ProductDataProvider>
+                      <Suspense>
+                      </Suspense>
+                      {children}
+                    </ProductDataProvider>
                   </CartProvider>
                 </AuthProvider>
               </Suspense>

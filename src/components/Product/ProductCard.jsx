@@ -9,7 +9,8 @@ import {
     Box,
     Chip,
     Skeleton,
-    IconButton
+    IconButton,
+    Tooltip
 } from '@mui/material';
 
 import { ShoppingCart, ScanSearch } from 'lucide-react';
@@ -129,28 +130,30 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
 
                     {/* SEARCH SIMILAR BUTTON */}
                     {showSimilarButton && onSearchSimilar && (product?.ImgUrl || product?.image) && (
-                        <IconButton
-                            size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSearchSimilar(product);
-                            }}
-                            sx={{
-                                position: 'absolute',
-                                top: 8,
-                                right: 8,
-                                color: "#555",
-                                bgcolor: 'rgba(255, 255, 255, 0.8)',
-                                backdropFilter: 'blur(4px)',
-                                '&:hover': {
-                                    bgcolor: 'rgba(255, 255, 255, 1)',
-                                    color: "#7367f0",
-                                },
-                                zIndex: 2
-                            }}
-                        >
-                            <ScanSearch size={18} />
-                        </IconButton>
+                        <Tooltip title="Search Similar Design" placement="left">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSearchSimilar(product);
+                                }}
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    color: "#555",
+                                    bgcolor: 'rgba(255, 255, 255, 0.8)',
+                                    backdropFilter: 'blur(4px)',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(255, 255, 255, 1)',
+                                        color: "#7367f0",
+                                    },
+                                    zIndex: 2
+                                }}
+                            >
+                                <ScanSearch size={18} />
+                            </IconButton>
+                        </Tooltip>
                     )}
 
                     {/* HOVER OVERLAY */}

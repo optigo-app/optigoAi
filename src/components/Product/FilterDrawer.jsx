@@ -107,7 +107,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
 });
 FilterCategory.displayName = 'FilterCategory';
 
-export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters = [] }) {
+export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters = [], urlParamsFlag }) {
   const [filters, setFilters] = useState([]);
   const [selectedFilters, setSelectedFilters] = useState(new Set());
   const [loadingFilters, setLoadingFilters] = useState(false);
@@ -306,7 +306,8 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
             borderRadius: 1,
             textTransform: 'none',
             fontWeight: 600,
-            boxShadow: 'none'
+            boxShadow: 'none',
+            bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 50 : 0
           }}
         >
           Done

@@ -10,6 +10,7 @@ import { fileToBase64 } from "@/utils/globalFunc";
 import { ModeSwitch } from "../Common/HomeCommon";
 import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
+import { useProductData } from "@/context/ProductDataContext";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -88,6 +89,9 @@ const Home = () => {
     const [featureIndex, setFeatureIndex] = useState(0);
     const [appliedFilters, setAppliedFilters] = useState([]);
 
+    // Use product data context
+    const { productData, isLoading: isLoadingProducts, fetchProductData } = useProductData();
+
     useEffect(() => {
         setIsLoaded(true);
     }, []);
@@ -99,6 +103,11 @@ const Home = () => {
         }, 3500);
         return () => clearInterval(interval);
     }, []);
+
+    // Fetch product data on mount
+    useEffect(() => {
+        fetchProductData();
+    }, [fetchProductData]);
 
     const handleSearch = async (searchData) => {
         let imageBase64 = null;
@@ -112,6 +121,30 @@ const Home = () => {
             timestamp: Date.now(),
             filters: appliedFilters,
         };
+        const jsonString = JSON.stringify(searchPayload);
+        const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+        sessionStorage.setItem("homeSearchData", encoded);
+        router.push("/product");
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        // Create filter object based on suggestion
+        const filter = {
+            category: suggestion.filterCategory,
+            item: {
+                id: `suggestion-${suggestion.type}-${Date.now()}`,
+                name: suggestion.value
+            }
+        };
+
+        // Navigate to product page with filter applied
+        const searchPayload = {
+            isSearchFlag: 0, // No API search, just filter
+            mode: selectedMode,
+            timestamp: Date.now(),
+            filters: [filter],
+        };
+
         const jsonString = JSON.stringify(searchPayload);
         const encoded = btoa(unescape(encodeURIComponent(jsonString)));
         sessionStorage.setItem("homeSearchData", encoded);
@@ -349,6 +382,9 @@ const Home = () => {
                         initialExpanded={true}
                         alwaysExpanded={true}
                         showMoreFiltersButton={false}
+                        showSuggestions={true}
+                        productData={productData}
+                        onSuggestionClick={handleSuggestionClick}
                     />
                 </Box>
 

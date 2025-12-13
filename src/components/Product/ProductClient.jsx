@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import dynamic from "next/dynamic";
 import {
     Container,
     Box,
@@ -12,14 +11,13 @@ import {
     IconButton,
     Badge,
 } from "@mui/material";
-import { Maximize2, Filter, ShoppingCart, ArrowLeft } from "lucide-react";
+import { ShoppingCart, ArrowLeft } from "lucide-react";
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import FullPageLoader from "@/components/FullPageLoader";
 import FilterDrawer from "@/components/Product/FilterDrawer";
 import PaginationControls from "@/components/PaginationControls";
-import { designCollectionApi } from "@/app/api/designCollectionApi";
 import { searchService } from "@/services/apiService";
 import Fuse from "fuse.js";
 import FilterChips from "@/components/Product/FilterChips";
@@ -28,15 +26,16 @@ import ProductGrid from "./ProductGrid";
 import SimilarProductsModal from "./SimilarProductsModal";
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
+import { useProductData } from '@/context/ProductDataContext';
 
 export default function ProductClient() {
-    const [loading, setLoading] = useState(true);
     const [isSearchLoading, setIsSearchLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const { totalCount } = useCart();
     const router = useRouter();
 
-    const [allDesignCollections, setAllDesignCollections] = useState([]);
+    // Use product data context
+    const { productData: allDesignCollections, isLoading: isLoadingProducts, fetchProductData } = useProductData();
     const [currentPage, setCurrentPage] = useState(1);
     const [error, setError] = useState(null);
     const [appliedFilters, setAppliedFilters] = useState([]);
@@ -55,6 +54,11 @@ export default function ProductClient() {
     // Filter Popover State
     const [anchorElFilter, setAnchorElFilter] = useState(null);
     const [filterPopoverItems, setFilterPopoverItems] = useState([]);
+
+    useEffect(() => {
+        const flag = sessionStorage.getItem("urlParams");
+        setUrlParamsFlag(flag);
+    }, []);
 
     const handleFilterPopoverOpen = (event, items) => {
         setAnchorElFilter(event.currentTarget);
@@ -92,8 +96,6 @@ export default function ProductClient() {
     const currentSimilarProduct = similarProductHistory[similarProductCurrentIndex] || null;
 
     useEffect(() => {
-        const flag = sessionStorage.getItem("urlParams");
-        setUrlParamsFlag(flag);
         const encoded = sessionStorage.getItem("homeSearchData");
         if (encoded && allDesignCollections.length > 0) {
             try {
@@ -155,7 +157,7 @@ export default function ProductClient() {
     }, []);
 
     const baseDataset = useMemo(() => {
-        return searchResults !== null ? searchResults : allDesignCollections;
+        return searchResults !== null ? searchResults : (allDesignCollections || []);
     }, [searchResults, allDesignCollections]);
 
     const finalFilteredProducts = useMemo(() => {
@@ -175,21 +177,44 @@ export default function ProductClient() {
             temp = temp.filter((product) => {
                 return Object.entries(filtersByCategory).every(([category, items]) => {
                     return items.some((item) => {
+                        const categoryLower = category.toLowerCase();
+
+                        // Optimized field mapping
+                        const fieldMap = {
+                            'category': product.categoryname,
+                            'subcategory': product.subcategoryname,
+                            'sub category': product.subcategoryname,
+                            'collection': product.collectionname,
+                            'product type': product.producttype,
+                            'type': product.producttype,
+                            'brand': product.brandname,
+                            'lab': product.labname,
+                            'metal color': product.metalcolor,
+                            'metal': product.metaltype,
+                            'diamond shape': product.diamondshape,
+                            'shape': product.diamondshape,
+                        };
+
+                        // Find matching field
                         let fieldValue = "";
-                        if (category.toLowerCase().includes("collection")) {
-                            fieldValue = product.collectionname;
-                        } else if (category.toLowerCase().includes("metal")) {
-                            fieldValue = product.metaltype;
-                        } else if (category.toLowerCase().includes("category")) {
-                            fieldValue = product.categoryname;
-                        } else if (category.toLowerCase().includes("brand")) {
-                            fieldValue = product.brandname;
-                        } else {
-                            fieldValue =
-                                product.categoryname || product.collectionname || product.metaltype;
+                        for (const [key, value] of Object.entries(fieldMap)) {
+                            if (categoryLower.includes(key)) {
+                                fieldValue = value;
+                                break;
+                            }
                         }
+
+                        // Fallback if no match
+                        if (!fieldValue) {
+                            fieldValue = product.categoryname || product.collectionname || product.metaltype;
+                        }
+
+                        // Case-insensitive partial matching
+                        const fieldValueLower = (fieldValue || "").toLowerCase();
+                        const itemNameLower = (item.name || "").toLowerCase();
+
                         return (
-                            fieldValue?.toLowerCase().includes(item.name.toLowerCase()) ||
+                            fieldValueLower.includes(itemNameLower) ||
                             product.MasterManagement_DiamondStoneTypeid === item.id
                         );
                     });
@@ -359,7 +384,7 @@ export default function ProductClient() {
                 return;
             }
 
-            const sortedMatchedDesigns = getMatchedDesignCollections(res, allDesignCollections);
+            const sortedMatchedDesigns = getMatchedDesignCollections(res, allDesignCollections || []);
 
             // Store search results - drawer filters will be applied on top
             setSearchResults(sortedMatchedDesigns);
@@ -459,29 +484,24 @@ export default function ProductClient() {
 
     useEffect(() => {
         let mounted = true;
-        setLoading(true);
-        const fetchData = async () => {
+
+        const loadData = async () => {
             try {
-                const res = await designCollectionApi();
-                const allProducts = res?.rd || [];
-                if (!mounted) return;
-                setAllDesignCollections(allProducts);
+                await fetchProductData();
             } catch (err) {
                 console.error(err);
-                setError("Failed to load products");
-            } finally {
-                if (mounted) setLoading(false);
+                if (mounted) setError("Failed to load products");
             }
         };
 
-        fetchData();
+        loadData();
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [fetchProductData]);
 
-
-    if (loading) return <FullPageLoader open={true} />;
+    // Use context loading state instead of local loading
+    const loading = isLoadingProducts;
 
     if (loading) return <FullPageLoader open={true} />;
 
@@ -543,20 +563,6 @@ export default function ProductClient() {
                         >
                             <ArrowLeft size={24} />
                         </IconButton>
-                        {/* <Button
-                            variant="text"
-                            startIcon={<Filter size={18} />}
-                            disableRipple
-                            onClick={() => setIsFilterOpen(true)}
-                            sx={{
-                                textTransform: "none",
-                                textDecoration: "underline",
-                                color: "text.primary",
-                                fontSize: 14,
-                            }}
-                        >
-                            Filter
-                        </Button> */}
                         <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
                             {finalFilteredProducts.length} products
                         </Typography>
@@ -569,9 +575,6 @@ export default function ProductClient() {
                                 sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText' }}
                             />
                         )}
-
-                        {/* Render Filter Chips with Grouping */}
-                        {/* Render Filter Chips with Grouping */}
                         <FilterChips
                             appliedFilters={appliedFilters}
                             onRemoveFilter={removeFilter}
@@ -676,6 +679,7 @@ export default function ProductClient() {
                 appliedFilters={appliedFilters}
                 onSearch={handleSearch}
                 currentSearchTerm={searchTerm}
+                urlParamsFlag={urlParamsFlag}
             />
 
 
@@ -755,13 +759,6 @@ export default function ProductClient() {
                     ))}
                 </Box>
             </Popover>
-
-            {/* Full Screen Image Viewer */}
-            {/* <ImageViewerModal
-                open={isImageViewerOpen}
-                onClose={() => setIsImageViewerOpen(false)}
-                imageUrl={viewerImage}
-            /> */}
 
             {/* Similar Products Modal */}
             <SimilarProductsModal

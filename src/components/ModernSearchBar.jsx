@@ -30,8 +30,9 @@ import CustomSlider from "./CustomSlider";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
+import SearchSuggestions from "./SearchSuggestions";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -51,6 +52,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [anchorEl, setAnchorEl] = useState(null);
+
+    // Suggestion States
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false);
+    const [debouncedText, setDebouncedText] = useState("");
 
     // Initialize Settings
     const [numResults, setNumResults] = useState(() => {
@@ -76,6 +82,118 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     useEffect(() => {
         sessionStorage.setItem('searchAccuracy', accuracy.toString());
     }, [accuracy]);
+
+    // Debounce text input for suggestions
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedText(text);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [text]);
+
+    // Generate suggestions based on debounced text
+    useEffect(() => {
+        if (!showSuggestions || !debouncedText.trim() || debouncedText.trim().length < 2) {
+            // Only update if there are currently suggestions to clear
+            setSuggestions(prev => prev.length > 0 ? [] : prev);
+            setShowSuggestionsDropdown(prev => prev ? false : prev);
+            return;
+        }
+
+        const searchTerm = debouncedText.trim().toLowerCase();
+        const suggestionMap = new Map();
+
+        // Search through products and collect unique suggestions
+        productData.forEach(product => {
+            // Category suggestions
+            if (product.categoryname && product.categoryname.toLowerCase().includes(searchTerm)) {
+                const key = `category-${product.categoryname}`;
+                if (!suggestionMap.has(key)) {
+                    suggestionMap.set(key, {
+                        type: 'category',
+                        label: product.categoryname,
+                        value: product.categoryname,
+                        filterCategory: 'Category',
+                        count: 1
+                    });
+                } else {
+                    suggestionMap.get(key).count++;
+                }
+            }
+
+            // Collection suggestions
+            if (product.collectionname && product.collectionname.toLowerCase().includes(searchTerm)) {
+                const key = `collection-${product.collectionname}`;
+                if (!suggestionMap.has(key)) {
+                    suggestionMap.set(key, {
+                        type: 'collection',
+                        label: product.collectionname,
+                        value: product.collectionname,
+                        filterCategory: 'Collection',
+                        count: 1
+                    });
+                } else {
+                    suggestionMap.get(key).count++;
+                }
+            }
+
+            // Brand suggestions
+            if (product.brandname && product.brandname.toLowerCase().includes(searchTerm)) {
+                const key = `brand-${product.brandname}`;
+                if (!suggestionMap.has(key)) {
+                    suggestionMap.set(key, {
+                        type: 'brand',
+                        label: product.brandname,
+                        value: product.brandname,
+                        filterCategory: 'Brand',
+                        count: 1
+                    });
+                } else {
+                    suggestionMap.get(key).count++;
+                }
+            }
+
+            // Metal Type suggestions
+            if (product.metaltype && product.metaltype.toLowerCase().includes(searchTerm)) {
+                const key = `metaltype-${product.metaltype}`;
+                if (!suggestionMap.has(key)) {
+                    suggestionMap.set(key, {
+                        type: 'metaltype',
+                        label: product.metaltype,
+                        value: product.metaltype,
+                        filterCategory: 'Metal',
+                        count: 1
+                    });
+                } else {
+                    suggestionMap.get(key).count++;
+                }
+            }
+
+            // Metal Color suggestions
+            if (product.metalcolor && product.metalcolor.toLowerCase().includes(searchTerm)) {
+                const key = `metalcolor-${product.metalcolor}`;
+                if (!suggestionMap.has(key)) {
+                    suggestionMap.set(key, {
+                        type: 'metalcolor',
+                        label: product.metalcolor,
+                        value: product.metalcolor,
+                        filterCategory: 'Metal Color',
+                        count: 1
+                    });
+                } else {
+                    suggestionMap.get(key).count++;
+                }
+            }
+        });
+
+        // Convert to array and limit to top 10
+        const suggestionArray = Array.from(suggestionMap.values())
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
+        setSuggestions(suggestionArray);
+        setShowSuggestionsDropdown(suggestionArray.length > 0);
+    }, [debouncedText, productData, showSuggestions]);
 
     // Load Filter Data on Mount (Single Fetch, but wait for auth)
     useEffect(() => {
@@ -298,6 +416,15 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         if (alwaysExpanded) return;
         if (!isSettingsOpen && !activeDropdown) {
             setIsExpanded(false);
+        }
+        setShowSuggestionsDropdown(false);
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        setShowSuggestionsDropdown(false);
+        setText("");
+        if (onSuggestionClick) {
+            onSuggestionClick(suggestion);
         }
     };
 
@@ -639,6 +766,16 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             </Fade>
                         )}
                     </Box>
+
+                    {/* Search Suggestions */}
+                    {showSuggestions && (
+                        <SearchSuggestions
+                            suggestions={suggestions}
+                            onSuggestionClick={handleSuggestionClick}
+                            isVisible={showSuggestionsDropdown && isExpanded}
+                            searchTerm={text}
+                        />
+                    )}
                 </Paper>
             </Box>
         </ClickAwayListener>

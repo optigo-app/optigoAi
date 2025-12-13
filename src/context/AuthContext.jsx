@@ -154,6 +154,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const decodeBase64 = (str) => {
   try {
@@ -174,6 +175,8 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   const getQueryParams = () => {
     const token = Cookies.get('skey');
@@ -197,6 +200,12 @@ export const AuthProvider = ({ children }) => {
 
     return decodedPayload;
   };
+
+  useEffect(() => {
+    if (searchParams.get('FE')) {
+      sessionStorage.setItem("urlParams", 'fe')
+    }
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
