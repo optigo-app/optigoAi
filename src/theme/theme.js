@@ -8,6 +8,7 @@ const theme = createTheme({
       light: 'rgba(115, 103, 240, 0.7)',
       dark: '#5e56d6',
       contrastText: '#ffffff',
+      danger: '#dc3545',
     },
     secondary: {
       main: '#82868b',

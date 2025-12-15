@@ -93,10 +93,20 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 0.5,
-                    ...(category?.items?.length > 10 && {
+                    ...(category?.items?.length > 5 && {
                         maxHeight: '200px',
                         overflowY: 'auto',
-                        pr: 1
+                        pr: 1,
+                        '&::-webkit-scrollbar': {
+                            width: '4px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            background: 'transparent',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            background: '#e0e0e0',
+                            borderRadius: '4px',
+                        }
                     })
                 }}>
                     {category?.items?.map((item) => (

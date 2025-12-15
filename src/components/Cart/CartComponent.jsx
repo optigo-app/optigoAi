@@ -18,6 +18,9 @@ import {
 } from '@mui/material';
 import { useCart } from '@/context/CartContext';
 import GridBackground from '../Common/GridBackground';
+import ReusableConfirmModal from '../Common/ReusableConfirmModal';
+import ProductModal from '../Product/ProductModal';
+import FullPageLoader from '../FullPageLoader';
 
 const LucideIconWrapper = ({ Icon, size = 24, ...props }) => (
     <Box component="span" sx={{ display: 'flex', alignItems: 'center' }} {...props}>
@@ -27,12 +30,30 @@ const LucideIconWrapper = ({ Icon, size = 24, ...props }) => (
 
 const CartPageMUI = () => {
     const router = useRouter();
-
-    const { items: cartItems, removeFromCart, clearCart, totalCount, hasHydrated } = useCart();
+    const { items: cartItems, removeFromCart, addToCart, clearCart, totalCount, hasHydrated, loading } = useCart();
+    const [openConfirmModal, setOpenConfirmModal] = useState(false);
+    const [confirmModalType, setConfirmModalType] = useState(null);
 
     const [imageStates, setImageStates] = useState({});
 
+    // Product Modal State
+    const [openProductModal, setOpenProductModal] = useState(false);
+    const [selectedProductIndex, setSelectedProductIndex] = useState(0);
+
     const handleClearCart = () => {
+        console.log("Clear cart");
+        setOpenConfirmModal(true);
+        setConfirmModalType('clearCart');
+    };
+
+    const handleCloseConfirmModal = () => {
+        setOpenConfirmModal(false);
+        setConfirmModalType(null);
+    };
+
+    const handleConfirmModalConfirm = () => {
+        setOpenConfirmModal(false);
+        setConfirmModalType(null);
         clearCart();
     };
 
@@ -42,6 +63,11 @@ const CartPageMUI = () => {
 
     const handleBack = () => {
         router.push('/product');
+    };
+
+    const handleProductClick = (index) => {
+        setSelectedProductIndex(index);
+        setOpenProductModal(true);
     };
 
     const handleContinue = () => {
@@ -59,38 +85,7 @@ const CartPageMUI = () => {
         return (
             <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Container maxWidth="false">
-                    <Box sx={{ textAlign: 'center' }}>
-                        {/* Loading text with gradient */}
-                        <Typography
-                            variant="h4"
-                            sx={{
-                                mt: 2,
-                                mb: 3,
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                backgroundClip: 'text',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                fontWeight: 600
-                            }}
-                        >
-                            Loading your cart...
-                        </Typography>
-
-                        <Typography variant="body1" color="text.secondary">
-                            Please wait while we fetch your items
-                        </Typography>
-
-                        {/* Skeleton cards for visual feedback */}
-                        <Box sx={{ mt: 6, display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => (
-                                <Box key={item} sx={{ width: 450 }}>
-                                    <Skeleton variant="rectangular" width="100%" height={450} sx={{ borderRadius: 2, mb: 2 }} />
-                                    <Skeleton variant="text" width="80%" sx={{ mx: 'auto' }} />
-                                    <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
+                    <FullPageLoader open={hasHydrated} message="Loading..." subtitle="Please wait while we load your cart" />
                 </Container>
             </Box>
         );
@@ -98,8 +93,7 @@ const CartPageMUI = () => {
 
     return (
         <GridBackground>
-
-            <Container maxWidth="false" sx={{ position: "relative", zIndex: 2 }}>
+            <Container maxWidth="false" sx={{ position: "relative", zIndex: 2, marginBottom: "60px" }}>
                 <Box
                     sx={{
                         mb: 1,
@@ -152,6 +146,7 @@ const CartPageMUI = () => {
                                 textTransform: 'none',
                                 textDecoration: 'underline',
                                 boxShadow: 'none',
+                                color: 'error.main',
                             }}
                         >
                             Clear Cart
@@ -184,6 +179,7 @@ const CartPageMUI = () => {
                                 }}
                             >
                                 <Card
+                                    onClick={() => handleProductClick(index)}
                                     sx={{
                                         position: 'relative',
                                         overflow: 'hidden',
@@ -308,6 +304,20 @@ const CartPageMUI = () => {
                 )}
 
             </Container>
+            <ReusableConfirmModal
+                open={openConfirmModal}
+                onClose={handleCloseConfirmModal}
+                onConfirm={handleConfirmModalConfirm}
+                type={confirmModalType} />
+
+            <ProductModal
+                open={openProductModal}
+                onClose={() => setOpenProductModal(false)}
+                product={cartItems[selectedProductIndex]}
+                products={cartItems}
+                startIndex={selectedProductIndex}
+                onAddToCart={addToCart}
+            />
         </GridBackground>
     );
 };

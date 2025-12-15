@@ -8,6 +8,7 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [hasHydrated, setHasHydrated] = useState(false);
   const saveTimeoutRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -68,8 +69,15 @@ export function CartProvider({ children }) {
     setItems((prev) => prev.filter((item) => item.id !== productId));
   }, []);
 
-  const clearCart = useCallback(() => {
-    setItems([]);
+  const clearCart = useCallback(async () => {
+    try {
+      setLoading(true);
+      await setItems([]);
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const isItemInCart = useCallback((productId) => {
@@ -83,7 +91,7 @@ export function CartProvider({ children }) {
 
   const value = useMemo(
     () => ({ items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated, isItemInCart }),
-    [items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated, isItemInCart]
+    [items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated, isItemInCart, loading]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

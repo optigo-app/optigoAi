@@ -531,7 +531,7 @@ export default function ProductClient() {
                         borderRadius: 2,
                     }}
                 >
-                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                         <IconButton
                             onClick={() => router.push('/')}
                             sx={{ color: 'text.primary' }}

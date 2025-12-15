@@ -207,14 +207,14 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
 
   const toggleAccordion = useCallback((toggledCategory) => {
     setFilters(prev => {
-        return prev.map(category => {
-            if (category.name === toggledCategory.name) {
-                return { ...category, expanded: !category.expanded };
-            }
-            return category;
-        });
+      return prev.map(category => {
+        if (category.name === toggledCategory.name) {
+          return { ...category, expanded: !category.expanded };
+        }
+        return category;
+      });
     });
-}, []);
+  }, []);
 
   const toggleFilterItem = useCallback((categoryName, item, e) => {
     e.stopPropagation();
@@ -277,9 +277,9 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
         const categoryNameMatches = category.name.toLowerCase().includes(lowercasedSearchTerm);
 
         if (categoryNameMatches || filteredItems.length > 0) {
-          return { 
-            ...category, 
-            items: categoryNameMatches ? category.items : filteredItems 
+          return {
+            ...category,
+            items: categoryNameMatches ? category.items : filteredItems
           };
         }
         return null;
@@ -289,21 +289,21 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
 
   useEffect(() => {
     if (debouncedSearchTerm) {
-        const updatedFilters = filters.map(category => {
-            const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
-            const categoryNameMatches = category.name.toLowerCase().includes(lowercasedSearchTerm);
-            const filteredItems = category.items.filter(item =>
-                item.name.toLowerCase().includes(lowercasedSearchTerm)
-            );
+      const updatedFilters = filters.map(category => {
+        const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
+        const categoryNameMatches = category.name.toLowerCase().includes(lowercasedSearchTerm);
+        const filteredItems = category.items.filter(item =>
+          item.name.toLowerCase().includes(lowercasedSearchTerm)
+        );
 
-            if (!categoryNameMatches && filteredItems.length > 0) {
-                return { ...category, expanded: true };
-            }
-            return category;
-        });
-        setFilters(updatedFilters);
+        if (!categoryNameMatches && filteredItems.length > 0) {
+          return { ...category, expanded: true };
+        }
+        return category;
+      });
+      setFilters(updatedFilters);
     }
-}, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm]);
 
   const categoryCounts = useMemo(() => {
     const counts = {};
