@@ -226,7 +226,7 @@ const Home = () => {
                 >
                     <Box>
                         <Image
-                            src="/AI.svg"
+                            src="/favicon.svg"
                             alt="Hero Image"
                             width={70}
                             height={70}

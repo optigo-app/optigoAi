@@ -54,6 +54,7 @@ const FullPageLoader = ({ open, message = "Loading...", subtitle }) => {
                             sx={{
                                 width: 40,
                                 height: 40,
+                                borderRadius: '50%',
                                 animation: 'pulse 2s infinite ease-in-out'
                             }}
                         />

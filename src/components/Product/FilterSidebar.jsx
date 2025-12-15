@@ -28,7 +28,7 @@ const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => 
         sx={{
             display: 'flex',
             alignItems: 'center',
-            p: 1,
+            p: 0.5,
             borderRadius: 1,
             cursor: 'pointer',
             bgcolor: isSelected ? 'primary.light' : 'transparent',
@@ -71,14 +71,14 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                 border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: '8px !important',
-                overflow: 'hidden'
+                overflow: 'hidden',
             }}
         >
             <AccordionSummary
                 expandIcon={<ChevronDown size={18} />}
                 sx={{
                     bgcolor: 'background.paper',
-                    '&.Mui-expanded': { minHeight: 48 }
+                    '&.Mui-expanded': { minHeight: 40 }
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 1 }}>
@@ -88,13 +88,13 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                 </Box>
             </AccordionSummary>
 
-            <AccordionDetails className="filterSidebar__details" sx={{ p: 1 }}>
+            <AccordionDetails className="filterSidebar__details" sx={{ p: 1, pt: 0 }}>
                 <Box sx={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 0.5,
                     ...(category?.items?.length > 5 && {
-                        maxHeight: '200px',
+                        maxHeight: '280px',
                         overflowY: 'auto',
                         pr: 1,
                         '&::-webkit-scrollbar': {
@@ -233,7 +233,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                 if (category.name === toggledCategory.name) {
                     return { ...category, expanded: !category.expanded };
                 }
-                return category;
+                return { ...category, expanded: false }; // Close other accordions
             });
         });
     }, []);
@@ -450,7 +450,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                 </Box>
 
                 {/* Footer */}
-                <Box className="filterSidebar__footer" sx={{
+                {/* <Box className="filterSidebar__footer" sx={{
                     p: 2,
                     borderTop: '1px solid',
                     borderColor: 'divider',
@@ -466,11 +466,12 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                             textTransform: 'none',
                             fontWeight: 600,
                             boxShadow: 'none',
+                            bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 50 : 0
                         }}
                     >
                         Done
                     </Button>
-                </Box>
+                </Box> */}
             </Box>
         </>
     );

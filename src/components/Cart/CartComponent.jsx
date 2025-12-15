@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2, ArrowLeft, ArrowRightCircle, ShoppingCart } from 'lucide-react';
-import dynamic from "next/dynamic";
 
 import {
     Container,
@@ -14,7 +13,6 @@ import {
     Card,
     CardMedia,
     CardContent,
-    Skeleton,
 } from '@mui/material';
 import { useCart } from '@/context/CartContext';
 import GridBackground from '../Common/GridBackground';
@@ -166,17 +164,11 @@ const CartPageMUI = () => {
                     </Box>
                 )}
                 {cartItems.length > 0 ? (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={2}>
                         {cartItems.map((item, index) => (
                             <Grid
                                 key={`${item.id}-${index}`}
-                                size={{
-                                    xs: 6,
-                                    sm: 4,
-                                    md: 3,
-                                    lg: 3,
-                                    xl: 2.4,
-                                }}
+                                size={{ xs: 6, sm: 4, md: 3, lg: 3, xl: 2 }}
                             >
                                 <Card
                                     onClick={() => handleProductClick(index)}
@@ -197,10 +189,10 @@ const CartPageMUI = () => {
                                         onClick={() => handleRemoveItem(item.id)}
                                         sx={{
                                             position: 'absolute',
-                                            top: 16,
-                                            right: 16,
+                                            top: 8,
+                                            right: 8,
                                             bgcolor: 'white',
-                                            boxShadow: 2,
+                                            boxShadow: '0 0 8px rgba(0,0,0,0.1)',
                                             zIndex: 10,
                                             '&:hover': { bgcolor: 'error.main', color: 'error.light' },
                                         }}
@@ -211,7 +203,7 @@ const CartPageMUI = () => {
                                         sx={{
                                             position: "relative",
                                             width: "100%",
-                                            pt: "100%", // 1:1 aspect ratio
+                                            pt: "100%",
                                             overflow: "hidden",
                                         }}
                                     >
@@ -235,7 +227,7 @@ const CartPageMUI = () => {
 
                                     {/* Product Details */}
                                     <CardContent sx={{ pb: '0 !important', padding: '10px !important' }}>
-                                        <Typography variant="h6" fontWeight="500" align="center">
+                                        <Typography variant="body1" fontWeight="500" align="center" className='code'>
                                             {item.designno || item.name}
                                         </Typography>
                                     </CardContent>

@@ -208,6 +208,49 @@ export default function ProductModal({ open, onClose, product, products = [], st
                             </Grid>
                         </SwiperSlide>
                     ))}
+
+                    {/* Custom Navigation Buttons */}
+                    <IconButton
+                        className="swiper-button-prev"
+                        sx={{
+                            position: 'absolute',
+                            left: 16,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 10,
+                            backgroundColor: 'rgba(115, 103, 240, 0.8)',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: 'rgba(115, 103, 240, 0.9)',
+                            },
+                            transition: 'all 0.3s ease',
+                            width: 40,
+                            height: 40
+                        }}
+                    >
+                        <ChevronLeft size={24} color='white' />
+                    </IconButton>
+
+                    <IconButton
+                        className="swiper-button-next"
+                        sx={{
+                            position: 'absolute',
+                            right: 16,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            zIndex: 10,
+                            backgroundColor: 'rgba(115, 103, 240, 0.8)',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: 'rgba(115, 103, 240, 0.9)',
+                            },
+                            transition: 'all 0.3s ease',
+                            width: 40,
+                            height: 40
+                        }}
+                    >
+                        <ChevronRight size={24} color='white' />
+                    </IconButton>
                 </Swiper>
             </DialogContent>
 
