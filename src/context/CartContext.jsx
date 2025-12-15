@@ -72,14 +72,18 @@ export function CartProvider({ children }) {
     setItems([]);
   }, []);
 
+  const isItemInCart = useCallback((productId) => {
+    return items.some(item => item.id === productId);
+  }, [items]);
+
   const totalCount = useMemo(
     () => items.reduce((sum, item) => sum + (item.quantity || 1), 0),
     [items]
   );
 
   const value = useMemo(
-    () => ({ items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated }),
-    [items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated]
+    () => ({ items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated, isItemInCart }),
+    [items, addToCart, removeFromCart, clearCart, totalCount, hasHydrated, isItemInCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

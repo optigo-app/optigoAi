@@ -15,7 +15,7 @@ import {
 import {
     Image as ImageIcon,
     X,
-    ArrowUp,
+    ArrowRight,
     ImagePlus,
     Settings2,
     Layers,
@@ -236,7 +236,6 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     }, []);
 
     const getItemsForCategory = (categoryName) => {
-        console.log("categoryName", categoryName);
         let target = categoryName;
         if (categoryName === 'Category') target = 'Category';
         if (categoryName === 'Gender') target = 'Gender';
@@ -579,7 +578,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                                         <Tooltip title="Search">
                                             <IconButton className="send-btn" onClick={handleSend}>
-                                                <ArrowUp size={20} />
+                                                <ArrowRight size={20} />
                                             </IconButton>
                                         </Tooltip>
                                     </Box>
@@ -613,7 +612,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                                     <Tooltip title="Search">
                                         <IconButton className="send-btn" onClick={handleSend}>
-                                            <ArrowUp size={20} />
+                                            <ArrowRight size={20} />
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
@@ -697,21 +696,20 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                             {showMoreFiltersButton && (
                                 <Button
-                                    variant="text"
+                                    variant="contained"
                                     size="small"
                                     className="quick-filter-btn"
                                     onClick={onFilterClick}
-                                    sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600 }}
                                 >
                                     More Filters
                                 </Button>
                             )}
                             {!showMoreFiltersButton && (
                                 <Button
-                                    variant="outline"
+                                    variant="contained"
                                     size="small"
                                     onClick={handleSend}
-                                    sx={{ color: 'primary.main', textTransform: 'none', fontWeight: '800px !important' }}
+                                    className="quick-filter-btn"
                                 >
                                     View Catalogue
                                 </Button>

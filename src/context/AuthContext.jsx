@@ -109,7 +109,6 @@
 //   // }, [pathname, searchParams, router]);
 
 //   useEffect(() => {
-//     debugger
 //     if (typeof window !== 'undefined') {
 //       if (!Cookies.get('skey')) {
 //         const hostname = window.location.hostname;

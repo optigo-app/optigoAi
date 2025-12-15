@@ -75,8 +75,6 @@ const TypewriterText = ({ text }) => {
     );
 };
 
-
-
 const upcomingFeatures = [
     "ERP Intelligence on Your Private Cloud",
     "Search by Photo",
@@ -228,17 +226,26 @@ const Home = () => {
                 >
                     <Box>
                         <Image
-                            src="/icons/base-icon.svg"
+                            src="/AI.svg"
                             alt="Hero Image"
-                            width={60}
-                            height={60}
+                            width={70}
+                            height={70}
                             priority
+                            draggable={false}
                             style={{
                                 maxWidth: '100%',
                                 height: 'auto',
                                 marginBottom: 2,
+                                borderRadius: '50%',
+                                cursor: 'none',
+                                userSelect: 'none',
+                                WebkitUserDrag: 'none',
+                                pointerEvents: 'auto',
                             }}
+                            onDragStart={(e) => e.preventDefault()}
                         />
+
+
                     </Box>
                 </Box>
 

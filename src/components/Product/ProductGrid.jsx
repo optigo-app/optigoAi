@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
-import { Grid, Box, Typography, Button } from '@mui/material';
+import { Grid, Box, Typography, Button, Skeleton } from '@mui/material';
 import { SearchX } from 'lucide-react';
 import ProductCard from './ProductCard';
 
@@ -8,7 +8,8 @@ const ProductGrid = memo(function ProductGrid({
   designData,
   appliedFilters,
   clearAllFilters,
-  onSearchSimilar
+  onSearchSimilar,
+  loading = false
 }) {
   const ITEMS_PER_LOAD = 24;
 
@@ -65,6 +66,45 @@ const ProductGrid = memo(function ProductGrid({
     setVisibleCount(ITEMS_PER_LOAD);
     loadingRef.current = false;
   }, [designData]);
+
+  // Loading State
+  if (loading) {
+    return (
+      <Box>
+        <Grid container spacing={2}>
+          {Array.from({ length: 24 }).map((_, index) => (
+            <Grid
+              key={`skeleton-${index}`}
+              size={{ xs: 6, sm: 4, md: 3, lg: 3, xl: 2 }}
+            >
+              <Box sx={{
+                borderRadius: '16px',
+                overflow: 'hidden',
+                bgcolor: 'background.paper',
+                height: '100%'
+              }}>
+                <Box sx={{ pt: '100%', position: 'relative', bgcolor: 'grey.100' }}>
+                  <Skeleton
+                    variant="rectangular"
+                    animation="wave"
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "4px",
+                      bgcolor: 'grey.100'
+                    }}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
 
   // Empty result UI
   if (designData.length === 0 && appliedFilters.length > 0) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useCart } from '@/context/CartContext';
 import {
     Dialog,
     DialogTitle,
@@ -43,8 +44,9 @@ const swiperStyles = `
   }
 `;
 
-export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, isInCart, onSearchSimilar }) {
+export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar }) {
     const [activeIndex, setActiveIndex] = useState(startIndex);
+    const { isItemInCart } = useCart();
 
     useEffect(() => {
         const styleElement = document.createElement('style');
@@ -249,28 +251,10 @@ export default function ProductModal({ open, onClose, product, products = [], st
                     >
                         <ChevronRight size={24} />
                     </IconButton>
-
-                    {/* Product counter */}
-                    <Box sx={{
-                        position: 'absolute',
-                        bottom: 16,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        backgroundColor: 'rgba(115, 103, 240, 0.9)',
-                        color: 'white',
-                        padding: '6px 16px',
-                        borderRadius: '16px',
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        zIndex: 10,
-                        boxShadow: '0 2px 8px rgba(115, 103, 240, 0.3)'
-                    }}>
-                        {activeIndex + 1} / {sliderProducts.length}
-                    </Box>
                 </Swiper>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, justifyContent: onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) ? 'space-between' : 'flex-end', backgroundColor: '#f5f5f5' }}>
+            <DialogActions sx={{ p: 3, justifyContent: onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) ? 'space-between' : 'flex-end', backgroundColor: '#fcfcfcff' }}>
                 {onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) && (
                     <Button
                         variant="outlined"
@@ -291,17 +275,37 @@ export default function ProductModal({ open, onClose, product, products = [], st
                         Search Similar
                     </Button>
                 )}
-                <Button
-                    variant="contained"
-                    startIcon={<ShoppingCart size={18} />}
-                    onClick={() => {
-                        if (!isInCart) onAddToCart(sliderProducts[activeIndex] || product);
-                        onClose();
-                    }}
-                    disabled={isInCart}
-                >
-                    {isInCart ? 'In Cart' : 'Add to Cart'}
-                </Button>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="body2" sx={{
+                        fontWeight: 500,
+                        position: 'absolute',
+                        bottom: 25,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        backgroundColor: 'rgba(141, 141, 141, 0.5)',
+                        color: 'white',
+                        padding: '6px 16px',
+                        borderRadius: '16px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        zIndex: 10,
+                    }}>
+                        {activeIndex + 1} / {sliderProducts.length}
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={<ShoppingCart size={18} />}
+                        onClick={() => {
+                            const currentProduct = sliderProducts[activeIndex] || product;
+                            if (!isItemInCart(currentProduct.id)) {
+                                onAddToCart(currentProduct);
+                            }
+                        }}
+                        disabled={isItemInCart((sliderProducts[activeIndex] || product)?.id)}
+                    >
+                        {isItemInCart((sliderProducts[activeIndex] || product)?.id) ? 'In Cart' : 'Add to Cart'}
+                    </Button>
+                </Box>
             </DialogActions>
         </Dialog>
     );

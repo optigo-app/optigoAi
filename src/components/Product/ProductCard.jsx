@@ -29,12 +29,13 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
         return cartItems.some(item => item.id === product.id);
     }, [cartItems, product.id]);
 
-    const handleToggleCart = (product) => {
-        if (!product || !product.id) return;
-        if (isInCart) {
-            removeFromCart(product.id);
+    const handleToggleCart = (productToToggle) => {
+        if (!productToToggle || !productToToggle.id) return;
+        const isProductInCart = cartItems.some(item => item.id === productToToggle.id);
+        if (isProductInCart) {
+            removeFromCart(productToToggle.id);
         } else {
-            addToCart(product);
+            addToCart(productToToggle);
         }
     };
 
@@ -227,7 +228,7 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                     product={product}
                     products={products}
                     startIndex={index}
-                    onAddToCart={() => handleToggleCart(product)}
+                    onAddToCart={handleToggleCart}
                     isInCart={isInCart}
                     onSearchSimilar={onSearchSimilar}
                 />

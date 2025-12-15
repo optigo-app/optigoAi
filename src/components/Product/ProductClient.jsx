@@ -17,7 +17,7 @@ import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import FullPageLoader from "@/components/FullPageLoader";
-import FilterDrawer from "@/components/Product/FilterDrawer";
+import FilterSidebar from "@/components/Product/FilterSidebar";
 import PaginationControls from "@/components/PaginationControls";
 import { searchService } from "@/services/apiService";
 import Fuse from "fuse.js";
@@ -30,8 +30,29 @@ import { useRouter } from 'next/navigation';
 import { useProductData } from '@/context/ProductDataContext';
 import GridBackground from "@/components/Common/GridBackground";
 
+const CATEGORY_FIELD_MAP = {
+    'category': 'categoryname',
+    'subcategory': 'subcategoryname',
+    'collection': 'collectionname',
+    'product type': 'producttype',
+    'type': 'producttype',
+    'brand': 'brandname',
+    'gender': 'gendername',
+    'style': 'stylename',
+    'ocassion': 'occassionname',
+    'lab': 'labname',
+    'metal color': 'metalcolor',
+    'metal': 'metaltype',
+    'metal type': 'metaltype',
+    'diamond shape': 'diamondshape',
+    'shape': 'diamondshape',
+    'design#': 'designno',
+    'designno': 'designno'
+};
+
 export default function ProductClient() {
     const [isSearchLoading, setIsSearchLoading] = useState(false);
+    const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const { totalCount } = useCart();
     const router = useRouter();
@@ -111,7 +132,6 @@ export default function ProductClient() {
                     if (searchData.image && typeof searchData.image === "string" && searchData.image.startsWith("data:")) {
                         searchData.image = base64ToFile(searchData.image, "uploaded-image.png");
                     }
-                    console.log("Decoded searchData:", searchData);
                     handleSubmit(searchData);
                     if (Array.isArray(searchData.filters) && searchData.filters.length > 0) {
                         setAppliedFilters(searchData.filters);
@@ -164,7 +184,6 @@ export default function ProductClient() {
 
     const finalFilteredProducts = useMemo(() => {
         let temp = baseDataset;
-
         // Apply drawer filters (exclude search chips)
         const drawerFilters = appliedFilters.filter(
             (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
@@ -180,45 +199,20 @@ export default function ProductClient() {
                 return Object.entries(filtersByCategory).every(([category, items]) => {
                     return items.some((item) => {
                         const categoryLower = category.toLowerCase();
+                        let productKey = CATEGORY_FIELD_MAP[categoryLower];
 
-                        // Optimized field mapping
-                        const fieldMap = {
-                            'category': product.categoryname,
-                            'subcategory': product.subcategoryname,
-                            'sub category': product.subcategoryname,
-                            'collection': product.collectionname,
-                            'product type': product.producttype,
-                            'type': product.producttype,
-                            'brand': product.brandname,
-                            'lab': product.labname,
-                            'metal color': product.metalcolor,
-                            'metal': product.metaltype,
-                            'diamond shape': product.diamondshape,
-                            'shape': product.diamondshape,
-                            'design#': product.designno,
-                            'designno': product.designno,
-                        };
-
-                        // Find matching field
-                        let fieldValue = "";
-                        for (const [key, value] of Object.entries(fieldMap)) {
-                            if (categoryLower.includes(key)) {
-                                fieldValue = value;
-                                break;
-                            }
+                        // Fallback: try to find a partial match if exact match fails
+                        if (!productKey) {
+                            const match = Object.keys(CATEGORY_FIELD_MAP).find(key => categoryLower.includes(key));
+                            if (match) productKey = CATEGORY_FIELD_MAP[match];
                         }
 
-                        // Fallback if no match
-                        // if (!fieldValue) {
-                        //     fieldValue = product.categoryname || product.collectionname || product.metaltype;
-                        // }
-
-                        // Case-insensitive partial matching
+                        const fieldValue = productKey ? product[productKey] : "";
                         const fieldValueLower = (fieldValue || "").toLowerCase();
                         const itemNameLower = (item.name || "").toLowerCase();
 
                         return (
-                            fieldValueLower.includes(itemNameLower) ||
+                            fieldValueLower === itemNameLower ||
                             product.MasterManagement_DiamondStoneTypeid === item.id
                         );
                     });
@@ -265,19 +259,22 @@ export default function ProductClient() {
     }, [finalFilteredProducts]);
 
     const handleApplyFilters = useCallback((applied) => {
-        // Preserve existing search filters and combine with new drawer filters
+        setIsFilterLoading(true);
         const searchFilters = appliedFilters.filter(
             (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
         );
 
-        // Separate drawer filters from the applied filters
         const drawerFilters = applied.filter(
             (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
         );
 
-        // Combine search filters with drawer filters
         const allAppliedFilters = [...searchFilters, ...drawerFilters];
-        setAppliedFilters(allAppliedFilters);
+
+        // Artificial delay to show loading state
+        setTimeout(() => {
+            setAppliedFilters(allAppliedFilters);
+            setIsFilterLoading(false);
+        }, 800);
     }, [appliedFilters]);
 
     const handleSearch = useCallback((term) => {
@@ -304,10 +301,7 @@ export default function ProductClient() {
     }, []);
 
     const handleSuggestionClick = useCallback((suggestion) => {
-        // Verify suggestion has necessary data
         if (!suggestion || !suggestion.value) return;
-
-        // Add as a filter
         const newFilter = {
             category: suggestion.filterCategory || 'Search',
             item: {
@@ -316,8 +310,6 @@ export default function ProductClient() {
                 value: suggestion.value
             }
         };
-
-        // Check if already exists to prevent duplicates
         setAppliedFilters(prev => {
             const exists = prev.some(f =>
                 f.category === newFilter.category &&
@@ -371,12 +363,10 @@ export default function ProductClient() {
     }
 
     const handleSubmit = useCallback(async (searchData) => {
-
         if (!searchData?.isSearchFlag || searchData.isSearchFlag === 0) {
             console.log('No search criteria provided, showing all products');
             return;
         }
-
         setLastSearchData(searchData);
         setError(null);
         setIsSearchLoading(true);
@@ -511,7 +501,6 @@ export default function ProductClient() {
 
     useEffect(() => {
         let mounted = true;
-
         const loadData = async () => {
             try {
                 await fetchProductData();
@@ -520,23 +509,18 @@ export default function ProductClient() {
                 if (mounted) setError("Failed to load products");
             }
         };
-
         loadData();
         return () => {
             mounted = false;
         };
     }, [fetchProductData]);
 
-    // Use context loading state instead of local loading
     const loading = isLoadingProducts;
-
     if (loading) return <FullPageLoader open={true} />;
 
     return (
         <GridBackground>
-
-
-            <Container maxWidth={false} sx={{ px: 2, pb: 12, position: "relative", zIndex: 2 }} disableGutters>
+            <Container maxWidth={false} sx={{ px: 2, pb: 12, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 2 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
                 <Box
                     sx={{
                         display: "flex",
@@ -643,6 +627,7 @@ export default function ProductClient() {
                                 appliedFilters={appliedFilters}
                                 clearAllFilters={clearAllFilters}
                                 onSearchSimilar={handleSearchSimilar}
+                                loading={isFilterLoading}
                             />
                         </Box>
                     </Fade>
@@ -652,10 +637,11 @@ export default function ProductClient() {
             <Box className="modernSearchInputBox" sx={{
                 position: "fixed",
                 bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 120 : 50,
-                left: 0,
+                left: { xs: 0, md: isFilterOpen ? '320px' : 0 },
                 right: 0,
                 p: 2,
-                zIndex: 1000
+                zIndex: 1000,
+                transition: 'left 0.4s cubic-bezier(0.86, 0, 0.07, 1)'
             }}>
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
                     <ModernSearchBar
@@ -673,7 +659,7 @@ export default function ProductClient() {
                 <ScrollToTop bottom={urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 70 : 24} />
             </Box>
 
-            <FilterDrawer
+            <FilterSidebar
                 isOpen={isFilterOpen}
                 onClose={() => setIsFilterOpen(false)}
                 onApply={handleApplyFilters}

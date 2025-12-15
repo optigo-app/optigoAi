@@ -50,7 +50,6 @@ export const searchService = {
   },
 
   async searchByText(query, params = {}) {
-    debugger
     if (!query || query.trim() === '') {
       throw new Error(API_ERROR_MESSAGES.INVALID_QUERY);
     }
