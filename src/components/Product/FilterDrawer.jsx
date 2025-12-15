@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { TextField, InputAdornment } from "@mui/material";
 import {
   Drawer,
   Accordion,
@@ -12,11 +13,12 @@ import {
   Typography,
   Skeleton,
 } from "@mui/material";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Search } from "lucide-react";
 
 import "../../Style/FilterDrawer.scss";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
+import useDebounce from "@/hooks/useDebounce";
 
 const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => (
   <Box
@@ -56,7 +58,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
   return (
     <Accordion
       expanded={expanded}
-      onChange={() => onToggleAccordion(index)}
+      onChange={() => onToggleAccordion(category)}
       disableGutters
       className="filterDrawer__accordion"
       TransitionProps={{ unmountOnExit: true }}
@@ -115,6 +117,8 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isPending, startTransition] = React.useTransition();
   const [shouldRenderFilters, setShouldRenderFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const ignoreNextUpdate = React.useRef(false);
 
@@ -201,13 +205,16 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
     setSelectedFilters(newSelected);
   }, [isOpen, filterLookup, appliedFilters]);
 
-  const toggleAccordion = useCallback((index) => {
+  const toggleAccordion = useCallback((toggledCategory) => {
     setFilters(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], expanded: !updated[index].expanded };
-      return updated;
+        return prev.map(category => {
+            if (category.name === toggledCategory.name) {
+                return { ...category, expanded: !category.expanded };
+            }
+            return category;
+        });
     });
-  }, []);
+}, []);
 
   const toggleFilterItem = useCallback((categoryName, item, e) => {
     e.stopPropagation();
@@ -238,6 +245,10 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
     });
   }, [filters, appliedFilters, onApply, selectedFilters]);
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
   const handleClearAll = useCallback(() => {
     const next = new Set();
     setSelectedFilters(next);
@@ -249,6 +260,50 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
       onApply?.(preservedFilters);
     });
   }, [appliedFilters, filters, onApply]);
+
+  const filteredFilters = useMemo(() => {
+    if (!debouncedSearchTerm) {
+      return filters;
+    }
+
+    const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
+
+    return filters
+      .map(category => {
+        const filteredItems = category.items.filter(item =>
+          item.name.toLowerCase().includes(lowercasedSearchTerm)
+        );
+
+        const categoryNameMatches = category.name.toLowerCase().includes(lowercasedSearchTerm);
+
+        if (categoryNameMatches || filteredItems.length > 0) {
+          return { 
+            ...category, 
+            items: categoryNameMatches ? category.items : filteredItems 
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [filters, debouncedSearchTerm]);
+
+  useEffect(() => {
+    if (debouncedSearchTerm) {
+        const updatedFilters = filters.map(category => {
+            const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
+            const categoryNameMatches = category.name.toLowerCase().includes(lowercasedSearchTerm);
+            const filteredItems = category.items.filter(item =>
+                item.name.toLowerCase().includes(lowercasedSearchTerm)
+            );
+
+            if (!categoryNameMatches && filteredItems.length > 0) {
+                return { ...category, expanded: true };
+            }
+            return category;
+        });
+        setFilters(updatedFilters);
+    }
+}, [debouncedSearchTerm]);
 
   const categoryCounts = useMemo(() => {
     const counts = {};
@@ -300,6 +355,24 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
         </Box>
       </Box>
 
+      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          size="small"
+          placeholder="Search filters..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search size={18} color="gray" />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       <Box className="filterDrawer__content">
         {!shouldRenderFilters || (loadingFilters && !hasLoaded) ? (
           <Box>
@@ -310,7 +383,7 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
             ))}
           </Box>
         ) : (
-          filters?.map((category, index) => (
+          filteredFilters?.map((category, index) => (
             <FilterCategory
               key={`${category.name}-${index}`}
               category={category}

@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
 import { useAuth } from "@/context/AuthContext";
+import GridBackground from "../Common/GridBackground";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -165,50 +166,8 @@ const Home = () => {
     };
 
     return (
-        <Box
-            sx={{
-                minHeight: "100vh",
-                background: "#f8f9fa",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                pt: "05vh",
-                position: "relative",
-                overflow: "hidden",
-            }}
-        >
-            {/* --- GRID & GRADIENT OVERLAY --- */}
+        <GridBackground>
             <GradientWaves />
-            {/* <MouseOrbs count={15} /> */}
-
-            <Box
-                sx={{
-                    position: "absolute",
-                    inset: 0,
-                    backgroundImage: "linear-gradient(rgba(115, 103, 240, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(115, 103, 240, 0.03) 1px, transparent 1px)",
-                    backgroundSize: "40px 40px",
-                    width: "100%",
-                    height: "100%",
-                    zIndex: 0,
-                    pointerEvents: "none"
-                }}
-            />
-            {/* Center Glow */}
-            <Box sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "70vw",
-                height: "70vw",
-                opacity: 0.5,
-                background: "radial-gradient(circle, rgba(115,103,240,0.18) 0%, transparent 60%)",
-                filter: "blur(100px)",
-                zIndex: 0
-            }} />
-
-
             {/* --- ANIMATED BLOBS (Side Accents) --- */}
             <motion.div
                 {...floatAnimation}
@@ -248,6 +207,7 @@ const Home = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    mt: 6
                 }}
             >
 
@@ -403,7 +363,7 @@ const Home = () => {
                 </Box>
 
             </Container>
-        </Box>
+        </GridBackground>
     );
 }
 

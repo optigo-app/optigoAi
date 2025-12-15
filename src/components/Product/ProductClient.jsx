@@ -28,6 +28,7 @@ import SimilarProductsModal from "./SimilarProductsModal";
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { useProductData } from '@/context/ProductDataContext';
+import GridBackground from "@/components/Common/GridBackground";
 
 export default function ProductClient() {
     const [isSearchLoading, setIsSearchLoading] = useState(false);
@@ -532,43 +533,7 @@ export default function ProductClient() {
     if (loading) return <FullPageLoader open={true} />;
 
     return (
-        <Box
-            sx={{
-                minHeight: "100vh",
-                background: "#f8f9fa",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                position: "relative",
-                overflow: "hidden",
-            }}
-        >
-            <Box
-                sx={{
-                    position: "absolute",
-                    inset: 0,
-                    backgroundImage: "linear-gradient(rgba(115, 103, 240, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(115, 103, 240, 0.03) 1px, transparent 1px)",
-                    backgroundSize: "40px 40px",
-                    width: "100%",
-                    height: "100%",
-                    zIndex: 0,
-                    pointerEvents: "none"
-                }}
-            />
-            {/* Center Glow */}
-            <Box sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "70vw",
-                height: "70vw",
-                opacity: 0.5,
-                background: "radial-gradient(circle, rgba(115,103,240,0.18) 0%, transparent 60%)",
-                filter: "blur(100px)",
-                zIndex: 0
-            }} />
+        <GridBackground>
 
 
             <Container maxWidth={false} sx={{ px: 2, pb: 12, position: "relative", zIndex: 2 }} disableGutters>
@@ -815,6 +780,6 @@ export default function ProductClient() {
                         : "Analyzing your design and matching collections"
                 }
             />
-        </Box>
+        </GridBackground>
     );
 }
