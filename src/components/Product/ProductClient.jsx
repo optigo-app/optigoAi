@@ -10,6 +10,7 @@ import {
     Chip,
     IconButton,
     Badge,
+    Tooltip,
 } from "@mui/material";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
 import productsData from "@/data/Product.json";
@@ -193,6 +194,8 @@ export default function ProductClient() {
                             'metal': product.metaltype,
                             'diamond shape': product.diamondshape,
                             'shape': product.diamondshape,
+                            'design#': product.designno,
+                            'designno': product.designno,
                         };
 
                         // Find matching field
@@ -205,9 +208,9 @@ export default function ProductClient() {
                         }
 
                         // Fallback if no match
-                        if (!fieldValue) {
-                            fieldValue = product.categoryname || product.collectionname || product.metaltype;
-                        }
+                        // if (!fieldValue) {
+                        //     fieldValue = product.categoryname || product.collectionname || product.metaltype;
+                        // }
 
                         // Case-insensitive partial matching
                         const fieldValueLower = (fieldValue || "").toLowerCase();
@@ -299,6 +302,31 @@ export default function ProductClient() {
         setError(null);
     }, []);
 
+    const handleSuggestionClick = useCallback((suggestion) => {
+        // Verify suggestion has necessary data
+        if (!suggestion || !suggestion.value) return;
+
+        // Add as a filter
+        const newFilter = {
+            category: suggestion.filterCategory || 'Search',
+            item: {
+                id: suggestion.id || suggestion.value,
+                name: suggestion.name || suggestion.label || suggestion.value,
+                value: suggestion.value
+            }
+        };
+
+        // Check if already exists to prevent duplicates
+        setAppliedFilters(prev => {
+            const exists = prev.some(f =>
+                f.category === newFilter.category &&
+                f.item.value === newFilter.item.value
+            );
+            if (exists) return prev;
+            return [...prev, newFilter];
+        });
+    }, []);
+
     const handlePageChange = useCallback((page) => {
         setIsTransitioning(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -306,7 +334,7 @@ export default function ProductClient() {
         setTimeout(() => {
             setCurrentPage(page);
             setIsTransitioning(false);
-        }, 200);
+        }, 100);
     }, []);
 
     function getMatchedDesignCollections(res = [], allDesignCollections = []) {
@@ -342,9 +370,7 @@ export default function ProductClient() {
     }
 
     const handleSubmit = useCallback(async (searchData) => {
-        console.log(searchData)
 
-        // If no search input (isSearchFlag = 0), just navigate without API call
         if (!searchData?.isSearchFlag || searchData.isSearchFlag === 0) {
             console.log('No search criteria provided, showing all products');
             return;
@@ -667,7 +693,17 @@ export default function ProductClient() {
                 zIndex: 1000
             }}>
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
-                    <ModernSearchBar onSubmit={handleSubmit} onFilterClick={() => setIsFilterOpen(true)} appliedFilters={appliedFilters} onApply={handleApplyFilters} />
+                    <ModernSearchBar
+                        onSubmit={handleSubmit}
+                        onFilterClick={() => setIsFilterOpen(true)}
+                        appliedFilters={appliedFilters}
+                        onApply={handleApplyFilters}
+                        alwaysExpanded={true}
+                        suggestionPosition="top"
+                        showSuggestions={true}
+                        productData={allDesignCollections}
+                        onSuggestionClick={handleSuggestionClick}
+                    />
                 </Box>
                 <ScrollToTop bottom={urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 70 : 24} />
             </Box>
@@ -700,7 +736,7 @@ export default function ProductClient() {
                 PaperProps={{
                     sx: {
                         p: 2,
-                        width: 280,
+                        width: 320,
                         borderRadius: 2,
                         boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                     }
@@ -726,37 +762,34 @@ export default function ProductClient() {
                         borderRadius: '3px',
                     }
                 }}>
-                    {filterPopoverItems.map(({ category, item }) => (
-                        <Chip
-                            key={item.id}
-                            label={item.name}
-                            size="small"
-                            sx={{
-                                maxWidth: '100%',
-                                justifyContent: 'space-between',
-                                '& .MuiChip-label': {
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: 'block',
-                                    flexGrow: 1,
-                                    pr: 0.5,
-                                },
-                                '& .MuiChip-deleteIcon': {
-                                    marginLeft: 'auto',
-                                    marginRight: 0,
-                                }
-                            }}
-                            onDelete={() => {
-                                removeFilter({ item });
-                                if (filterPopoverItems.length <= 2) {
-                                    handleFilterPopoverClose();
-                                } else {
-                                    setFilterPopoverItems(prev => prev.filter(i => i.item.id !== item.id));
-                                }
-                            }}
-                        />
-                    ))}
+                    {filterPopoverItems.map(({ category, item }) => {
+                        const isLong = item.name.length > 15;
+                        const label = isLong ? `${item.name.substring(0, 12)}...` : item.name;
+
+                        return (
+                            <Tooltip title={item.name} key={item.id} placement="top" disableHoverListener={!isLong}>
+                                <Chip
+                                    label={label}
+                                    size="small"
+                                    sx={{
+                                        maxWidth: '100%',
+                                        "&.MuiButtonBase-root": {
+                                            display: 'flex !important',
+                                            justifyContent: 'space-between !important'
+                                        }
+                                    }}
+                                    onDelete={() => {
+                                        removeFilter({ item });
+                                        if (filterPopoverItems.length <= 2) {
+                                            handleFilterPopoverClose();
+                                        } else {
+                                            setFilterPopoverItems(prev => prev.filter(i => i.item.id !== item.id));
+                                        }
+                                    }}
+                                />
+                            </Tooltip>
+                        );
+                    })}
                 </Box>
             </Popover>
 

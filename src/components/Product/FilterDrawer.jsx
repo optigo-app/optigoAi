@@ -105,6 +105,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
   if (!next.expanded) return true;
   return prev.selectedFilters === next.selectedFilters;
 });
+
 FilterCategory.displayName = 'FilterCategory';
 
 export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters = [], urlParamsFlag }) {
@@ -150,21 +151,55 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
     }
   }, [isOpen, hasLoaded, loadingFilters]);
 
+  const filterLookup = useMemo(() => {
+    const map = new Map();
+    filters.forEach(cat => {
+      cat.items.forEach(item => {
+        map.set(`${cat.name}-${item.id}`, `${cat.name}-${item.id}`);
+        if (item.name) {
+          map.set(`${cat.name}-${item.name.toLowerCase().trim()}`, `${cat.name}-${item.id}`);
+        }
+        if (item.value) {
+          map.set(`${cat.name}-${item.value.toLowerCase().trim()}`, `${cat.name}-${item.id}`);
+        }
+      });
+    });
+    return map;
+  }, [filters]);
+
   useEffect(() => {
     if (isOpen) {
       setShouldRenderFilters(false);
-      ignoreNextUpdate.current = true;
-      setSelectedFilters(new Set(appliedFilters.map(({ category, item }) => `${category}-${item.id}`)));
-
       const timer = setTimeout(() => {
         setShouldRenderFilters(true);
       }, 100);
-
       return () => clearTimeout(timer);
     } else {
       setShouldRenderFilters(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const newSelected = new Set();
+
+    appliedFilters.forEach(({ category, item }) => {
+      const idKey = `${category}-${item.id}`;
+
+      if (filterLookup.has(idKey)) {
+        newSelected.add(filterLookup.get(idKey));
+      } else {
+        const nameKey = `${category}-${(item.name || item.value || "").toLowerCase().trim()}`;
+        if (filterLookup.has(nameKey)) {
+          newSelected.add(filterLookup.get(nameKey));
+        } else {
+          newSelected.add(idKey);
+        }
+      }
+    });
+
+    setSelectedFilters(newSelected);
+  }, [isOpen, filterLookup, appliedFilters]);
 
   const toggleAccordion = useCallback((index) => {
     setFilters(prev => {
@@ -177,49 +212,43 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
   const toggleFilterItem = useCallback((categoryName, item, e) => {
     e.stopPropagation();
     const key = `${categoryName}-${item.id}`;
-
+    const next = new Set(selectedFilters);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    setSelectedFilters(next);
     startTransition(() => {
-      setSelectedFilters(prev => {
-        const next = new Set(prev);
-        if (next.has(key)) {
-          next.delete(key);
-        } else {
-          next.add(key);
-        }
-
-        // Apply changes immediately
-        const drawerFilters = [];
-        filters.forEach(cat => {
-          cat.items.forEach(it => {
-            if (next.has(`${cat.name}-${it.id}`)) {
-              drawerFilters.push({ category: cat.name, item: it });
-            }
-          });
+      const drawerFilters = [];
+      const drawerCategoryNames = new Set(filters.map(c => c.name));
+      filters.forEach(cat => {
+        cat.items.forEach(it => {
+          if (next.has(`${cat.name}-${it.id}`)) {
+            drawerFilters.push({ category: cat.name, item: it });
+          }
         });
-
-        const searchFilters = appliedFilters.filter(
-          (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
-        );
-
-        const allAppliedFilters = [...searchFilters, ...drawerFilters];
-        onApply?.(allAppliedFilters);
-
-        return next;
       });
+      const preservedFilters = appliedFilters.filter(
+        (f) => !drawerCategoryNames.has(f.category)
+      );
+
+      const allAppliedFilters = [...preservedFilters, ...drawerFilters];
+      onApply?.(allAppliedFilters);
     });
-  }, [filters, appliedFilters, onApply]);
+  }, [filters, appliedFilters, onApply, selectedFilters]);
 
   const handleClearAll = useCallback(() => {
+    const next = new Set();
+    setSelectedFilters(next);
     startTransition(() => {
-      setSelectedFilters(new Set());
-
-      // Apply clear immediately (preserve search filters)
-      const searchFilters = appliedFilters.filter(
-        (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
+      const drawerCategoryNames = new Set(filters.map(c => c.name));
+      const preservedFilters = appliedFilters.filter(
+        (f) => !drawerCategoryNames.has(f.category)
       );
-      onApply?.(searchFilters);
+      onApply?.(preservedFilters);
     });
-  }, [appliedFilters, onApply]);
+  }, [appliedFilters, filters, onApply]);
 
   const categoryCounts = useMemo(() => {
     const counts = {};

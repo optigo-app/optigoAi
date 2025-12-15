@@ -11,6 +11,7 @@ import { ModeSwitch } from "../Common/HomeCommon";
 import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
+import { useAuth } from "@/context/AuthContext";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -40,7 +41,7 @@ const TypewriterText = ({ text }) => {
         hidden: { opacity: 0 },
         visible: (i = 1) => ({
             opacity: 1,
-            transition: { staggerChildren: 0.035, delayChildren: 0.04 * i },
+            transition: { staggerChildren: 0.025, delayChildren: 0.03 * i },
         }),
     };
 
@@ -76,10 +77,19 @@ const TypewriterText = ({ text }) => {
 
 
 const upcomingFeatures = [
-    "AI style recommendations",
-    "Saved favourites & wishlists",
-    "Shareable design moodboards",
-    "Try-on preview for rings & bangles",
+    "ERP Intelligence on Your Private Cloud",
+    "Search by Photo",
+    "Hybrid Search: Text + Images",
+    "Build & Share Smart Catalog Albums",
+    "Book Sales Orders in Seconds"
+];
+
+const typeWriterText = [
+    "Private-Cloud ERP Intelligence",
+    "Find Products by Photo",
+    "Hybrid Search Across Text & Images",
+    "Create & Share Catalog Albums",
+    "Instant Sales Order Booking",
 ];
 
 const Home = () => {
@@ -91,6 +101,7 @@ const Home = () => {
 
     // Use product data context
     const { productData, isLoading: isLoadingProducts, fetchProductData } = useProductData();
+    const { isAuthReady } = useAuth();
 
     useEffect(() => {
         setIsLoaded(true);
@@ -106,8 +117,10 @@ const Home = () => {
 
     // Fetch product data on mount
     useEffect(() => {
-        fetchProductData();
-    }, [fetchProductData]);
+        if (isAuthReady) {
+            fetchProductData();
+        }
+    }, [fetchProductData, isAuthReady]);
 
     const handleSearch = async (searchData) => {
         let imageBase64 = null;
@@ -274,7 +287,7 @@ const Home = () => {
                     component={motion.div}
                     initial={{ opacity: 0, scale: 0.98, y: 8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 1.2, duration: 0.4 }}
+                    transition={{ delay: 0.6, duration: 0.4 }}
                     sx={{
                         mb: 4,
                         px: 2,
@@ -344,36 +357,36 @@ const Home = () => {
                             opacity: 0.9,
                         }}
                     >
-                        <TypewriterText text="Think it. Type it. Launch it." />
+                        <TypewriterText text="Private Cloud AI — Built Deep Into Your Business." />
                     </Typography>
 
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1, duration: 0.6 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
                     >
                         <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, maxWidth: 600, mx: "auto", fontSize: "1.1rem", opacity: 0.8, height: "1.5rem" }}>
-                            <ContinuousTypewriter texts={["Your AI-powered jewelry design studio.", "Stunning custom jewelry pieces.", "Unique rings, necklaces & more."]} />
+                            <ContinuousTypewriter texts={typeWriterText} />
                         </Typography>
                     </motion.div>
                 </Box>
 
                 {/* Mode Selection Pill */}
-                <motion.div
+                {/* <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ delay: 1.3, duration: 0.5 }}
                 >
                     <ModeSwitch selectedMode={selectedMode} onSelect={setSelectedMode} />
-                </motion.div>
+                </motion.div> */}
 
                 {/* Search Bar */}
                 <Box
                     component={motion.div}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.6, duration: 0.6, type: "spring", stiffness: 100 }}
-                    sx={{ width: "100%", maxWidth: 800 }}
+                    transition={{ delay: 0.8, duration: 0.6, type: "spring", stiffness: 100 }}
+                    sx={{ width: "100%", maxWidth: 800, mt: 2 }}
                 >
                     <ModernSearchBar
                         onSubmit={handleSearch}
@@ -385,6 +398,7 @@ const Home = () => {
                         showSuggestions={true}
                         productData={productData}
                         onSuggestionClick={handleSuggestionClick}
+                        autoFocus={true}
                     />
                 </Box>
 

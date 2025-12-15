@@ -9,7 +9,6 @@ import {
     Tooltip,
     ClickAwayListener,
     Button,
-    Fade,
     Zoom,
     Chip,
 } from "@mui/material";
@@ -20,19 +19,17 @@ import {
     ImagePlus,
     Settings2,
     Layers,
-    Palette,
     Users,
     Check
 } from "lucide-react";
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
-import CustomSlider from "./CustomSlider";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom' }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -44,7 +41,6 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [text, setText] = useState("");
     const [isDragging, setIsDragging] = useState(false);
     const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isMultiline, setIsMultiline] = useState(false);
 
     // Filter Logic States
@@ -57,6 +53,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestionsDropdown, setShowSuggestionsDropdown] = useState(false);
     const [debouncedText, setDebouncedText] = useState("");
+    const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
 
     // Initialize Settings
     const [numResults, setNumResults] = useState(() => {
@@ -83,6 +80,15 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         sessionStorage.setItem('searchAccuracy', accuracy.toString());
     }, [accuracy]);
 
+    useEffect(() => {
+        if (autoFocus && textFieldRef.current) {
+            const timer = setTimeout(() => {
+                textFieldRef.current.focus();
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [autoFocus]);
+
     // Debounce text input for suggestions
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -91,111 +97,91 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         return () => clearTimeout(timer);
     }, [text]);
 
-    // Generate suggestions based on debounced text
     useEffect(() => {
         if (!showSuggestions || !debouncedText.trim() || debouncedText.trim().length < 2) {
-            // Only update if there are currently suggestions to clear
             setSuggestions(prev => prev.length > 0 ? [] : prev);
             setShowSuggestionsDropdown(prev => prev ? false : prev);
             return;
         }
-
         const searchTerm = debouncedText.trim().toLowerCase();
         const suggestionMap = new Map();
 
-        // Search through products and collect unique suggestions
+        // Optimized Search Configuration
+        const SEARCH_FIELDS = [
+            { key: 'categoryname', type: 'category', filterCategory: 'Category' },
+            { key: 'subcategoryname', type: 'subcategory', filterCategory: 'Subcategory' },
+            { key: 'collectionname', type: 'collection', filterCategory: 'Collection' },
+            { key: 'brandname', type: 'brand', filterCategory: 'Brand' },
+            { key: 'metaltype', type: 'metaltype', filterCategory: 'Metal' },
+            { key: 'metalcolor', type: 'metalcolor', filterCategory: 'Metal Color' },
+            { key: 'gendername', type: 'gender', filterCategory: 'Gender' },
+            { key: 'stylename', type: 'style', filterCategory: 'Style' },
+            { key: 'occassionname', type: 'occasion', filterCategory: 'Occasion' },
+            { key: 'producttype', type: 'producttype', filterCategory: 'Product Type' }
+        ];
+
         productData.forEach(product => {
-            // Category suggestions
-            if (product.categoryname && product.categoryname.toLowerCase().includes(searchTerm)) {
-                const key = `category-${product.categoryname}`;
-                if (!suggestionMap.has(key)) {
-                    suggestionMap.set(key, {
-                        type: 'category',
-                        label: product.categoryname,
-                        value: product.categoryname,
-                        filterCategory: 'Category',
-                        count: 1
-                    });
-                } else {
-                    suggestionMap.get(key).count++;
+            SEARCH_FIELDS.forEach(field => {
+                const val = product[field.key];
+                if (val && typeof val === 'string' && val.toLowerCase().includes(searchTerm)) {
+                    const key = `${field.type}-${val}`;
+                    if (!suggestionMap.has(key)) {
+                        suggestionMap.set(key, {
+                            type: field.type,
+                            label: val,
+                            value: val,
+                            filterCategory: field.filterCategory,
+                            count: 1
+                        });
+                    } else {
+                        suggestionMap.get(key).count++;
+                    }
                 }
-            }
-
-            // Collection suggestions
-            if (product.collectionname && product.collectionname.toLowerCase().includes(searchTerm)) {
-                const key = `collection-${product.collectionname}`;
-                if (!suggestionMap.has(key)) {
-                    suggestionMap.set(key, {
-                        type: 'collection',
-                        label: product.collectionname,
-                        value: product.collectionname,
-                        filterCategory: 'Collection',
-                        count: 1
-                    });
-                } else {
-                    suggestionMap.get(key).count++;
-                }
-            }
-
-            // Brand suggestions
-            if (product.brandname && product.brandname.toLowerCase().includes(searchTerm)) {
-                const key = `brand-${product.brandname}`;
-                if (!suggestionMap.has(key)) {
-                    suggestionMap.set(key, {
-                        type: 'brand',
-                        label: product.brandname,
-                        value: product.brandname,
-                        filterCategory: 'Brand',
-                        count: 1
-                    });
-                } else {
-                    suggestionMap.get(key).count++;
-                }
-            }
-
-            // Metal Type suggestions
-            if (product.metaltype && product.metaltype.toLowerCase().includes(searchTerm)) {
-                const key = `metaltype-${product.metaltype}`;
-                if (!suggestionMap.has(key)) {
-                    suggestionMap.set(key, {
-                        type: 'metaltype',
-                        label: product.metaltype,
-                        value: product.metaltype,
-                        filterCategory: 'Metal',
-                        count: 1
-                    });
-                } else {
-                    suggestionMap.get(key).count++;
-                }
-            }
-
-            // Metal Color suggestions
-            if (product.metalcolor && product.metalcolor.toLowerCase().includes(searchTerm)) {
-                const key = `metalcolor-${product.metalcolor}`;
-                if (!suggestionMap.has(key)) {
-                    suggestionMap.set(key, {
-                        type: 'metalcolor',
-                        label: product.metalcolor,
-                        value: product.metalcolor,
-                        filterCategory: 'Metal Color',
-                        count: 1
-                    });
-                } else {
-                    suggestionMap.get(key).count++;
-                }
-            }
+            });
         });
 
-        // Convert to array and limit to top 10
-        const suggestionArray = Array.from(suggestionMap.values())
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 10);
+        if (debouncedText.length >= 2) {
+            const lowerTerm = debouncedText.toLowerCase();
+            const designMatches = productData
+                .filter(p => p.designno && p.designno.toLowerCase().includes(lowerTerm))
+                .slice(0, 10)
+                .map(p => ({
+                    type: 'design',
+                    label: p.designno,
+                    value: p.designno,
+                    name: p.designno,
+                    filterCategory: 'Design#',
+                    category: p.categoryname,
+                    id: p.id,
+                    count: 1
+                }));
 
-        setSuggestions(suggestionArray);
+            designMatches.forEach(match => {
+                const key = `design-${match.label}`;
+                if (!suggestionMap.has(key)) {
+                    suggestionMap.set(key, match);
+                }
+            });
+        }
+
+
+        const suggestionArray = Array.from(suggestionMap.values());
+
+        // Group by type and limit each to top 5
+        const groupedByType = suggestionArray.reduce((acc, item) => {
+            if (!acc[item.type]) acc[item.type] = [];
+            acc[item.type].push(item);
+            return acc;
+        }, {});
+
+        const finalSuggestions = Object.values(groupedByType).flatMap(group =>
+            group.sort((a, b) => b.count - a.count).slice(0, 5)
+        );
+
+        setSuggestions(finalSuggestions);
         setShowSuggestionsDropdown(suggestionArray.length > 0);
     }, [debouncedText, productData, showSuggestions]);
 
-    // Load Filter Data on Mount (Single Fetch, but wait for auth)
     useEffect(() => {
         let timeoutId;
         let isMounted = true;
@@ -385,7 +371,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && e.shiftKey) return;
 
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && highlightedSuggestionIndex === -1) {
             e.preventDefault();
             handleSend();
         }
@@ -414,7 +400,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
     const handleClickAway = () => {
         if (alwaysExpanded) return;
-        if (!isSettingsOpen && !activeDropdown) {
+        if (!activeDropdown) {
             setIsExpanded(false);
         }
         setShowSuggestionsDropdown(false);
@@ -566,17 +552,24 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                 }}
                             />
 
+                            {!isExpanded && (
+                                <Tooltip title="Settings">
+                                    <IconButton onClick={() => setIsExpanded(true)} sx={{ ml: 1 }}>
+                                        <Settings2 size={20} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+
                             {/* Actions Group - Inline */}
-                            {!isMultiline && (
+                            {(isExpanded && !isMultiline) && (
                                 <Zoom in={isExpanded || text.length > 0 || Boolean(imagePreview)}>
                                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                        <Tooltip title="Advanced Settings">
+                                        <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                             <IconButton
                                                 className="settings-btn"
                                                 size="small"
-                                                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                                onClick={() => setIsExpanded(!isExpanded)}
                                                 sx={{
-                                                    color: isSettingsOpen ? 'primary.main' : 'text.secondary',
                                                     mr: 0.5
                                                 }}
                                             >
@@ -608,14 +601,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                 </Tooltip>
 
                                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                    <Tooltip title="Advanced Settings">
+                                    <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                         <IconButton
                                             className="settings-btn"
                                             size="small"
-                                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                                            sx={{
-                                                color: isSettingsOpen ? 'primary.main' : 'text.secondary',
-                                            }}
+                                            onClick={() => setIsExpanded(!isExpanded)}
                                         >
                                             <Settings2 size={20} />
                                         </IconButton>
@@ -646,79 +636,87 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                         }}
                     >
                         {/* Quick Filter Buttons */}
-                        {!isSettingsOpen && (
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.4, alignItems: 'center' }}>
-                                {appliedFilters.length > 0 && (
-                                    <Tooltip title="Clear all filters">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => onApply([])}
-                                            sx={{
-                                                bgcolor: '#ffebee',
-                                                color: '#d32f2f',
-                                                mr: 0.5,
-                                                '&:hover': { bgcolor: '#ffcdd2' }
-                                            }}
-                                        >
-                                            <X size={16} />
-                                        </IconButton>
-                                    </Tooltip>
-                                )}
-                                <Chip
-                                    icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
-                                    label={getActiveFilterName('Category')}
-                                    clickable
-                                    onClick={(e) => openDropdown('Category', e)}
-                                    variant={hasSelection('Category') ? "filled" : "outlined"}
-                                    color={hasSelection('Category') ? "primary" : "default"}
-                                    sx={{
-                                        borderRadius: '8px',
-                                        border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
-                                        transition: 'all 0.2s'
-                                    }}
-                                />
-                                {/* <Chip
-                                    icon={hasSelection('Style') ? <Check size={14} /> : <Palette size={15} />}
-                                    label={getActiveFilterName('Style')}
-                                    clickable
-                                    onClick={(e) => openDropdown('Style', e)}
-                                    variant={hasSelection('Style') ? "filled" : "outlined"}
-                                    color={hasSelection('Style') ? "primary" : "default"}
-                                    sx={{
-                                        borderRadius: '8px',
-                                        border: hasSelection('Style') ? 'none' : '1px solid #e0e0e0',
-                                        transition: 'all 0.2s'
-                                    }}
-                                /> */}
-                                <Chip
-                                    icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
-                                    label={getActiveFilterName('Gender')}
-                                    clickable
-                                    onClick={(e) => openDropdown('Gender', e)}
-                                    variant={hasSelection('Gender') ? "filled" : "outlined"}
-                                    color={hasSelection('Gender') ? "primary" : "default"}
-                                    sx={{
-                                        borderRadius: '8px',
-                                        border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
-                                        transition: 'all 0.2s'
-                                    }}
-                                />
-
-                                <Box sx={{ flexGrow: 1 }} />
-
-                                {showMoreFiltersButton && (
-                                    <Button
-                                        variant="text"
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.4, alignItems: 'center' }}>
+                            {appliedFilters.length > 0 && (
+                                <Tooltip title="Clear all filters">
+                                    <IconButton
                                         size="small"
-                                        className="quick-filter-btn"
-                                        onClick={onFilterClick}
-                                        sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600 }}
+                                        onClick={() => onApply([])}
+                                        sx={{
+                                            bgcolor: '#ffebee',
+                                            color: '#d32f2f',
+                                            mr: 0.5,
+                                            '&:hover': { bgcolor: '#ffcdd2' }
+                                        }}
                                     >
-                                        More Filters
-                                    </Button>
-                                )}
-                            </Box>
-                        )}
+                                        <X size={16} />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                            <Chip
+                                icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
+                                label={getActiveFilterName('Category')}
+                                clickable
+                                onClick={(e) => openDropdown('Category', e)}
+                                variant={hasSelection('Category') ? "filled" : "outlined"}
+                                color={hasSelection('Category') ? "primary" : "default"}
+                                sx={{
+                                    borderRadius: '8px',
+                                    border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
+                                    transition: 'all 0.2s'
+                                }}
+                            />
+                            {/* <Chip
+                                icon={hasSelection('Style') ? <Check size={14} /> : <Palette size={15} />}
+                                label={getActiveFilterName('Style')}
+                                clickable
+                                onClick={(e) => openDropdown('Style', e)}
+                                variant={hasSelection('Style') ? "filled" : "outlined"}
+                                color={hasSelection('Style') ? "primary" : "default"}
+                                sx={{
+                                    borderRadius: '8px',
+                                    border: hasSelection('Style') ? 'none' : '1px solid #e0e0e0',
+                                    transition: 'all 0.2s'
+                                }}
+                            /> */}
+                            <Chip
+                                icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
+                                label={getActiveFilterName('Gender')}
+                                clickable
+                                onClick={(e) => openDropdown('Gender', e)}
+                                variant={hasSelection('Gender') ? "filled" : "outlined"}
+                                color={hasSelection('Gender') ? "primary" : "default"}
+                                sx={{
+                                    borderRadius: '8px',
+                                    border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
+                                    transition: 'all 0.2s'
+                                }}
+                            />
+
+                            <Box sx={{ flexGrow: 1 }} />
+
+                            {showMoreFiltersButton && (
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    className="quick-filter-btn"
+                                    onClick={onFilterClick}
+                                    sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 600 }}
+                                >
+                                    More Filters
+                                </Button>
+                            )}
+                            {!showMoreFiltersButton && (
+                                <Button
+                                    variant="outline"
+                                    size="small"
+                                    onClick={handleSend}
+                                    sx={{ color: 'primary.main', textTransform: 'none', fontWeight: '800px !important' }}
+                                >
+                                    View Catalogue
+                                </Button>
+                            )}
+                        </Box>
 
                         {/* Dropdown Popover */}
                         <FilterDropdown
@@ -731,51 +729,18 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             isLoading={isLoadingFilters}
                         />
 
-                        {/* Settings Slider Section (if toggled) */}
-                        {isSettingsOpen && (
-                            <Fade in={isSettingsOpen}>
-                                <Box sx={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    gap: 3,
-                                    alignItems: 'center',
-                                    p: "0px 16px",
-                                }}>
-                                    <Box sx={{ flex: 1 }}>
-                                        <CustomSlider
-                                            label="Number of Results"
-                                            value={numResults}
-                                            onChange={setNumResults}
-                                            min={1}
-                                            max={50}
-                                            step={1}
-                                        />
-                                    </Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <CustomSlider
-                                            label="Search Accuracy"
-                                            value={accuracy}
-                                            onChange={setAccuracy}
-                                            min={0}
-                                            max={100}
-                                            step={5}
-                                            unit="%"
-                                        />
-                                    </Box>
-                                </Box>
-                            </Fade>
+                        {/* Search Suggestions */}
+                        {showSuggestions && (
+                            <SearchSuggestions
+                                suggestions={suggestions}
+                                onSuggestionClick={handleSuggestionClick}
+                                isVisible={showSuggestionsDropdown && isExpanded}
+                                searchTerm={text}
+                                suggestionPosition={suggestionPosition}
+                                onHighlightChange={setHighlightedSuggestionIndex}
+                            />
                         )}
                     </Box>
-
-                    {/* Search Suggestions */}
-                    {showSuggestions && (
-                        <SearchSuggestions
-                            suggestions={suggestions}
-                            onSuggestionClick={handleSuggestionClick}
-                            isVisible={showSuggestionsDropdown && isExpanded}
-                            searchTerm={text}
-                        />
-                    )}
                 </Paper>
             </Box>
         </ClickAwayListener>

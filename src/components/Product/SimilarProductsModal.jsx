@@ -26,8 +26,6 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [slideDirection, setSlideDirection] = useState('none'); // 'left', 'right', or 'none'
     const [isNavigating, setIsNavigating] = useState(false);
-    const [cacheDetected, setCacheDetected] = useState(false);
-    const [cachedDesignKey, setCachedDesignKey] = useState(null);
 
     const searchCacheRef = useRef({});
 
@@ -54,15 +52,8 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
 
         // Check if cached and not forcing fresh search
         if (searchCacheRef.current[cacheKey] && !forceFresh) {
-            // If navigating, just load from cache
-            if (isNavigating) {
-                setSimilarProducts(searchCacheRef.current[cacheKey]);
-                setIsNavigating(false);
-                return;
-            }
-            // If not navigating (fresh search attempt), show cache detection dialog
-            setCachedDesignKey(cacheKey);
-            setCacheDetected(true);
+            setSimilarProducts(searchCacheRef.current[cacheKey]);
+            setIsNavigating(false);
             return;
         }
 
@@ -219,6 +210,14 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                         )}
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                        {/* <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => fetchSimilarProducts(true)}
+                            sx={{ minWidth: 'auto', py: 0, px: 2, mr: 1, textTransform: 'none', borderRadius: 1 }}
+                        >
+                            Refresh
+                        </Button> */}
                         <IconButton
                             onClick={() => setIsFullscreen(!isFullscreen)}
                             size="small"
@@ -332,48 +331,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             </Dialog>
 
             {/* Cache Detection Dialog */}
-            <Dialog
-                open={cacheDetected}
-                onClose={() => setCacheDetected(false)}
-                maxWidth="sm"
-                fullWidth
-            >
-                <DialogTitle sx={{ fontWeight: 'bold' }}>
-                    Design Already Searched
-                </DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        You previously searched this design. Would you like to view the cached results from your history or perform a fresh search?
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, gap: 1 }}>
-                    <Button
-                        onClick={() => {
-                            setCacheDetected(false);
-                            // Load from cache and show it
-                            if (cachedDesignKey && searchCacheRef.current[cachedDesignKey]) {
-                                setSimilarProducts(searchCacheRef.current[cachedDesignKey]);
-                                setShowContent(true);
-                            }
-                        }}
-                        variant="outlined"
-                        sx={{ flex: 1 }}
-                    >
-                        Go to History
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            setCacheDetected(false);
-                            // Perform fresh search
-                            fetchSimilarProducts(true);
-                        }}
-                        variant="contained"
-                        sx={{ flex: 1 }}
-                    >
-                        Search Fresh
-                    </Button>
-                </DialogActions>
-            </Dialog>
+
         </>
     );
 }

@@ -8,7 +8,13 @@ import {
     Award,
     Palette,
     Sparkles,
-    Tag
+    Tag,
+    Hash,
+    Users,
+    Shapes,
+    PartyPopper,
+    Gem,
+    GitBranch
 } from "lucide-react";
 import "../Style/SearchSuggestions.scss";
 
@@ -18,15 +24,24 @@ const SUGGESTION_ICONS = {
     brand: Award,
     metaltype: Palette,
     metalcolor: Sparkles,
-    default: Tag
+    design: Hash,
+    default: Tag,
+    gender: Users,
+    style: Shapes,
+    occasion: PartyPopper,
+    producttype: Gem,
+    subcategory: GitBranch,
 };
 
 const SearchSuggestions = ({
     suggestions = [],
     onSuggestionClick,
     isVisible = false,
-    searchTerm = ""
+    searchTerm = "",
+    suggestionPosition = 'bottom',
+    onHighlightChange = () => { }
 }) => {
+    const [urlParamsFlag, setUrlParamsFlag] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const suggestionRefs = useRef([]);
     const containerRef = useRef(null);
@@ -35,8 +50,19 @@ const SearchSuggestions = ({
     const flatSuggestions = suggestions;
 
     useEffect(() => {
+        const flag = sessionStorage.getItem("urlParams");
+        setUrlParamsFlag(flag);
+    }, []);
+
+    useEffect(() => {
         setSelectedIndex(-1);
     }, [suggestions]);
+
+    useEffect(() => {
+        if (onHighlightChange) {
+            onHighlightChange(selectedIndex);
+        }
+    }, [selectedIndex, onHighlightChange]);
 
     useEffect(() => {
         if (selectedIndex >= 0 && suggestionRefs.current[selectedIndex] && containerRef.current) {
@@ -86,21 +112,15 @@ const SearchSuggestions = ({
 
     useEffect(() => {
         if (!isVisible) return;
-
         const handleKeyDown = (e) => {
             const now = Date.now();
             const { selectedIndex, flatSuggestions, onSuggestionClick } = stateRef.current;
-
-            // Throttle rapid keypresses for navigation only
             if ((e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-                // Prevent default scrolling immediately
                 e.preventDefault();
-
                 if (now - lastKeyTime.current < 50) {
                     return;
                 }
                 lastKeyTime.current = now;
-
                 if (e.key === 'ArrowDown') {
                     setSelectedIndex(prev =>
                         prev < flatSuggestions.length - 1 ? prev + 1 : prev
@@ -121,7 +141,7 @@ const SearchSuggestions = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isVisible]); // Stable dependency
+    }, [isVisible]);
 
     if (!isVisible || suggestions.length === 0) {
         return null;
@@ -139,11 +159,17 @@ const SearchSuggestions = ({
 
     const getCategoryLabel = (type) => {
         const labels = {
-            category: "Categories",
             collection: "Collections",
+            category: "Categories",
+            subcategory: "Subcategories",
             brand: "Brands",
             metaltype: "Metal Types",
             metalcolor: "Metal Colors",
+            design: "Design#",
+            gender: "Gender",
+            style: "Style",
+            occasion: "Occasions",
+            producttype: "Product Types",
             default: "Suggestions"
         };
         return labels[type] || "Suggestions";
@@ -157,120 +183,58 @@ const SearchSuggestions = ({
 
     let globalIndex = 0;
 
+    const groupCount = Object.keys(groupedSuggestions).length;
+    const hasMultipleGroups = groupCount > 1;
+    const isTwoGroups = groupCount === 2;
+    const isThreeGroups = groupCount === 3;
+
     return (
         <Fade in={isVisible} timeout={200}>
             <Paper
                 ref={containerRef}
-                className="search-suggestions-container"
-                elevation={8}
+                className={`search-suggestions-container ${suggestionPosition === 'top' ? 'position-top' : ''}`}
                 sx={{
-                    position: "absolute",
-                    top: "calc(100% + 8px)",
-                    left: 0,
-                    right: 0,
-                    zIndex: 1200,
-                    maxHeight: "350px",
-                    pb: "10px",
-                    overflowY: "auto",
-                    borderRadius: "16px",
-                    background: "rgba(255, 255, 255, 0.95)",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(115, 103, 240, 0.1)",
-                    boxShadow: "0 8px 32px rgba(115, 103, 240, 0.15)",
+                    maxHeight: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? '270px' : "350px",
                 }}
+                elevation={8}
             >
-                {Object.entries(groupedSuggestions).map(([type, items]) => {
-                    const IconComponent = SUGGESTION_ICONS[type] || SUGGESTION_ICONS.default;
+                <Box className={`suggestions-grid ${isThreeGroups ? 'three-groups' : isTwoGroups ? 'two-groups' : !hasMultipleGroups ? 'single-group' : ''}`}>
+                    {Object.entries(groupedSuggestions).map(([type, items]) => {
+                        const IconComponent = SUGGESTION_ICONS[type] || SUGGESTION_ICONS.default;
 
-                    return (
-                        <Box key={type} className="suggestion-group">
-                            <Box className="suggestion-group-header">
-                                <IconComponent size={14} />
-                                <Typography variant="caption" className="suggestion-group-title">
-                                    {getCategoryLabel(type)}
-                                </Typography>
-                            </Box>
+                        return (
+                            <Box key={type} className={`suggestion-group group-${type} ${type === 'design' && items.length > 5 ? 'two-column-grid' : ''}`}>
+                                <Box className="suggestion-group-header">
+                                    <IconComponent size={14} />
+                                    <Typography variant="caption" className="suggestion-group-title">
+                                        {getCategoryLabel(type)}
+                                    </Typography>
+                                </Box>
 
-                            {items.map((suggestion, index) => {
-                                const currentGlobalIndex = globalIndex++;
-                                const isSelected = currentGlobalIndex === selectedIndex;
+                                {items.map((suggestion, index) => {
+                                    const currentGlobalIndex = globalIndex++;
+                                    const isSelected = currentGlobalIndex === selectedIndex;
 
-                                return (
-                                    <Box
-                                        key={`${type} -${index} `}
-                                        ref={el => suggestionRefs.current[currentGlobalIndex] = el}
-                                        className="suggestion-item"
-                                        onClick={() => handleClick(suggestion)}
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1.5,
-                                            padding: "10px 16px",
-                                            cursor: "pointer",
-                                            transition: "all 0.2s ease",
-                                            borderRadius: "8px",
-                                            margin: "0 8px 4px 8px",
-                                            background: isSelected
-                                                ? "linear-gradient(135deg, rgba(115, 103, 240, 0.15) 0%, rgba(162, 155, 254, 0.15) 100%)"
-                                                : "transparent",
-                                            transform: isSelected ? "translateX(4px)" : "translateX(0)",
-                                            "&:hover": {
-                                                background: "linear-gradient(135deg, rgba(115, 103, 240, 0.08) 0%, rgba(162, 155, 254, 0.08) 100%)",
-                                                transform: "translateX(4px)",
-                                            },
-                                            "&:active": {
-                                                transform: "translateX(2px) scale(0.98)",
-                                            }
-                                        }}
-                                    >
+                                    return (
                                         <Box
-                                            sx={{
-                                                width: 32,
-                                                height: 32,
-                                                borderRadius: "8px",
-                                                background: isSelected
-                                                    ? "linear-gradient(135deg, rgba(115, 103, 240, 0.2) 0%, rgba(162, 155, 254, 0.2) 100%)"
-                                                    : "linear-gradient(135deg, rgba(115, 103, 240, 0.1) 0%, rgba(162, 155, 254, 0.1) 100%)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                flexShrink: 0,
-                                            }}
+                                            key={`${type}-${index}`}
+                                            ref={el => suggestionRefs.current[currentGlobalIndex] = el}
+                                            className={`suggestion-item item-${type} ${isSelected ? 'selected' : ''}`}
+                                            onClick={() => handleClick(suggestion)}
                                         >
-                                            <IconComponent size={16} color="#7367f0" />
-                                        </Box>
-
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
                                             <Typography
                                                 variant="body2"
-                                                sx={{
-                                                    fontWeight: isSelected ? 600 : 500,
-                                                    color: "#2c3e50",
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                    whiteSpace: "nowrap",
-                                                }}
+                                                className="suggestion-label"
                                             >
                                                 {suggestion.label}
                                             </Typography>
-                                            {suggestion.count && (
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        color: "#94a3b8",
-                                                        fontSize: "0.75rem",
-                                                    }}
-                                                >
-                                                    {suggestion.count} {suggestion.count === 1 ? 'item' : 'items'}
-                                                </Typography>
-                                            )}
                                         </Box>
-                                    </Box>
-                                );
-                            })}
-                        </Box>
-                    );
-                })}
+                                    );
+                                })}
+                            </Box>
+                        );
+                    })}
+                </Box>
             </Paper>
         </Fade>
     );
