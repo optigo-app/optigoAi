@@ -62,6 +62,7 @@ export default function FilterChips({
                             maxWidth: '200px',
                             cursor: isImageSearch && !isError ? 'pointer' : 'default',
                             opacity: isError ? 0.9 : 1,
+                            flexShrink: 0,
                             '& .MuiChip-label': {
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -121,6 +122,7 @@ export default function FilterChips({
                                 label={`${category}: ${item.name}`}
                                 size="small"
                                 onDelete={() => onRemoveFilter({ item })}
+                                sx={{ flexShrink: 0 }}
                             />
                         ))}
                         {hiddenItems.length > 0 && (
@@ -135,6 +137,7 @@ export default function FilterChips({
                                 sx={{
                                     borderColor: 'divider',
                                     bgcolor: 'background.paper',
+                                    flexShrink: 0,
                                     '&:hover': { bgcolor: 'action.hover' }
                                 }}
                             />

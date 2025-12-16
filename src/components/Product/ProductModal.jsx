@@ -15,11 +15,13 @@ import {
     Paper,
     IconButton,
 } from '@mui/material';
-import { ShoppingCart, X, ChevronLeft, ChevronRight, ScanSearch } from 'lucide-react';
+import { ShoppingCart, X, ChevronLeft, ChevronRight, ScanSearch, Trash2 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Navigation, Virtual } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import ReusableConfirmModal from '../Common/ReusableConfirmModal';
+import { isFrontendFeRoute } from '@/utils/urlUtils';
 
 // Custom CSS for Swiper to match theme
 const swiperStyles = `
@@ -44,9 +46,10 @@ const swiperStyles = `
   }
 `;
 
-export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar }) {
+export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, fromCart, urlParamsFlag }) {
     const [activeIndex, setActiveIndex] = useState(startIndex);
-    const { isItemInCart } = useCart();
+    const { isItemInCart, removeFromCart } = useCart();
+    const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
     useEffect(() => {
         const styleElement = document.createElement('style');
@@ -80,6 +83,19 @@ export default function ProductModal({ open, onClose, product, products = [], st
         setActiveIndex(swiper.activeIndex);
     };
 
+    const handleRemoveItem = () => {
+        setOpenConfirmModal(true);
+    };
+
+    const handleConfirmRemove = () => {
+        const currentProduct = sliderProducts[activeIndex] || product;
+        if (currentProduct) {
+            removeFromCart(currentProduct.id);
+        }
+        setOpenConfirmModal(false);
+        onClose();
+    };
+
     return (
         <Dialog
             open={open}
@@ -87,6 +103,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
             maxWidth="lg"
             fullWidth
             sx={{
+                height: isFrontendFeRoute(urlParamsFlag) ? '94%' : "100%",
                 '& .MuiDialog-paper': {
                     borderRadius: 2,
                 },
@@ -254,7 +271,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                 </Swiper>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, justifyContent: onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) ? 'space-between' : 'flex-end', backgroundColor: '#fcfcfcff' }}>
+            <DialogActions sx={{ p: 3, justifyContent: (onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image)) || fromCart ? 'space-between' : 'flex-end', backgroundColor: '#fcfcfcff' }}>
                 {onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) && (
                     <Button
                         variant="outlined"
@@ -273,6 +290,16 @@ export default function ProductModal({ open, onClose, product, products = [], st
                         }}
                     >
                         Search Similar
+                    </Button>
+                )}
+                {fromCart && (
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        startIcon={<Trash2 size={18} />}
+                        onClick={handleRemoveItem}
+                    >
+                        Remove
                     </Button>
                 )}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -307,6 +334,12 @@ export default function ProductModal({ open, onClose, product, products = [], st
                     </Button>
                 </Box>
             </DialogActions>
+            <ReusableConfirmModal
+                open={openConfirmModal}
+                onClose={() => setOpenConfirmModal(false)}
+                onConfirm={handleConfirmRemove}
+                type="removeItem"
+            />
         </Dialog>
     );
 }

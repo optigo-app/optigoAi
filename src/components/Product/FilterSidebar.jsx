@@ -72,6 +72,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                 borderColor: 'divider',
                 borderRadius: '8px !important',
                 overflow: 'hidden',
+                '&.MuiAccordionSummary-content': { margin: '8px 0px !important' },
             }}
         >
             <AccordionSummary
@@ -85,6 +86,13 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                     <Typography className="filterSidebar__title">
                         {category.name}
                     </Typography>
+                    {count > 0 && (
+                        <Box sx={{ bgcolor: 'secondary.extraLight', borderRadius: '4px', p: '2px 6px' }}>
+                            <Typography variant="caption">
+                                {count}
+                            </Typography>
+                        </Box>
+                    )}
                 </Box>
             </AccordionSummary>
 
@@ -94,7 +102,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                     flexDirection: 'column',
                     gap: 0.5,
                     ...(category?.items?.length > 5 && {
-                        maxHeight: '280px',
+                        maxHeight: '275px',
                         overflowY: 'auto',
                         pr: 1,
                         '&::-webkit-scrollbar': {
@@ -361,7 +369,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
             >
                 {/* Header */}
                 <Box className="filterSidebar__header" sx={{
-                    p: 2,
+                    p: '8px 16px',
                     borderBottom: '1px solid',
                     borderColor: 'divider',
                     display: 'flex',
@@ -379,19 +387,19 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                             <Button
                                 size="small"
                                 onClick={handleClearAll}
-                                sx={{ minWidth: 'auto', px: 1 }}
+                                sx={{ minWidth: 'auto', padding: '4px 8px' }}
                             >
                                 Clear
                             </Button>
                         )}
-                        <IconButton onClick={onClose} size="small">
+                        <IconButton onClick={onClose} size="small" sx={{ padding: '8px' }}>
                             <X size={20} />
                         </IconButton>
                     </Box>
                 </Box>
 
                 {/* Search */}
-                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ p: '8px 16px', borderBottom: '1px solid', borderColor: 'divider' }}>
                     <TextField
                         fullWidth
                         variant="outlined"
@@ -448,30 +456,6 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                         ))
                     )}
                 </Box>
-
-                {/* Footer */}
-                {/* <Box className="filterSidebar__footer" sx={{
-                    p: 2,
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
-                }}>
-                    <Button
-                        variant="contained"
-                        fullWidth
-                        onClick={onClose}
-                        size="large"
-                        sx={{
-                            borderRadius: 1,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            boxShadow: 'none',
-                            bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 50 : 0
-                        }}
-                    >
-                        Done
-                    </Button>
-                </Box> */}
             </Box>
         </>
     );

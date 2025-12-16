@@ -31,6 +31,7 @@ const CartPageMUI = () => {
     const { items: cartItems, removeFromCart, addToCart, clearCart, totalCount, hasHydrated, loading } = useCart();
     const [openConfirmModal, setOpenConfirmModal] = useState(false);
     const [confirmModalType, setConfirmModalType] = useState(null);
+    const [itemToRemove, setItemToRemove] = useState(null);
 
     const [imageStates, setImageStates] = useState({});
 
@@ -47,16 +48,25 @@ const CartPageMUI = () => {
     const handleCloseConfirmModal = () => {
         setOpenConfirmModal(false);
         setConfirmModalType(null);
+        setItemToRemove(null);
     };
 
     const handleConfirmModalConfirm = () => {
+        if (confirmModalType === 'clearCart') {
+            clearCart();
+        } else if (confirmModalType === 'removeItem' && itemToRemove) {
+            removeFromCart(itemToRemove);
+        }
         setOpenConfirmModal(false);
         setConfirmModalType(null);
-        clearCart();
+        setItemToRemove(null);
     };
 
-    const handleRemoveItem = (id) => {
-        removeFromCart(id);
+    const handleRemoveItem = (id, event) => {
+        event.stopPropagation();
+        setOpenConfirmModal(true);
+        setConfirmModalType('removeItem');
+        setItemToRemove(id);
     };
 
     const handleBack = () => {
@@ -186,7 +196,7 @@ const CartPageMUI = () => {
                                 >
                                     {/* Delete Button */}
                                     <IconButton
-                                        onClick={() => handleRemoveItem(item.id)}
+                                        onClick={(e) => handleRemoveItem(item.id, e)}
                                         sx={{
                                             position: 'absolute',
                                             top: 8,
@@ -309,6 +319,7 @@ const CartPageMUI = () => {
                 products={cartItems}
                 startIndex={selectedProductIndex}
                 onAddToCart={addToCart}
+                fromCart={true}
             />
         </GridBackground>
     );

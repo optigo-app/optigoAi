@@ -17,7 +17,7 @@ import { ShoppingCart, ScanSearch } from 'lucide-react';
 import ProductModal from './ProductModal';
 import { useCart } from '@/context/CartContext';
 
-export default function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true }) {
+export default function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true, urlParamsFlag }) {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -231,6 +231,7 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                     onAddToCart={handleToggleCart}
                     isInCart={isInCart}
                     onSearchSimilar={onSearchSimilar}
+                    urlParamsFlag={urlParamsFlag}
                 />
             </Card>
         </Box>

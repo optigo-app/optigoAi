@@ -1,5 +1,4 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from "@mui/material";
-import { Trash2 } from "lucide-react";
 
 /**
  * @typedef {'suggest' | 'close'} ConfirmModalType
@@ -38,8 +37,15 @@ const ReusableConfirmModal = ({ open, onClose, onConfirm, type }) => {
             cancelText: "Cancel",
             confirmColor: "error",
             cancelColor: "inherit",
+        },
+        removeItem: {
+            title: "Remove Item",
+            message: "Are you sure you want to remove this item from your cart?",
+            confirmText: "Remove",
+            cancelText: "Cancel",
+            confirmColor: "error",
+            cancelColor: "inherit",
         }
-
     };
 
     const { title, icon, message, confirmText, cancelText, confirmColor, cancelColor } = modalConfigs[type] || {};

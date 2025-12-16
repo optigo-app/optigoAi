@@ -397,24 +397,6 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
           ))
         )}
       </Box>
-
-      <Box className="filterDrawer__footer" sx={{ boxShadow: '0 -4px 12px rgba(0,0,0,0.05)' }}>
-        <Button
-          variant="contained"
-          fullWidth
-          onClick={onClose}
-          size="large"
-          sx={{
-            borderRadius: 1,
-            textTransform: 'none',
-            fontWeight: 600,
-            boxShadow: 'none',
-            bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 50 : 0
-          }}
-        >
-          Done
-        </Button>
-      </Box>
     </Drawer>
   );
 }

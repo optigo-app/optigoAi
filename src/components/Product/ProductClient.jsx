@@ -12,7 +12,7 @@ import {
     Badge,
     Tooltip,
 } from "@mui/material";
-import { ShoppingCart, ArrowLeft } from "lucide-react";
+import { ShoppingCart, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -29,6 +29,7 @@ import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { useProductData } from '@/context/ProductDataContext';
 import GridBackground from "@/components/Common/GridBackground";
+import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 const CATEGORY_FIELD_MAP = {
     'category': 'categoryname',
@@ -77,6 +78,37 @@ export default function ProductClient() {
     // Filter Popover State
     const [anchorElFilter, setAnchorElFilter] = useState(null);
     const [filterPopoverItems, setFilterPopoverItems] = useState([]);
+
+    // Filter Chips Scroll State
+    const filterScrollRef = React.useRef(null);
+    const [showLeftScroll, setShowLeftScroll] = useState(false);
+    const [showRightScroll, setShowRightScroll] = useState(false);
+
+    const checkScrollButtons = useCallback(() => {
+        if (filterScrollRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = filterScrollRef.current;
+            setShowLeftScroll(scrollLeft > 0);
+            // using a small buffer (5px) for floating point precision
+            setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 5);
+        }
+    }, []);
+
+    useEffect(() => {
+        checkScrollButtons();
+        window.addEventListener('resize', checkScrollButtons);
+        return () => window.removeEventListener('resize', checkScrollButtons);
+    }, [checkScrollButtons, appliedFilters, searchTerm]);
+
+    const scrollFilters = (direction) => {
+        if (filterScrollRef.current) {
+            const scrollAmount = 200;
+            filterScrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+            setTimeout(checkScrollButtons, 300);
+        }
+    };
 
     useEffect(() => {
         const flag = sessionStorage.getItem("urlParams");
@@ -521,54 +553,125 @@ export default function ProductClient() {
     return (
         <GridBackground>
             <Container maxWidth={false} sx={{ px: 2, pb: 12, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 2 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mb: 1.5,
-                        pt: 1,
-
-                        borderRadius: 2,
-                    }}
-                >
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                <Box sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 1.5,
+                    pt: 1,
+                    gap: 2,
+                    borderRadius: 2,
+                }}>
+                    {/* Static Left Section: Back & Count */}
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>
                         <IconButton
                             onClick={() => router.push('/')}
                             sx={{ color: 'text.primary' }}
                         >
                             <ArrowLeft size={24} />
                         </IconButton>
-                        <Typography sx={{ fontSize: 14, color: "text.secondary" }}>
+                        <Typography sx={{ fontSize: 14, color: "text.secondary", whiteSpace: 'nowrap' }}>
                             {finalFilteredProducts.length} products
                         </Typography>
-                        {searchTerm && (
-                            <Chip
-                                key="drawer-search"
-                                label={`Search: ${searchTerm}`}
+                    </Box>
+
+                    {/* Scrollable Middle Section: Chips & Clear All */}
+                    <Box sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        flex: 1,
+                        minWidth: 0, // Critical for flex child scrolling
+                        position: "relative"
+                    }}>
+                        <Fade in={showLeftScroll}>
+                            <IconButton
                                 size="small"
-                                onDelete={() => setSearchTerm('')}
-                                sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText' }}
+                                onClick={() => scrollFilters('left')}
+                                sx={{
+                                    p: 0.5,
+                                    mr: 0.5,
+                                    flexShrink: 0,
+                                    bgcolor: 'background.paper',
+                                    boxShadow: 1,
+                                    '&:hover': { bgcolor: 'action.hover' }
+                                }}
+                            >
+                                <ChevronLeft size={16} />
+                            </IconButton>
+                        </Fade>
+
+                        <Box
+                            ref={filterScrollRef}
+                            onScroll={checkScrollButtons}
+                            sx={{
+                                display: "flex",
+                                gap: 1,
+                                overflowX: "auto",
+                                scrollbarWidth: "none",
+                                "&::-webkit-scrollbar": { display: "none" },
+                                alignItems: "center",
+                                flex: 1,
+                                scrollBehavior: "smooth",
+                                px: 0.5 // Padding to avid cutting off shadows
+                            }}
+                        >
+                            {searchTerm && (
+                                <Chip
+                                    key="drawer-search"
+                                    label={`Search: ${searchTerm}`}
+                                    size="small"
+                                    onDelete={() => setSearchTerm('')}
+                                    sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText', flexShrink: 0 }}
+                                />
+                            )}
+                            <FilterChips
+                                appliedFilters={appliedFilters}
+                                onRemoveFilter={removeFilter}
+                                onFilterPopoverOpen={handleFilterPopoverOpen}
                             />
-                        )}
-                        <FilterChips
-                            appliedFilters={appliedFilters}
-                            onRemoveFilter={removeFilter}
-                            onFilterPopoverOpen={handleFilterPopoverOpen}
-                        />
+                        </Box>
+
+                        <Fade in={showRightScroll}>
+                            <IconButton
+                                size="small"
+                                onClick={() => scrollFilters('right')}
+                                sx={{
+                                    p: 0.5,
+                                    ml: 0.5,
+                                    flexShrink: 0,
+                                    bgcolor: 'background.paper',
+                                    boxShadow: 1,
+                                    '&:hover': { bgcolor: 'action.hover' }
+                                }}
+                            >
+                                <ChevronRight size={16} />
+                            </IconButton>
+                        </Fade>
 
                         {appliedFilters.length > 0 && (
                             <Button
                                 variant="text"
                                 size="small"
                                 onClick={clearAllFilters}
-                                sx={{ textTransform: "none", fontSize: 14, textDecoration: "underline", color: "text.primary" }}
+                                sx={{
+                                    textTransform: "none",
+                                    fontSize: 13,
+                                    textDecoration: "underline",
+                                    color: "text.primary",
+                                    whiteSpace: "nowrap",
+                                    minWidth: "auto",
+                                    flexShrink: 0,
+                                    ml: 1,
+                                    padding: '5px 8px'
+                                }}
                             >
                                 Clear All
                             </Button>
                         )}
                     </Box>
 
-                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    {/* Static Right Section: Pagination & Cart */}
+                    <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
                         <PaginationControls
                             currentPage={currentPage}
                             totalPages={totalPages}
@@ -636,7 +739,7 @@ export default function ProductClient() {
 
             <Box className="modernSearchInputBox" sx={{
                 position: "fixed",
-                bottom: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 120 : 50,
+                bottom: isFrontendFeRoute ? 120 : 50,
                 left: { xs: 0, md: isFilterOpen ? '320px' : 0 },
                 right: 0,
                 p: 2,
@@ -656,7 +759,7 @@ export default function ProductClient() {
                         onSuggestionClick={handleSuggestionClick}
                     />
                 </Box>
-                <ScrollToTop bottom={urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? 70 : 24} />
+                <ScrollToTop bottom={isFrontendFeRoute ? 70 : 24} />
             </Box>
 
             <FilterSidebar

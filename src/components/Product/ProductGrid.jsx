@@ -9,7 +9,8 @@ const ProductGrid = memo(function ProductGrid({
   appliedFilters,
   clearAllFilters,
   onSearchSimilar,
-  loading = false
+  loading = false,
+  urlParamsFlag
 }) {
   const ITEMS_PER_LOAD = 24;
 

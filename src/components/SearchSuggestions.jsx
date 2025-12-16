@@ -17,6 +17,7 @@ import {
     GitBranch
 } from "lucide-react";
 import "../Style/SearchSuggestions.scss";
+import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 const SUGGESTION_ICONS = {
     category: Layers,
@@ -194,7 +195,7 @@ const SearchSuggestions = ({
                 ref={containerRef}
                 className={`search-suggestions-container ${suggestionPosition === 'top' ? 'position-top' : ''}`}
                 sx={{
-                    maxHeight: urlParamsFlag && urlParamsFlag?.toLowerCase() === 'fe' ? '270px' : "350px",
+                    maxHeight: isFrontendFeRoute ? '270px' : "350px",
                 }}
                 elevation={8}
             >
