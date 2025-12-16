@@ -69,8 +69,6 @@ export default function ProductClient() {
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Similar Product Search State
-
-    // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
     const [similarProductCurrentIndex, setSimilarProductCurrentIndex] = useState(-1);
     const [isSimilarModalOpen, setIsSimilarModalOpen] = useState(false);
@@ -83,25 +81,34 @@ export default function ProductClient() {
     const filterScrollRef = React.useRef(null);
     const [showLeftScroll, setShowLeftScroll] = useState(false);
     const [showRightScroll, setShowRightScroll] = useState(false);
+    const [isClearAllInside, setIsClearAllInside] = useState(true);
 
     const checkScrollButtons = useCallback(() => {
         if (filterScrollRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = filterScrollRef.current;
             setShowLeftScroll(scrollLeft > 0);
-            // using a small buffer (5px) for floating point precision
             setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 5);
+            const hasOverflow = scrollWidth > clientWidth + 2;
+            setIsClearAllInside(!hasOverflow);
         }
     }, []);
 
     useEffect(() => {
         checkScrollButtons();
         window.addEventListener('resize', checkScrollButtons);
-        return () => window.removeEventListener('resize', checkScrollButtons);
-    }, [checkScrollButtons, appliedFilters, searchTerm]);
+        const transitionTimer = setTimeout(() => {
+            checkScrollButtons();
+        }, 450);
+
+        return () => {
+            window.removeEventListener('resize', checkScrollButtons);
+            clearTimeout(transitionTimer);
+        };
+    }, [checkScrollButtons, appliedFilters, searchTerm, isFilterOpen]);
 
     const scrollFilters = (direction) => {
         if (filterScrollRef.current) {
-            const scrollAmount = 200;
+            const scrollAmount = 400;
             filterScrollRef.current.scrollBy({
                 left: direction === 'left' ? -scrollAmount : scrollAmount,
                 behavior: 'smooth'
@@ -601,6 +608,7 @@ export default function ProductClient() {
                         </Fade>
 
                         <Box
+                            className="filterScrollBox"
                             ref={filterScrollRef}
                             onScroll={checkScrollButtons}
                             sx={{
@@ -629,6 +637,26 @@ export default function ProductClient() {
                                 onRemoveFilter={removeFilter}
                                 onFilterPopoverOpen={handleFilterPopoverOpen}
                             />
+
+                            {appliedFilters.length > 0 && isClearAllInside && (
+                                <Button
+                                    variant="text"
+                                    size="small"
+                                    onClick={clearAllFilters}
+                                    sx={{
+                                        textTransform: "none",
+                                        fontSize: 13,
+                                        textDecoration: "underline",
+                                        color: "text.primary",
+                                        whiteSpace: "nowrap",
+                                        minWidth: "auto",
+                                        flexShrink: 0,
+                                        padding: '5px 8px'
+                                    }}
+                                >
+                                    Clear All
+                                </Button>
+                            )}
                         </Box>
 
                         <Fade in={showRightScroll}>
@@ -648,7 +676,7 @@ export default function ProductClient() {
                             </IconButton>
                         </Fade>
 
-                        {appliedFilters.length > 0 && (
+                        {appliedFilters.length > 0 && !isClearAllInside && (
                             <Button
                                 variant="text"
                                 size="small"

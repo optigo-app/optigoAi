@@ -43,7 +43,8 @@ const theme = createTheme({
       light: '#f5f5f5',
     },
     text: {
-      primary: '#212121',
+      // primary: '#212121',
+      primary: '#404040ff',
       secondary: '#757575',
       disabled: '#bdbdbd',
     },

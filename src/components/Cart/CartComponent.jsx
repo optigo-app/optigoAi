@@ -237,8 +237,8 @@ const CartPageMUI = () => {
 
                                     {/* Product Details */}
                                     <CardContent sx={{ pb: '0 !important', padding: '10px !important' }}>
-                                        <Typography variant="body1" fontWeight="500" align="center" className='code'>
-                                            {item.designno || item.name}
+                                        <Typography variant="body2" fontWeight="500" align="center" className='code'>
+                                            {item.designno}
                                         </Typography>
                                     </CardContent>
                                 </Card>

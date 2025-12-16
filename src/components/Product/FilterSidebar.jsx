@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { TextField, InputAdornment } from "@mui/material";
 import {
     Accordion,
@@ -22,9 +22,15 @@ import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
 import useDebounce from "@/hooks/useDebounce";
 
-const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => (
+const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle, focusId, tabIndex, onFocus, onKeyDown, registerFocusable }) => (
     <Box
+        ref={(el) => registerFocusable?.(focusId, el)}
         onClick={(e) => onToggle(categoryName, item, e)}
+        onFocus={onFocus}
+        onKeyDown={onKeyDown}
+        tabIndex={tabIndex}
+        role="checkbox"
+        aria-checked={isSelected}
         sx={{
             display: 'flex',
             alignItems: 'center',
@@ -34,6 +40,11 @@ const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => 
             bgcolor: isSelected ? 'primary.light' : 'transparent',
             color: isSelected ? 'primary.contrastText' : 'text.primary',
             transition: 'all 0.2s',
+            outline: 'none',
+            '&:focus-visible': {
+                outline: 'none',
+                bgcolor: isSelected ? 'primary.light' : 'action.hover',
+            },
             '&:hover': {
                 bgcolor: isSelected ? 'primary.light' : 'action.hover',
             }
@@ -42,6 +53,7 @@ const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => 
         <Checkbox
             checked={isSelected}
             size="small"
+            tabIndex={-1}
             sx={{
                 p: 0.5,
                 mr: 1,
@@ -54,9 +66,12 @@ const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle }) => 
         </Typography>
     </Box>
 ));
+
 FilterItem.displayName = 'FilterItem';
 
-const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordion, selectedFilters, onToggleItem, count }) => {
+const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordion, selectedFilters, onToggleItem, count, categoryFocusId, registerFocusable, onFocusFocusable, onKeyDownFocusable }) => {
+    const headerId = `cat:${category.name}`;
+
     return (
         <Accordion
             expanded={expanded}
@@ -76,9 +91,22 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
             }}
         >
             <AccordionSummary
+                ref={(el) => registerFocusable?.(headerId, el)}
                 expandIcon={<ChevronDown size={18} />}
+                tabIndex={categoryFocusId === headerId ? 0 : -1}
+                onFocus={() => onFocusFocusable?.(headerId)}
+                onKeyDown={(e) => onKeyDownFocusable?.(e, { kind: 'category', id: headerId, category })}
                 sx={{
                     bgcolor: 'background.paper',
+                    outline: 'none',
+                    '&.Mui-focusVisible': {
+                        outline: 'none',
+                        bgcolor: 'action.hover',
+                    },
+                    '&:focus-visible': {
+                        outline: 'none',
+                        bgcolor: 'action.hover',
+                    },
                     '&.Mui-expanded': { minHeight: 40 }
                 }}
             >
@@ -88,7 +116,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                     </Typography>
                     {count > 0 && (
                         <Box sx={{ bgcolor: 'secondary.extraLight', borderRadius: '4px', p: '2px 6px' }}>
-                            <Typography variant="caption">
+                            <Typography variant="caption" sx={{fontWeight:'500'}}>
                                 {count}
                             </Typography>
                         </Box>
@@ -118,13 +146,23 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                     })
                 }}>
                     {category?.items?.map((item) => (
-                        <FilterItem
-                            key={item.id}
-                            categoryName={category.name}
-                            item={item}
-                            isSelected={selectedFilters.has(`${category.name}-${item.id}`)}
-                            onToggle={onToggleItem}
-                        />
+                        (() => {
+                            const itemId = `item:${category.name}:${item.id}`;
+                            return (
+                                <FilterItem
+                                    key={item.id}
+                                    categoryName={category.name}
+                                    item={item}
+                                    isSelected={selectedFilters.has(`${category.name}-${item.id}`)}
+                                    onToggle={onToggleItem}
+                                    focusId={itemId}
+                                    tabIndex={categoryFocusId === itemId ? 0 : -1}
+                                    registerFocusable={registerFocusable}
+                                    onFocus={() => onFocusFocusable?.(itemId)}
+                                    onKeyDown={(e) => onKeyDownFocusable?.(e, { kind: 'item', id: itemId, category, item })}
+                                />
+                            );
+                        })()
                     ))}
                 </Box>
             </AccordionDetails>
@@ -133,6 +171,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
 }, (prev, next) => {
     if (prev.expanded !== next.expanded) return false;
     if (prev.count !== next.count) return false;
+    if (prev.categoryFocusId !== next.categoryFocusId) return false;
     if (!next.expanded) return true;
     return prev.selectedFilters === next.selectedFilters;
 });
@@ -149,8 +188,22 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
+    const [focusedId, setFocusedId] = useState(null);
+    const focusablesRef = useRef(new Map());
+    const shouldProgrammaticallyFocusRef = useRef(false);
+    const pendingFocusIdRef = useRef(null);
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+    const registerFocusable = useCallback((id, el) => {
+        if (!id) return;
+        if (el) {
+            focusablesRef.current.set(id, el);
+        } else {
+            focusablesRef.current.delete(id);
+        }
+    }, []);
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -275,22 +328,6 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
         });
     }, [filters, appliedFilters, onApply, selectedFilters]);
 
-    const handleSearchChange = (event) => {
-        setSearchTerm(event.target.value);
-    };
-
-    const handleClearAll = useCallback(() => {
-        const next = new Set();
-        setSelectedFilters(next);
-        startTransition(() => {
-            const drawerCategoryNames = new Set(filters.map(c => c.name));
-            const preservedFilters = appliedFilters.filter(
-                (f) => !drawerCategoryNames.has(f.category)
-            );
-            onApply?.(preservedFilters);
-        });
-    }, [appliedFilters, filters, onApply]);
-
     const filteredFilters = useMemo(() => {
         if (!debouncedSearchTerm) {
             return filters;
@@ -316,6 +353,152 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
             })
             .filter(Boolean);
     }, [filters, debouncedSearchTerm]);
+
+    const focusableIds = useMemo(() => {
+        const ids = [];
+        filteredFilters?.forEach((category) => {
+            ids.push(`cat:${category.name}`);
+            if (category.expanded) {
+                category.items?.forEach((item) => {
+                    ids.push(`item:${category.name}:${item.id}`);
+                });
+            }
+        });
+        return ids;
+    }, [filteredFilters]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (pendingFocusIdRef.current && focusableIds.includes(pendingFocusIdRef.current)) {
+            shouldProgrammaticallyFocusRef.current = true;
+            setFocusedId(pendingFocusIdRef.current);
+            pendingFocusIdRef.current = null;
+            return;
+        }
+
+        if (!focusedId || !focusableIds.includes(focusedId)) {
+            if (focusableIds.length > 0) {
+                shouldProgrammaticallyFocusRef.current = true;
+                setFocusedId(focusableIds[0]);
+            }
+        }
+    }, [isOpen, focusableIds, focusedId]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (!focusedId) return;
+        if (!shouldProgrammaticallyFocusRef.current) return;
+        const el = focusablesRef.current.get(focusedId);
+        if (el && typeof el.focus === 'function') {
+            el.focus();
+        }
+        shouldProgrammaticallyFocusRef.current = false;
+    }, [isOpen, focusedId]);
+
+    const focusById = useCallback((id) => {
+        if (!id) return;
+        shouldProgrammaticallyFocusRef.current = true;
+        setFocusedId(id);
+    }, []);
+
+    const moveFocus = useCallback((delta) => {
+        if (!focusableIds.length) return;
+        const currentIndex = focusedId ? focusableIds.indexOf(focusedId) : -1;
+        const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+        const nextIndex = Math.max(0, Math.min(focusableIds.length - 1, safeIndex + delta));
+        focusById(focusableIds[nextIndex]);
+    }, [focusableIds, focusedId, focusById]);
+
+    const onFocusFocusable = useCallback((id) => {
+        setFocusedId(id);
+    }, []);
+
+    const onKeyDownFocusable = useCallback((e, payload) => {
+        if (!payload) return;
+        const key = e.key;
+
+        if (key === 'Escape') {
+            e.preventDefault();
+            onClose?.();
+            return;
+        }
+
+        if (key === 'ArrowDown') {
+            e.preventDefault();
+            moveFocus(1);
+            return;
+        }
+
+        if (key === 'ArrowUp') {
+            e.preventDefault();
+            moveFocus(-1);
+            return;
+        }
+
+        if (payload.kind === 'category') {
+            const headerId = payload.id;
+
+            if (key === 'Enter' || key === ' ') {
+                e.preventDefault();
+                const willExpand = !payload.category.expanded;
+                toggleAccordion(payload.category);
+                if (willExpand && payload.category.items?.length) {
+                    pendingFocusIdRef.current = `item:${payload.category.name}:${payload.category.items[0].id}`;
+                }
+                return;
+            }
+
+            if (key === 'ArrowRight') {
+                e.preventDefault();
+                if (!payload.category.expanded) {
+                    toggleAccordion(payload.category);
+                }
+                if (payload.category.items?.length) {
+                    pendingFocusIdRef.current = `item:${payload.category.name}:${payload.category.items[0].id}`;
+                }
+                return;
+            }
+
+            if (key === 'ArrowLeft') {
+                e.preventDefault();
+                if (payload.category.expanded) {
+                    toggleAccordion(payload.category);
+                    focusById(headerId);
+                }
+                return;
+            }
+        }
+
+        if (payload.kind === 'item') {
+            if (key === 'Enter' || key === ' ') {
+                e.preventDefault();
+                toggleFilterItem(payload.category.name, payload.item, { stopPropagation: () => { } });
+                return;
+            }
+
+            if (key === 'ArrowLeft') {
+                e.preventDefault();
+                focusById(`cat:${payload.category.name}`);
+                return;
+            }
+        }
+    }, [focusById, moveFocus, onClose, toggleAccordion, toggleFilterItem]);
+
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const handleClearAll = useCallback(() => {
+        const next = new Set();
+        setSelectedFilters(next);
+        startTransition(() => {
+            const drawerCategoryNames = new Set(filters.map(c => c.name));
+            const preservedFilters = appliedFilters.filter(
+                (f) => !drawerCategoryNames.has(f.category)
+            );
+            onApply?.(preservedFilters);
+        });
+    }, [appliedFilters, filters, onApply]);
 
     useEffect(() => {
         if (debouncedSearchTerm) {
@@ -452,6 +635,10 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                                 selectedFilters={selectedFilters}
                                 onToggleItem={toggleFilterItem}
                                 count={categoryCounts[category.name] || 0}
+                                categoryFocusId={focusedId && (focusedId === `cat:${category.name}` || focusedId.startsWith(`item:${category.name}:`)) ? focusedId : null}
+                                registerFocusable={registerFocusable}
+                                onFocusFocusable={onFocusFocusable}
+                                onKeyDownFocusable={onKeyDownFocusable}
                             />
                         ))
                     )}
