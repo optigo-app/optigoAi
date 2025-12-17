@@ -584,7 +584,7 @@ export default function ProductClient() {
                             />
                             <Box>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                                    AI with Magic Catalogue
+                                    Magic Catalog / AI
                                 </Typography>
                                 <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
                                     {finalFilteredProducts.length} products found

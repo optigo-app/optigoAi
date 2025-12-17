@@ -11,7 +11,7 @@ import {
     Paper,
     CircularProgress,
 } from "@mui/material";
-import { ArrowLeft, ShoppingCart, Images, FileText } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Images, FileText, Sparkles } from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -23,58 +23,55 @@ import PageHeader from "../Common/PageHeader";
 /* ----------------------------------------------------
    ACTION CONFIG — Adding new actions requires only this
    ---------------------------------------------------- */
-const ACTION_BUTTON_BG = "#7367f0";
-const ACTION_BUTTON_HOVER = "#5e56d6";
-
 const ACTION_CONFIG = {
     album: {
         title: "Add to Album",
-        description: "Add items to album for future reference",
+        description: "Add these items to your album for future reference and inspiration",
         api: SaveCartApi,
         successMessage: "Items added to Album!",
         postMessageEvent: "Album",
         responseKey: "QID",
 
         ui: {
-            icon: <Images size={24} color="#ff9f43" />,
-            iconBg: "#fff7ed",
-            cardBg: "#ffffff",
-            buttonBg: ACTION_BUTTON_BG,
-            buttonHover: ACTION_BUTTON_HOVER,
+            icon: <Images size={32} />,
+            iconBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
+            cardBg: "linear-gradient(135deg, #fff7ed 0%, #fff0df 100%)",
+            buttonBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
+            buttonHover: "linear-gradient(135deg, #ff8c1a 0%, #e65b00 100%)",
         },
     },
 
     quote: {
         title: "Add to Quote",
-        description: "Add items to quotation for reference",
+        description: "Add these items to your quotation for future reference and inspiration",
         api: SaveCartApi,
         successMessage: "Items added to Quotation!",
         postMessageEvent: "Quotation",
         responseKey: "QID",
 
         ui: {
-            icon: <FileText size={24} color="#667eea" />,
-            iconBg: "#f5f7ff",
-            cardBg: "#ffffff",
-            buttonBg: ACTION_BUTTON_BG,
-            buttonHover: ACTION_BUTTON_HOVER,
+            icon: <FileText size={32} />,
+            iconBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            cardBg: "linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%)",
+            buttonBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            buttonHover: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
         },
     },
 
     order: {
         title: "Add to Order",
-        description: "Add items to order for processing",
+        description: "Add these items to your order for future reference and inspiration",
         api: SaveCartApi,
         successMessage: "Items added to Order!",
         postMessageEvent: "Order",
         responseKey: "QID",
 
         ui: {
-            icon: <ShoppingCart size={24} color="#10ac84" />,
-            iconBg: "#e3fff1",
-            cardBg: "#ffffff",
-            buttonBg: ACTION_BUTTON_BG,
-            buttonHover: ACTION_BUTTON_HOVER,
+            icon: <ShoppingCart size={32} />,
+            iconBg: "linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%)",
+            cardBg: "linear-gradient(135deg, #f0fff7 0%, #e3fff1 100%)",
+            buttonBg: "linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%)",
+            buttonHover: "linear-gradient(135deg, #14c79a 0%, #0f9b77 100%)",
         },
     },
 };
@@ -103,26 +100,31 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
         <Paper
             elevation={0}
             sx={{
-                p: 0,
-                borderRadius: 2,
+                p: 2,
+                borderRadius: 3,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
                 overflow: "hidden",
                 background: ui.cardBg,
                 border: "1px solid",
-                borderColor: "divider",
+                borderColor: "rgba(0,0,0,0.08)",
                 transition: "0.3s",
                 cursor: "pointer",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
                 "&:hover": {
                     transform: "translateY(-4px)",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                    boxShadow: "0 15px 30px rgba(0,0,0,0.1)",
                 },
             }}
         >
             {/* Header */}
-            <Box sx={{ p: 3, pb: 2, textAlign: "center" }}>
+            <Box sx={{ textAlign: "center", mb: 2 }}>
                 <Box
                     sx={{
-                        width: 56,
-                        height: 56,
+                        width: 50,
+                        height: 50,
                         borderRadius: "50%",
                         background: ui.iconBg,
                         display: "flex",
@@ -130,54 +132,48 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
                         justifyContent: "center",
                         mx: "auto",
                         mb: 2,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        color: "white",
                     }}
                 >
-                    {ui.icon}
+                    {React.cloneElement(ui.icon, { size: 24 })}
                 </Box>
 
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5, fontSize: "1rem" }}>
                     {title}
                 </Typography>
 
-                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300, mx: "auto", lineHeight: 1.4 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.85rem", lineHeight: 1.4 }}>
                     {description}
                 </Typography>
             </Box>
 
             {/* Button */}
-            <Box sx={{ p: 2 }}>
+            <Box>
                 <Button
                     fullWidth
-                    variant="outlined"
+                    variant="contained"
                     size="medium"
                     onClick={onClick}
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={16} /> : ''}
+                    startIcon={loading ? <CircularProgress size={16} /> : <Sparkles size={16} />}
                     sx={{
                         py: 1,
                         borderRadius: 2,
                         textTransform: "none",
-                        fontSize: "0.95rem",
+                        fontSize: "0.9rem",
                         fontWeight: 600,
-                        borderColor: "transparent",
-                        color: ui.buttonHover,
-                        background: "rgba(115, 103, 240, 0.08)",
+                        background: ui.buttonBg,
+                        "&:hover": { background: ui.buttonHover },
                         boxShadow: "none",
-                        "&:hover": {
-                            background: "rgba(115, 103, 240, 0.12)",
-                            borderColor: "transparent",
-                            color: ui.buttonBg,
-                            boxShadow: "none"
-                        },
                     }}
                 >
-                    {loading ? "Processing..." : `Continue with ${title}`}
+                    {loading ? "Processing..." : `Continue`}
                 </Button>
             </Box>
-        </Paper >
+        </Paper>
     );
 };
-
 /* ----------------------------------------------------
    MAIN COMPONENT
    ---------------------------------------------------- */
@@ -234,11 +230,23 @@ const CheckoutClient = () => {
                         </>
                     }
                 />
-                <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", p: '10px 16px !important', mt: 2 }}>
+                <Box
+                    sx={{
+                        maxWidth: 1200,
+                        mx: "auto",
+                        mt: 4,
+                        p: { xs: 2, md: 4, lg: 8 },
+                        borderRadius: 4,
+                        bgcolor: "rgba(255,255,255,0.6)",
+                        backdropFilter: "blur(20px)",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+                        border: "1px solid rgba(255,255,255,0.8)",
+                    }}
+                >
                     {/* Dynamic Config-based Action Cards */}
-                    <Grid container spacing={3} justifyContent="center" alignItems="center">
+                    <Grid container spacing={2} justifyContent="center">
                         {Object.entries(ACTION_CONFIG).map(([key, cfg]) => (
-                            <Grid key={key} size={{ xs: 12, md: 6, lg: 2.4 }}>
+                            <Grid key={key} size={{ xs: 12, sm: 6, md: 4 }}>
                                 <ActionCard
                                     actionKey={key}
                                     config={cfg}

@@ -20,6 +20,7 @@ export default function GridBackground({ children }) {
           inset: 0,
           backgroundImage: 'linear-gradient(rgba(115, 103, 240, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(115, 103, 240, 0.03) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
+          opacity: 0.5,
           width: '100%',
           height: '100%',
           zIndex: 0,

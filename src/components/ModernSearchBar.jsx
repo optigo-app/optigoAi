@@ -532,6 +532,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             {!isMultiline && (
                                 <Tooltip title="Upload image">
                                     <IconButton
+                                        className="iconbuttonsearch"
                                         onClick={() => fileRef.current.click()}
                                         sx={actionIconButtonSx}
                                     >
@@ -576,7 +577,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                             {!isExpanded && (
                                 <Tooltip title="Settings">
-                                    <IconButton onClick={() => setIsExpanded(true)} sx={{ ...actionIconButtonSx, ml: 1 }}>
+                                    <IconButton className="iconbuttonsearch" onClick={() => setIsExpanded(true)} sx={{ ...actionIconButtonSx, ml: 1 }}>
                                         <Settings2 size={20} />
                                     </IconButton>
                                 </Tooltip>
@@ -589,6 +590,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                             <IconButton
                                                 size="small"
+                                                className="iconbuttonsearch"
                                                 onClick={() => setIsExpanded(!isExpanded)}
                                                 sx={{
                                                     ...actionIconButtonSx,
@@ -600,7 +602,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         </Tooltip>
 
                                         <Tooltip title="AI Search" placement="top">
-                                            <IconButton onClick={handleSend} sx={sendIconButtonSx}>
+                                            <IconButton className="iconbuttonsearch" onClick={handleSend} sx={sendIconButtonSx}>
                                                 <ArrowRight size={20} />
                                             </IconButton>
                                         </Tooltip>
@@ -614,10 +616,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5 }}>
                                 <Tooltip title="Upload image">
                                     <IconButton
+                                        className="iconbuttonsearch"
                                         onClick={() => fileRef.current.click()}
                                         sx={actionIconButtonSx}
                                     >
-                                        <ImagePlus size={22} />
+                                        <ImagePlus size={20} />
                                     </IconButton>
                                 </Tooltip>
 
@@ -625,6 +628,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                         <IconButton
                                             size="small"
+                                            className="iconbuttonsearch"
                                             onClick={() => setIsExpanded(!isExpanded)}
                                             sx={actionIconButtonSx}
                                         >
@@ -633,7 +637,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     </Tooltip>
 
                                     <Tooltip title="AI Search" placement="top">
-                                        <IconButton onClick={handleSend} sx={sendIconButtonSx}>
+                                        <IconButton
+                                            className="iconbuttonsearch"
+                                            onClick={handleSend}
+                                            sx={sendIconButtonSx}
+                                        >
                                             <ArrowRight size={20} />
                                         </IconButton>
                                     </Tooltip>
@@ -679,19 +687,21 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     </IconButton>
                                 </Tooltip>
                             )}
-                            <Chip
-                                icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
-                                label={getActiveFilterName('Category')}
-                                clickable
-                                onClick={(e) => openDropdown('Category', e)}
-                                variant={hasSelection('Category') ? "filled" : "outlined"}
-                                color={hasSelection('Category') ? "primary" : "default"}
-                                sx={{
-                                    borderRadius: '8px',
-                                    border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
-                                    transition: 'all 0.2s'
-                                }}
-                            />
+                            {getItemsForCategory('Category').length > 0 && (
+                                <Chip
+                                    icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
+                                    label={getActiveFilterName('Category')}
+                                    clickable
+                                    onClick={(e) => openDropdown('Category', e)}
+                                    variant={hasSelection('Category') ? "filled" : "outlined"}
+                                    color={hasSelection('Category') ? "primary" : "default"}
+                                    sx={{
+                                        borderRadius: '8px',
+                                        border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                />
+                            )}
                             {/* <Chip
                                 icon={hasSelection('Style') ? <Check size={14} /> : <Palette size={15} />}
                                 label={getActiveFilterName('Style')}
@@ -705,19 +715,21 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     transition: 'all 0.2s'
                                 }}
                             /> */}
-                            <Chip
-                                icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
-                                label={getActiveFilterName('Gender')}
-                                clickable
-                                onClick={(e) => openDropdown('Gender', e)}
-                                variant={hasSelection('Gender') ? "filled" : "outlined"}
-                                color={hasSelection('Gender') ? "primary" : "default"}
-                                sx={{
-                                    borderRadius: '8px',
-                                    border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
-                                    transition: 'all 0.2s'
-                                }}
-                            />
+                            {getItemsForCategory('Gender').length > 0 && (
+                                <Chip
+                                    icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
+                                    label={getActiveFilterName('Gender')}
+                                    clickable
+                                    onClick={(e) => openDropdown('Gender', e)}
+                                    variant={hasSelection('Gender') ? "filled" : "outlined"}
+                                    color={hasSelection('Gender') ? "primary" : "default"}
+                                    sx={{
+                                        borderRadius: '8px',
+                                        border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
+                                        transition: 'all 0.2s'
+                                    }}
+                                />
+                            )}
                             {showMoreFiltersButton && (
                                 <Button
                                     variant="contained"
