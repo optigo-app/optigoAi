@@ -13,7 +13,7 @@ const ProductGrid = memo(function ProductGrid({
   urlParamsFlag,
   isFilterOpen
 }) {
-  const ITEMS_PER_LOAD = 24;
+  const ITEMS_PER_LOAD = 48;
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
   const sentinelRef = useRef(null);
@@ -52,7 +52,7 @@ const ProductGrid = memo(function ProductGrid({
       },
       {
         threshold: 0,
-        rootMargin: '500px'   // 👈 load before reaching end
+        rootMargin: '1200px'   // 👈 load before reaching end
       }
     );
 
@@ -135,7 +135,24 @@ const ProductGrid = memo(function ProductGrid({
           Try adjusting your filters to see more results.
         </Typography>
 
-        <Button variant="contained" size="large" onClick={clearAllFilters}>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={clearAllFilters}
+          sx={{
+            textTransform: 'none',
+            boxShadow: 'none',
+            borderRadius: 2,
+            bgcolor: 'rgba(0, 0, 0, 0.04)',
+            color: 'text.white',
+            border: '1px solid rgba(0, 0, 0, 0.10)',
+            '&:hover': {
+              boxShadow: 'none',
+              bgcolor: 'rgba(0, 0, 0, 0.06)',
+              borderColor: 'rgba(0, 0, 0, 0.12)'
+            }
+          }}
+        >
           Clear All Filters
         </Button>
       </Box>

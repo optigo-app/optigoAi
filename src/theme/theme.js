@@ -47,6 +47,7 @@ const theme = createTheme({
       primary: '#404040ff',
       secondary: '#757575',
       disabled: '#bdbdbd',
+      white:'#fffff'
     },
     divider: '#e0e0e0',
     grey: {
@@ -221,7 +222,7 @@ const theme = createTheme({
         elevation2: {
           boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
         },
-        elevation3: {
+        elevation3: { 
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
         },
       },

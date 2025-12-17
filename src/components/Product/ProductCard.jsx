@@ -17,7 +17,7 @@ import { ShoppingCart, ScanSearch } from 'lucide-react';
 import ProductModal from './ProductModal';
 import { useCart } from '@/context/CartContext';
 
-export default function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true, urlParamsFlag }) {
+const ProductCard = React.memo(function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true, urlParamsFlag }) {
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -71,13 +71,11 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                     borderRadius: '16px',
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     transform: isHovered ? 'translateY(-8px)' : 'none',
-                    boxShadow: isInCart
-                        ? '0 0 0 1px #7367f0, 0 12px 24px rgba(115, 103, 240, 0.2)'
-                        : isHovered
-                            ? '0 20px 40px rgba(0,0,0,0.12)'
-                            : '0 4px 12px rgba(0,0,0,0.03)',
+                    boxShadow: isHovered
+                        ? '0 20px 40px rgba(0,0,0,0.12)'
+                        : '0 4px 12px rgba(0,0,0,0.03)',
                     height: '100%',
-                    bgcolor: isInCart ? '#f8f7ff' : '#fff',
+                    bgcolor: '#fff',
                 }}
             >
                 <Box sx={{ position: 'relative', overflow: 'hidden' }}>
@@ -126,8 +124,33 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                         />
                     </Box>
 
-                    {/* CART TICK */}
-
+                    {/* IN CART BADGE */}
+                    {isInCart && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: 12,
+                                left: 12,
+                                zIndex: 2,
+                                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                backdropFilter: 'blur(4px)',
+                                color: 'text.secondary',
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: '12px',
+                                fontSize: '0.65rem',
+                                fontWeight: 'bold',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                pointerEvents: 'none',
+                            }}
+                        >
+                            <ShoppingCart size={12} />
+                            In Cart
+                        </Box>
+                    )}
 
                     {/* SEARCH SIMILAR BUTTON */}
                     {showSimilarButton && onSearchSimilar && (product?.ImgUrl || product?.image) && (
@@ -249,4 +272,6 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
             </Card>
         </Box>
     );
-}
+});
+
+export default ProductCard;

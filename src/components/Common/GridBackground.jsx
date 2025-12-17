@@ -33,7 +33,6 @@ export default function GridBackground({ children }) {
           left: '50%',
           transform: 'translate(-50%, -50%)',
           width: '70vw',
-          height: '70vw',
           opacity: 0.5,
           background: 'radial-gradient(circle, rgba(115,103,240,0.18) 0%, transparent 60%)',
           filter: 'blur(100px)',

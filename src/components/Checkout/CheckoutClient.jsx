@@ -18,10 +18,14 @@ import { useToast } from "@/context/ToastContext";
 import { buildQuoteRedirectUrl } from "@/utils/globalFunc";
 import { SaveCartApi } from "@/app/api/SaveCartApi";
 import GridBackground from "../Common/GridBackground";
+import PageHeader from "../Common/PageHeader";
 
 /* ----------------------------------------------------
    ACTION CONFIG — Adding new actions requires only this
    ---------------------------------------------------- */
+const ACTION_BUTTON_BG = "#7367f0";
+const ACTION_BUTTON_HOVER = "#5e56d6";
+
 const ACTION_CONFIG = {
     album: {
         title: "Add to Album",
@@ -35,8 +39,8 @@ const ACTION_CONFIG = {
             icon: <Images size={24} color="#ff9f43" />,
             iconBg: "#fff7ed",
             cardBg: "#ffffff",
-            buttonBg: "#ff9f43",
-            buttonHover: "#ff8c1a",
+            buttonBg: ACTION_BUTTON_BG,
+            buttonHover: ACTION_BUTTON_HOVER,
         },
     },
 
@@ -52,8 +56,8 @@ const ACTION_CONFIG = {
             icon: <FileText size={24} color="#667eea" />,
             iconBg: "#f5f7ff",
             cardBg: "#ffffff",
-            buttonBg: "#667eea",
-            buttonHover: "#5a6fd8",
+            buttonBg: ACTION_BUTTON_BG,
+            buttonHover: ACTION_BUTTON_HOVER,
         },
     },
 
@@ -69,8 +73,8 @@ const ACTION_CONFIG = {
             icon: <ShoppingCart size={24} color="#10ac84" />,
             iconBg: "#e3fff1",
             cardBg: "#ffffff",
-            buttonBg: "#10ac84",
-            buttonHover: "#0d8c6b",
+            buttonBg: ACTION_BUTTON_BG,
+            buttonHover: ACTION_BUTTON_HOVER,
         },
     },
 };
@@ -151,18 +155,18 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
                     startIcon={loading ? <CircularProgress size={16} /> : ''}
                     sx={{
                         py: 1,
-                        borderRadius: 1.5,
+                        borderRadius: 2,
                         textTransform: "none",
                         fontSize: "0.95rem",
                         fontWeight: 600,
-                        borderColor: ui.buttonBg,
-                        color: ui.buttonBg,
-                        background: "transparent",
+                        borderColor: "transparent",
+                        color: ui.buttonHover,
+                        background: "rgba(115, 103, 240, 0.08)",
                         boxShadow: "none",
                         "&:hover": {
-                            background: ui.iconBg,
-                            borderColor: ui.buttonHover,
-                            color: ui.buttonHover,
+                            background: "rgba(115, 103, 240, 0.12)",
+                            borderColor: "transparent",
+                            color: ui.buttonBg,
                             boxShadow: "none"
                         },
                     }}
@@ -214,59 +218,36 @@ const CheckoutClient = () => {
     return (
         <GridBackground>
             <Container maxWidth={false} sx={{ position: "relative", zIndex: 2, px: '0 !important' }}>
-                {/* Header */}
-                <Box
-                    sx={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 100,
-                        bgcolor: 'gray.100',
-                        backdropFilter: 'blur(12px)',
-                        mb: 4,
-                        p: '8px 16px',
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            position: "relative",
-                        }}
-                    >
-                        <Box sx={{ position: "absolute", left: 0, display: "flex", alignItems: "center", gap: 1.5 }}>
+                <PageHeader
+                    centerTitle="Checkout"
+                    centerIcon={ShoppingCart}
+                    leftContent={
+                        <>
                             <IconButton onClick={handleBack}>
                                 <ArrowLeft size={20} />
                             </IconButton>
-                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                                {totalItems} products
-                            </Typography>
-                        </Box>
-
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <ShoppingCart size={20} />
-                            <Typography variant="h6" fontWeight={600}>
-                                Checkout
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Box>
-                <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", px: '10px 16px !important' }}>
-                    <Container maxWidth="lg">
-                        {/* Dynamic Config-based Action Cards */}
-                        <Grid container spacing={3} justifyContent="center" alignItems="center">
-                            {Object.entries(ACTION_CONFIG).map(([key, cfg]) => (
-                                <Grid key={key} size={{ xs: 12, md: 6, lg: 4 }}>
-                                    <ActionCard
-                                        actionKey={key}
-                                        config={cfg}
-                                        loading={!!loading[key]}
-                                        onClick={() => handleAction(key)}
-                                    />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </Container>
+                            {totalItems > 1 && (
+                                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                                    {totalItems} products
+                                </Typography>
+                            )}
+                        </>
+                    }
+                />
+                <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", p: '10px 16px !important', mt: 2 }}>
+                    {/* Dynamic Config-based Action Cards */}
+                    <Grid container spacing={3} justifyContent="center" alignItems="center">
+                        {Object.entries(ACTION_CONFIG).map(([key, cfg]) => (
+                            <Grid key={key} size={{ xs: 12, md: 6, lg: 2.4 }}>
+                                <ActionCard
+                                    actionKey={key}
+                                    config={cfg}
+                                    loading={!!loading[key]}
+                                    onClick={() => handleAction(key)}
+                                />
+                            </Grid>
+                        ))}
+                    </Grid>
                 </Box>
             </Container>
         </GridBackground>

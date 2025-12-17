@@ -51,6 +51,34 @@ export default function ProductModal({ open, onClose, product, products = [], st
     const { isItemInCart, removeFromCart } = useCart();
     const [openConfirmModal, setOpenConfirmModal] = useState(false);
 
+    const softPrimaryButtonSx = {
+        textTransform: 'none',
+        boxShadow: 'none',
+        borderRadius: 2,
+        borderColor: 'transparent',
+        bgcolor: 'rgba(115, 103, 240, 0.08)',
+        color: 'primary.dark',
+        '&:hover': {
+            bgcolor: 'rgba(115, 103, 240, 0.12)',
+            borderColor: 'transparent',
+            boxShadow: 'none',
+        },
+    };
+
+    const softDangerButtonSx = {
+        textTransform: 'none',
+        boxShadow: 'none',
+        borderRadius: 2,
+        borderColor: 'transparent',
+        bgcolor: 'rgba(244, 67, 54, 0.08)',
+        color: 'error.dark',
+        '&:hover': {
+            bgcolor: 'rgba(244, 67, 54, 0.12)',
+            borderColor: 'transparent',
+            boxShadow: 'none',
+        },
+    };
+
     useEffect(() => {
         const styleElement = document.createElement('style');
         styleElement.innerHTML = swiperStyles;
@@ -280,14 +308,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                             onSearchSimilar(sliderProducts[activeIndex] || product);
                             onClose();
                         }}
-                        sx={{
-                            borderColor: 'primary.main',
-                            color: 'primary.main',
-                            '&:hover': {
-                                borderColor: 'primary.dark',
-                                backgroundColor: 'rgba(115, 103, 240, 0.1)',
-                            },
-                        }}
+                        sx={softPrimaryButtonSx}
                     >
                         Search Similar
                     </Button>
@@ -298,6 +319,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                         color="error"
                         startIcon={<Trash2 size={18} />}
                         onClick={handleRemoveItem}
+                        sx={softDangerButtonSx}
                     >
                         Remove
                     </Button>
@@ -329,6 +351,13 @@ export default function ProductModal({ open, onClose, product, products = [], st
                             }
                         }}
                         disabled={isItemInCart((sliderProducts[activeIndex] || product)?.id)}
+                        sx={{
+                            ...softPrimaryButtonSx,
+                            '&.Mui-disabled': {
+                                bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                color: 'text.disabled',
+                            },
+                        }}
                     >
                         {isItemInCart((sliderProducts[activeIndex] || product)?.id) ? 'In Cart' : 'Add to Cart'}
                     </Button>

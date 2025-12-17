@@ -35,6 +35,30 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const textFieldRef = useRef(null);
     const containerRef = useRef(null);
 
+    const actionIconButtonSx = {
+        width: 40,
+        height: 40,
+        p: 1,
+        borderRadius: '50%',
+        color: 'text.secondary',
+        bgcolor: 'rgba(115, 103, 240, 0.06)',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+            bgcolor: 'rgba(115, 103, 240, 0.12)',
+            color: 'primary.main',
+        },
+    };
+
+    const sendIconButtonSx = {
+        ...actionIconButtonSx,
+        bgcolor: 'primary.main',
+        color: '#ffffff',
+        '&:hover': {
+            bgcolor: 'primary.dark',
+            color: '#ffffff',
+        },
+    };
+
     // Original State
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
@@ -399,9 +423,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
     const handleClickAway = () => {
         if (alwaysExpanded) return;
-        if (!activeDropdown) {
-            setIsExpanded(false);
-        }
+        closeDropdown();
+        setIsExpanded(false);
+        setIsMultiline(false);
         setShowSuggestionsDropdown(false);
     };
 
@@ -509,8 +533,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                 <Tooltip title="Upload image">
                                     <IconButton
                                         onClick={() => fileRef.current.click()}
-                                        className="upload-btn"
-                                        sx={{ p: 1 }}
+                                        sx={actionIconButtonSx}
                                     >
                                         <ImagePlus size={22} />
                                     </IconButton>
@@ -553,7 +576,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                             {!isExpanded && (
                                 <Tooltip title="Settings">
-                                    <IconButton onClick={() => setIsExpanded(true)} sx={{ ml: 1 }}>
+                                    <IconButton onClick={() => setIsExpanded(true)} sx={{ ...actionIconButtonSx, ml: 1 }}>
                                         <Settings2 size={20} />
                                     </IconButton>
                                 </Tooltip>
@@ -565,10 +588,10 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                                         <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                             <IconButton
-                                                className="settings-btn"
                                                 size="small"
                                                 onClick={() => setIsExpanded(!isExpanded)}
                                                 sx={{
+                                                    ...actionIconButtonSx,
                                                     mr: 0.5
                                                 }}
                                             >
@@ -577,7 +600,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         </Tooltip>
 
                                         <Tooltip title="AI Search" placement="top">
-                                            <IconButton className="send-btn" onClick={handleSend}>
+                                            <IconButton onClick={handleSend} sx={sendIconButtonSx}>
                                                 <ArrowRight size={20} />
                                             </IconButton>
                                         </Tooltip>
@@ -592,8 +615,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                 <Tooltip title="Upload image">
                                     <IconButton
                                         onClick={() => fileRef.current.click()}
-                                        className="upload-btn"
-                                        sx={{ p: 1 }}
+                                        sx={actionIconButtonSx}
                                     >
                                         <ImagePlus size={22} />
                                     </IconButton>
@@ -602,16 +624,16 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                                     <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                         <IconButton
-                                            className="settings-btn"
                                             size="small"
                                             onClick={() => setIsExpanded(!isExpanded)}
+                                            sx={actionIconButtonSx}
                                         >
                                             <Settings2 size={20} />
                                         </IconButton>
                                     </Tooltip>
 
                                     <Tooltip title="AI Search" placement="top">
-                                        <IconButton className="send-btn" onClick={handleSend}>
+                                        <IconButton onClick={handleSend} sx={sendIconButtonSx}>
                                             <ArrowRight size={20} />
                                         </IconButton>
                                     </Tooltip>
@@ -642,10 +664,15 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         size="small"
                                         onClick={() => onApply([])}
                                         sx={{
-                                            bgcolor: '#ffebee',
-                                            color: '#d32f2f',
+                                            borderRadius: 2,
+                                            bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                            color: 'text.white',
+                                            border: '1px solid rgba(0, 0, 0, 0.10)',
                                             mr: 0.5,
-                                            '&:hover': { bgcolor: '#ffcdd2' }
+                                            '&:hover': {
+                                                bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                                borderColor: 'rgba(0, 0, 0, 0.12)'
+                                            }
                                         }}
                                     >
                                         <X size={16} />

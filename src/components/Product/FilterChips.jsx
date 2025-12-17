@@ -5,6 +5,36 @@ import { Chip, Avatar, Box } from '@mui/material';
 import { Image as ImageIcon } from 'lucide-react';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 
+const softPrimaryChipSx = {
+    borderRadius: 2,
+    bgcolor: 'rgba(0, 0, 0, 0.04)',
+    color: 'text.primary',
+    border: '1px solid rgba(0, 0, 0, 0.10)',
+    '&:hover': {
+        bgcolor: 'rgba(0, 0, 0, 0.06)',
+    },
+};
+
+const softErrorChipSx = {
+    borderRadius: 2,
+    bgcolor: 'rgba(0, 0, 0, 0.04)',
+    color: 'text.primary',
+    border: '1px solid rgba(0, 0, 0, 0.10)',
+    '&:hover': {
+        bgcolor: 'rgba(0, 0, 0, 0.06)',
+    },
+};
+
+const softNeutralChipSx = {
+    borderRadius: 2,
+    bgcolor: 'rgba(0, 0, 0, 0.04)',
+    color: 'text.primary',
+    border: '1px solid rgba(0, 0, 0, 0.10)',
+    '&:hover': {
+        bgcolor: 'rgba(0, 0, 0, 0.06)',
+    },
+};
+
 export default function FilterChips({
     appliedFilters,
     onRemoveFilter,
@@ -46,7 +76,7 @@ export default function FilterChips({
                                     alt="search"
                                     variant="rounded"
                                     sx={{
-                                        borderRadius: '6px'
+                                        borderRadius: 2
                                     }}
                                 />
                             ) : item.icon ? (
@@ -62,6 +92,7 @@ export default function FilterChips({
                             maxWidth: '200px',
                             cursor: isImageSearch && !isError ? 'pointer' : 'default',
                             opacity: isError ? 0.9 : 1,
+                            borderRadius: 2,
                             flexShrink: 0,
                             '& .MuiChip-label': {
                                 overflow: 'hidden',
@@ -122,23 +153,35 @@ export default function FilterChips({
                                 label={`${category}: ${item.name}`}
                                 size="small"
                                 onDelete={() => onRemoveFilter({ item })}
-                                sx={{ flexShrink: 0 }}
+                                sx={{
+                                    ...softPrimaryChipSx,
+                                    flexShrink: 0,
+                                    maxWidth: '240px',
+                                    '& .MuiChip-label': {
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                    },
+                                    '& .MuiChip-deleteIcon': {
+                                        color: 'text.secondary',
+                                        opacity: 0.8,
+                                        '&:hover': { opacity: 1 }
+                                    }
+                                }}
                             />
                         ))}
                         {hiddenItems.length > 0 && (
                             <Chip
                                 label={`+${hiddenItems.length}`}
                                 size="small"
-                                variant="outlined"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onFilterPopoverOpen(e, hiddenItems);
                                 }}
                                 sx={{
-                                    borderColor: 'divider',
-                                    bgcolor: 'background.paper',
+                                    ...softNeutralChipSx,
                                     flexShrink: 0,
-                                    '&:hover': { bgcolor: 'action.hover' }
+                                    cursor: 'pointer'
                                 }}
                             />
                         )}

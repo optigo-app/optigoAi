@@ -20,6 +20,8 @@ import ReusableConfirmModal from '../Common/ReusableConfirmModal';
 import ProductModal from '../Product/ProductModal';
 import FullPageLoader from '../FullPageLoader';
 
+import PageHeader from '../Common/PageHeader';
+
 const LucideIconWrapper = ({ Icon, size = 24, ...props }) => (
     <Box component="span" sx={{ display: 'flex', alignItems: 'center' }} {...props}>
         <Icon size={size} />
@@ -102,89 +104,68 @@ const CartPageMUI = () => {
     return (
         <GridBackground>
             <Container maxWidth="false" sx={{ position: "relative", zIndex: 2, marginBottom: "60px", px: '0 !important' }}>
-                <Box
-                    sx={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 100,
-                        bgcolor: 'gray.600',
-                        backdropFilter: 'blur(12px)',
-                        mb: 2,
-                        p: '8px 16px',
-                    }}
-                >
-                    <Box
-                        sx={{
-                            position: 'relative',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Box sx={{ position: 'absolute', left: 0, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <PageHeader
+                    centerTitle="My Cart"
+                    centerIcon={ShoppingCart}
+                    leftContent={
+                        <>
                             <IconButton
                                 onClick={handleBack}
                                 sx={{
-                                    color: 'text.secondary',
-                                    '&:hover': { color: 'text.primary' }
+                                    color: 'inherit',
                                 }}
                             >
                                 <ArrowLeft size={20} />
                             </IconButton>
-                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                                {totalCount} products
-                            </Typography>
+                            {totalCount > 1 && (
+                                <Typography variant="body2" sx={{ whiteSpace: 'nowrap', color: 'inherit', opacity: 0.9 }}>
+                                    {totalCount} products
+                                </Typography>
+                            )}
                             {cartItems.length > 0 && (
                                 <Button
                                     onClick={handleClearCart}
-                                    variant="text"
                                     size="small"
+                                    startIcon={<Trash2 size={16} />}
                                     sx={{
                                         textTransform: 'none',
-                                        textDecoration: 'underline',
                                         boxShadow: 'none',
-                                        color: 'error.main',
+                                        borderRadius: 2,
+                                        bgcolor: 'rgba(244, 67, 54, 0.08)',
+                                        color: 'error.dark',
+                                        '&:hover': {
+                                            bgcolor: 'rgba(244, 67, 54, 0.12)',
+                                            boxShadow: 'none',
+                                        },
                                     }}
                                 >
-                                    Clear Cart
+                                    Clear cart
                                 </Button>
                             )}
-                        </Box>
-
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                <ShoppingCart size={20} />
-                                <Typography
-                                    variant="h6"
-                                    fontWeight={600}
-                                >
-                                    My Cart
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        {cartItems.length > 0 && (
-                            <Box sx={{ position: 'absolute', right: 0, display: 'flex', gap: 2, alignItems: 'center' }}>
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    startIcon={<ArrowRightCircle size={16} />}
-                                    onClick={handleContinue}
-                                    sx={{
-                                        textTransform: 'none',
-                                        fontWeight: 'bold'
-                                    }}
-                                >
-                                    Continue
-                                </Button>
-                            </Box>
-                        )}
-                    </Box>
-                </Box>
+                        </>
+                    }
+                    rightContent={
+                        cartItems.length > 0 && (
+                            <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<ArrowRightCircle size={16} />}
+                                onClick={handleContinue}
+                                sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 'bold',
+                                    borderRadius: 2,
+                                }}
+                            >
+                                Continue
+                            </Button>
+                        )
+                    }
+                />
 
 
                 {cartItems.length > 0 ? (
-                    <Grid container spacing={2} sx={{ px: '10px 16px !important' }}>
+                    <Grid container spacing={2} sx={{ p: '10px 16px !important', mt: 2 }}>
                         {cartItems.map((item, index) => (
                             <Grid
                                 key={`${item.id}-${index}`}

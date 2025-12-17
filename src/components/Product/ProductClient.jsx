@@ -31,6 +31,7 @@ import { useProductData } from '@/context/ProductDataContext';
 import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
 import Image from "next/image";
+import PageHeader from "@/components/Common/PageHeader";
 
 const CATEGORY_FIELD_MAP = {
     'category': 'categoryname',
@@ -561,106 +562,151 @@ export default function ProductClient() {
     return (
         <GridBackground>
             <Container maxWidth={false} sx={{ px: 0, pb: 50, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
-                <Box sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    pt: 1,
-                    gap: 2,
-                    borderRadius: 0,
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 100,
-                    bgcolor: 'transparent',
-                    backdropFilter: 'blur(12px)',
-                    p: '8px 16px',
-                }}>
+                <PageHeader
+                    layout="fluid"
+                    leftContent={
+                        <>
+                            <Image
+                                src="/favicon.svg"
+                                alt="Hero Image"
+                                width={35}
+                                height={35}
+                                priority
+                                draggable={false}
+                                style={{
+                                    maxWidth: '100%',
+                                    height: 'auto',
+                                    borderRadius: '50%',
+                                    cursor: 'pointer',
+                                }}
+                                onClick={() => router.push('/')}
+                                onDragStart={(e) => e.preventDefault()}
+                            />
+                            <Box>
+                                <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                                    AI with Magic Catalogue
+                                </Typography>
+                                <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                                    {finalFilteredProducts.length} products found
+                                </Typography>
+                            </Box>
+                        </>
+                    }
+                    centerContent={
+                        <Box sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            width: "100%", // Take full available width in the center slot
+                            minWidth: 0,
+                            position: "relative"
+                        }}>
+                            <Fade in={showLeftScroll}>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => scrollFilters('left')}
+                                    sx={{
+                                        p: 0.5,
+                                        mr: 0.5,
+                                        flexShrink: 0,
+                                        bgcolor: 'background.paper',
+                                        boxShadow: 1,
+                                        '&:hover': { bgcolor: 'action.hover' }
+                                    }}
+                                >
+                                    <ChevronLeft size={16} />
+                                </IconButton>
+                            </Fade>
 
-                    {/* Static Left Section: Logo & Title */}
-                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", flexShrink: 0 }}>
-                        <Image
-                            src="/favicon.svg"
-                            alt="Hero Image"
-                            width={35}
-                            height={35}
-                            priority
-                            draggable={false}
-                            style={{
-                                maxWidth: '100%',
-                                height: 'auto',
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                            }}
-                            onClick={() => router.push('/')}
-                            onDragStart={(e) => e.preventDefault()}
-                        />
-                        <Box>
-                            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                                AI with Magic Catalogue
-                            </Typography>
-                            <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-                                {finalFilteredProducts.length} products found
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    {/* Scrollable Middle Section: Chips & Clear All */}
-                    <Box sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        flex: 1,
-                        minWidth: 0, // Critical for flex child scrolling
-                        position: "relative"
-                    }}>
-                        <Fade in={showLeftScroll}>
-                            <IconButton
-                                size="small"
-                                onClick={() => scrollFilters('left')}
+                            <Box
+                                className="filterScrollBox"
+                                ref={filterScrollRef}
+                                onScroll={checkScrollButtons}
                                 sx={{
+                                    display: "flex",
+                                    gap: 1,
+                                    overflowX: "auto",
+                                    scrollbarWidth: "none",
+                                    "&::-webkit-scrollbar": { display: "none" },
+                                    alignItems: "center",
+                                    flex: 1,
+                                    scrollBehavior: "smooth",
                                     p: 0.5,
-                                    mr: 0.5,
-                                    flexShrink: 0,
-                                    bgcolor: 'background.paper',
-                                    boxShadow: 1,
-                                    '&:hover': { bgcolor: 'action.hover' }
                                 }}
                             >
-                                <ChevronLeft size={16} />
-                            </IconButton>
-                        </Fade>
-
-                        <Box
-                            className="filterScrollBox"
-                            ref={filterScrollRef}
-                            onScroll={checkScrollButtons}
-                            sx={{
-                                display: "flex",
-                                gap: 1,
-                                overflowX: "auto",
-                                scrollbarWidth: "none",
-                                "&::-webkit-scrollbar": { display: "none" },
-                                alignItems: "center",
-                                flex: 1,
-                                scrollBehavior: "smooth",
-                                p: 0.5,
-                            }}
-                        >
-                            {searchTerm && (
-                                <Chip
-                                    key="drawer-search"
-                                    label={`Search: ${searchTerm}`}
-                                    size="small"
-                                    onDelete={() => setSearchTerm('')}
-                                    sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText', flexShrink: 0 }}
+                                {searchTerm && (
+                                    <Chip
+                                        key="drawer-search"
+                                        label={`Search: ${searchTerm}`}
+                                        size="small"
+                                        onDelete={() => setSearchTerm('')}
+                                        sx={{
+                                            borderRadius: 2,
+                                            bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                            color: 'primary.dark',
+                                            border: '1px solid rgba(115, 103, 240, 0.18)',
+                                            flexShrink: 0,
+                                            '&:hover': {
+                                                bgcolor: 'rgba(115, 103, 240, 0.12)',
+                                            },
+                                            '& .MuiChip-deleteIcon': {
+                                                color: 'primary.dark',
+                                                opacity: 0.8,
+                                                '&:hover': { opacity: 1 }
+                                            }
+                                        }}
+                                    />
+                                )}
+                                <FilterChips
+                                    appliedFilters={appliedFilters}
+                                    onRemoveFilter={removeFilter}
+                                    onFilterPopoverOpen={handleFilterPopoverOpen}
                                 />
-                            )}
-                            <FilterChips
-                                appliedFilters={appliedFilters}
-                                onRemoveFilter={removeFilter}
-                                onFilterPopoverOpen={handleFilterPopoverOpen}
-                            />
 
-                            {appliedFilters.length > 0 && isClearAllInside && (
+                                {appliedFilters.length > 0 && isClearAllInside && (
+                                    <Button
+                                        variant="text"
+                                        size="small"
+                                        onClick={clearAllFilters}
+                                        sx={{
+                                            textTransform: "none",
+                                            fontSize: 12.5,
+                                            borderRadius: 2,
+                                            bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                            color: 'text.primary',
+                                            border: '1px solid rgba(0, 0, 0, 0.10)',
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            flexShrink: 0,
+                                            padding: '0px 10px',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                                borderColor: 'rgba(0, 0, 0, 0.12)'
+                                            }
+                                        }}
+                                    >
+                                        Clear All
+                                    </Button>
+                                )}
+                            </Box>
+
+                            <Fade in={showRightScroll}>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => scrollFilters('right')}
+                                    sx={{
+                                        p: 0.5,
+                                        ml: 0.5,
+                                        flexShrink: 0,
+                                        bgcolor: 'background.paper',
+                                        boxShadow: 1,
+                                        '&:hover': { bgcolor: 'action.hover' }
+                                    }}
+                                >
+                                    <ChevronRight size={16} />
+                                </IconButton>
+                            </Fade>
+
+                            {appliedFilters.length > 0 && !isClearAllInside && (
                                 <Button
                                     variant="text"
                                     size="small"
@@ -668,76 +714,53 @@ export default function ProductClient() {
                                     sx={{
                                         textTransform: "none",
                                         fontSize: 13,
-                                        textDecoration: "underline",
-                                        color: "text.primary",
+                                        borderRadius: 2,
+                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                        color: 'text.primary',
+                                        border: '1px solid rgba(0, 0, 0, 0.10)',
                                         whiteSpace: "nowrap",
                                         minWidth: "auto",
                                         flexShrink: 0,
-                                        padding: '5px 8px'
+                                        ml: 1,
+                                        padding: '0px 10px',
+                                        '&:hover': {
+                                            bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                            borderColor: 'rgba(0, 0, 0, 0.12)'
+                                        }
                                     }}
                                 >
                                     Clear All
                                 </Button>
                             )}
                         </Box>
-
-                        <Fade in={showRightScroll}>
-                            <IconButton
-                                size="small"
-                                onClick={() => scrollFilters('right')}
-                                sx={{
-                                    p: 0.5,
-                                    ml: 0.5,
-                                    flexShrink: 0,
-                                    bgcolor: 'background.paper',
-                                    boxShadow: 1,
-                                    '&:hover': { bgcolor: 'action.hover' }
-                                }}
-                            >
-                                <ChevronRight size={16} />
-                            </IconButton>
-                        </Fade>
-
-                        {appliedFilters.length > 0 && !isClearAllInside && (
-                            <Button
-                                variant="text"
-                                size="small"
-                                onClick={clearAllFilters}
-                                sx={{
-                                    textTransform: "none",
-                                    fontSize: 13,
-                                    textDecoration: "underline",
-                                    color: "text.primary",
-                                    whiteSpace: "nowrap",
-                                    minWidth: "auto",
-                                    flexShrink: 0,
-                                    ml: 1,
-                                    padding: '5px 8px'
-                                }}
-                            >
-                                Clear All
-                            </Button>
-                        )}
-                    </Box>
-
-                    {/* Static Right Section: Pagination & Cart */}
-                    <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
+                    }
+                    rightContent={
                         <IconButton
                             color="primary"
                             onClick={() => router.push('/cart')}
-                            sx={{
-                                bgcolor: 'rgba(115, 103, 240, 0.1)',
-                                '&:hover': {
-                                    bgcolor: 'rgba(115, 103, 240, 0.2)',
-                                }
-                            }}
                         >
-                            <Badge badgeContent={totalCount} color="primary" max={99}>
-                                <ShoppingCart size={22} />
+                            <Badge
+                                badgeContent={totalCount}
+                                color="primary"
+                                max={99}
+                                sx={{
+                                    '& .MuiBadge-badge': {
+                                        fontSize: 12,
+                                        minWidth: 22,
+                                        height: 22,
+                                        lineHeight: '22px',
+                                        borderRadius: 12,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    },
+                                }}
+                            >
+                                <ShoppingCart size={25} />
                             </Badge>
                         </IconButton>
-                    </Box>
-                </Box>
+                    }
+                />
 
                 {error ? (
                     <Box
@@ -766,7 +789,7 @@ export default function ProductClient() {
                     </Box>
                 ) : (
                     <Fade in={!isTransitioning} timeout={200}>
-                        <Box sx={{ p: 2 }}>
+                        <Box sx={{ p: '10px 16px !important', mt: 2 }}>
                             <ProductGrid
                                 products={productsData}
                                 designData={displayedProducts}
@@ -809,7 +832,7 @@ export default function ProductClient() {
                         onFilterClick={() => setIsFilterOpen(true)}
                         appliedFilters={appliedFilters}
                         onApply={handleApplyFilters}
-                        alwaysExpanded={true}
+                        initialExpanded={true}
                         suggestionPosition="top"
                         showSuggestions={true}
                         productData={allDesignCollections}
@@ -883,10 +906,22 @@ export default function ProductClient() {
                                     label={label}
                                     size="small"
                                     sx={{
+                                        borderRadius: 2,
+                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                        color: 'text.primary',
+                                        border: '1px solid rgba(0, 0, 0, 0.10)',
                                         maxWidth: '100%',
                                         "&.MuiButtonBase-root": {
                                             display: 'flex !important',
                                             justifyContent: 'space-between !important'
+                                        },
+                                        '&:hover': {
+                                            bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                        },
+                                        '& .MuiChip-deleteIcon': {
+                                            color: 'text.secondary',
+                                            opacity: 0.8,
+                                            '&:hover': { opacity: 1 }
                                         }
                                     }}
                                     onDelete={() => {
