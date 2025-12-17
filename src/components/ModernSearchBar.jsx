@@ -576,7 +576,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                             </IconButton>
                                         </Tooltip>
 
-                                        <Tooltip title="Search">
+                                        <Tooltip title="AI Search" placement="top">
                                             <IconButton className="send-btn" onClick={handleSend}>
                                                 <ArrowRight size={20} />
                                             </IconButton>
@@ -610,7 +610,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         </IconButton>
                                     </Tooltip>
 
-                                    <Tooltip title="Search">
+                                    <Tooltip title="AI Search" placement="top">
                                         <IconButton className="send-btn" onClick={handleSend}>
                                             <ArrowRight size={20} />
                                         </IconButton>
@@ -691,19 +691,19 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     transition: 'all 0.2s'
                                 }}
                             />
-
-                            <Box sx={{ flexGrow: 1 }} />
-
                             {showMoreFiltersButton && (
                                 <Button
                                     variant="contained"
                                     size="small"
-                                    className="quick-filter-btn"
+                                    className="more-filter-btn"
                                     onClick={onFilterClick}
                                 >
                                     More Filters
                                 </Button>
                             )}
+
+                            <Box sx={{ flexGrow: 1 }} />
+
                             {!showMoreFiltersButton && (
                                 <Button
                                     variant="contained"

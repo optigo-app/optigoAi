@@ -12,7 +12,7 @@ import {
     Badge,
     Tooltip,
 } from "@mui/material";
-import { ShoppingCart, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useProductData } from '@/context/ProductDataContext';
 import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
+import Image from "next/image";
 
 const CATEGORY_FIELD_MAP = {
     'category': 'categoryname',
@@ -559,27 +560,48 @@ export default function ProductClient() {
 
     return (
         <GridBackground>
-            <Container maxWidth={false} sx={{ px: 2, pb: 12, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 2 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
+            <Container maxWidth={false} sx={{ px: 0, pb: 50, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
                 <Box sx={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    mb: 1.5,
                     pt: 1,
                     gap: 2,
-                    borderRadius: 2,
+                    borderRadius: 0,
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 100,
+                    bgcolor: 'transparent',
+                    backdropFilter: 'blur(12px)',
+                    p: '8px 16px',
                 }}>
-                    {/* Static Left Section: Back & Count */}
-                    <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexShrink: 0 }}>
-                        <IconButton
+
+                    {/* Static Left Section: Logo & Title */}
+                    <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", flexShrink: 0 }}>
+                        <Image
+                            src="/favicon.svg"
+                            alt="Hero Image"
+                            width={35}
+                            height={35}
+                            priority
+                            draggable={false}
+                            style={{
+                                maxWidth: '100%',
+                                height: 'auto',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                            }}
                             onClick={() => router.push('/')}
-                            sx={{ color: 'text.primary' }}
-                        >
-                            <ArrowLeft size={24} />
-                        </IconButton>
-                        <Typography sx={{ fontSize: 14, color: "text.secondary", whiteSpace: 'nowrap' }}>
-                            {finalFilteredProducts.length} products
-                        </Typography>
+                            onDragStart={(e) => e.preventDefault()}
+                        />
+                        <Box>
+                            <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                                AI with Magic Catalogue
+                            </Typography>
+                            <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                                {finalFilteredProducts.length} products found
+                            </Typography>
+                        </Box>
                     </Box>
 
                     {/* Scrollable Middle Section: Chips & Clear All */}
@@ -620,7 +642,7 @@ export default function ProductClient() {
                                 alignItems: "center",
                                 flex: 1,
                                 scrollBehavior: "smooth",
-                                px: 0.5 // Padding to avid cutting off shadows
+                                p: 0.5,
                             }}
                         >
                             {searchTerm && (
@@ -700,13 +722,6 @@ export default function ProductClient() {
 
                     {/* Static Right Section: Pagination & Cart */}
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexShrink: 0 }}>
-                        <PaginationControls
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            itemsPerPage={itemsPerPage}
-                            onItemsPerPageChange={handleItemsPerPageChange}
-                        />
                         <IconButton
                             color="primary"
                             onClick={() => router.push('/cart')}
@@ -751,7 +766,7 @@ export default function ProductClient() {
                     </Box>
                 ) : (
                     <Fade in={!isTransitioning} timeout={200}>
-                        <Box>
+                        <Box sx={{ p: 2 }}>
                             <ProductGrid
                                 products={productsData}
                                 designData={displayedProducts}
@@ -759,15 +774,29 @@ export default function ProductClient() {
                                 clearAllFilters={clearAllFilters}
                                 onSearchSimilar={handleSearchSimilar}
                                 loading={isFilterLoading}
+                                isFilterOpen={isFilterOpen}
                             />
                         </Box>
                     </Fade>
+                )}
+
+                {/* Bottom Pagination */}
+                {!error && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 12, mb: 2 }}>
+                        <PaginationControls
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            itemsPerPage={itemsPerPage}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </Box>
                 )}
             </Container >
 
             <Box className="modernSearchInputBox" sx={{
                 position: "fixed",
-                bottom: isFrontendFeRoute ? 120 : 50,
+                bottom: isFrontendFeRoute() ? 120 : 50,
                 left: { xs: 0, md: isFilterOpen ? '320px' : 0 },
                 right: 0,
                 p: 2,
@@ -787,7 +816,7 @@ export default function ProductClient() {
                         onSuggestionClick={handleSuggestionClick}
                     />
                 </Box>
-                <ScrollToTop bottom={isFrontendFeRoute ? 70 : 24} />
+                <ScrollToTop bottom={isFrontendFeRoute() ? 70 : 24} />
             </Box>
 
             <FilterSidebar
@@ -897,6 +926,6 @@ export default function ProductClient() {
                         : "Analyzing your design and matching collections"
                 }
             />
-        </GridBackground>
+        </GridBackground >
     );
 }

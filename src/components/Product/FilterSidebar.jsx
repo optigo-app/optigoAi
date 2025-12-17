@@ -18,9 +18,11 @@ import {
 import { X, ChevronDown, Search } from "lucide-react";
 
 import "../../Style/FilterSidebar.scss";
+
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
 import useDebounce from "@/hooks/useDebounce";
+import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle, focusId, tabIndex, onFocus, onKeyDown, registerFocusable }) => (
     <Box
@@ -97,7 +99,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                 onFocus={() => onFocusFocusable?.(headerId)}
                 onKeyDown={(e) => onKeyDownFocusable?.(e, { kind: 'category', id: headerId, category })}
                 sx={{
-                    bgcolor: 'background.paper',
+                    bgcolor: expanded ? 'background.light' : 'background.paper',
                     outline: 'none',
                     '&.Mui-focusVisible': {
                         outline: 'none',
@@ -116,7 +118,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                     </Typography>
                     {count > 0 && (
                         <Box sx={{ bgcolor: 'secondary.extraLight', borderRadius: '4px', p: '2px 6px' }}>
-                            <Typography variant="caption" sx={{fontWeight:'500'}}>
+                            <Typography variant="caption" sx={{ fontWeight: '500' }}>
                                 {count}
                             </Typography>
                         </Box>
@@ -124,25 +126,15 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
                 </Box>
             </AccordionSummary>
 
-            <AccordionDetails className="filterSidebar__details" sx={{ p: 1, pt: 0 }}>
-                <Box sx={{
+            <AccordionDetails className="filterSidebar__details" sx={{ p: 1, pt: 1 }}>
+                <Box className="filterSidebar__list" sx={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 0.5,
                     ...(category?.items?.length > 5 && {
                         maxHeight: '275px',
                         overflowY: 'auto',
-                        pr: 1,
-                        '&::-webkit-scrollbar': {
-                            width: '4px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            background: 'transparent',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            background: '#e0e0e0',
-                            borderRadius: '4px',
-                        }
+                        pr: 1
                     })
                 }}>
                     {category?.items?.map((item) => (
@@ -536,7 +528,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                     position: 'fixed',
                     top: 0,
                     left: 0,
-                    height: '100vh',
+                    height: isFrontendFeRoute() ? '94vh' : '100vh',
                     width: isMobile ? '100%' : '320px',
                     bgcolor: 'background.paper',
                     boxShadow: isOpen ? '4px 0 20px rgba(0,0,0,0.1)' : 'none',
@@ -604,17 +596,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                 <Box className="filterSidebar__content" sx={{
                     flex: 1,
                     overflowY: 'auto',
-                    p: 2,
-                    '&::-webkit-scrollbar': {
-                        width: '8px',
-                    },
-                    '&::-webkit-scrollbar-track': {
-                        background: 'transparent',
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                        background: '#e0e0e0',
-                        borderRadius: '4px',
-                    }
+                    p: 2
                 }}>
                     {!shouldRenderFilters || (loadingFilters && !hasLoaded) ? (
                         <Box>

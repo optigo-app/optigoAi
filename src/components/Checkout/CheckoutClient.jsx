@@ -11,8 +11,7 @@ import {
     Paper,
     CircularProgress,
 } from "@mui/material";
-import { ArrowLeft, Palette, ShoppingBag, Sparkles, ShoppingCart } from "lucide-react";
-import dynamic from "next/dynamic";
+import { ArrowLeft, ShoppingCart, Images, FileText } from "lucide-react";
 
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -26,52 +25,52 @@ import GridBackground from "../Common/GridBackground";
 const ACTION_CONFIG = {
     album: {
         title: "Add to Album",
-        description: "Add these items to your album for future reference and inspiration",
+        description: "Add items to album for future reference",
         api: SaveCartApi,
         successMessage: "Items added to Album!",
         postMessageEvent: "Album",
         responseKey: "QID",
 
         ui: {
-            icon: <ShoppingBag size={32} />,
-            iconBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
-            cardBg: "linear-gradient(135deg, #fff7ed 0%, #fff0df 100%)",
-            buttonBg: "linear-gradient(135deg, #ff9f43 0%, #ff6b00 100%)",
-            buttonHover: "linear-gradient(135deg, #ff8c1a 0%, #e65b00 100%)",
+            icon: <Images size={24} color="#ff9f43" />,
+            iconBg: "#fff7ed",
+            cardBg: "#ffffff",
+            buttonBg: "#ff9f43",
+            buttonHover: "#ff8c1a",
         },
     },
 
     quote: {
         title: "Add to Quote",
-        description: "Add these items to your quotation for future reference and inspiration",
+        description: "Add items to quotation for reference",
         api: SaveCartApi,
         successMessage: "Items added to Quotation!",
         postMessageEvent: "Quotation",
         responseKey: "QID",
 
         ui: {
-            icon: <Palette size={32} />,
-            iconBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            cardBg: "linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%)",
-            buttonBg: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            buttonHover: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
+            icon: <FileText size={24} color="#667eea" />,
+            iconBg: "#f5f7ff",
+            cardBg: "#ffffff",
+            buttonBg: "#667eea",
+            buttonHover: "#5a6fd8",
         },
     },
 
     order: {
         title: "Add to Order",
-        description: "Add these items to your order for future reference and inspiration",
+        description: "Add items to order for processing",
         api: SaveCartApi,
         successMessage: "Items added to Order!",
         postMessageEvent: "Order",
         responseKey: "QID",
 
         ui: {
-            icon: <ShoppingCart size={32} />,
-            iconBg: "linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%)",
-            cardBg: "linear-gradient(135deg, #f0fff7 0%, #e3fff1 100%)",
-            buttonBg: "linear-gradient(135deg, #1dd1a1 0%, #10ac84 100%)",
-            buttonHover: "linear-gradient(135deg, #14c79a 0%, #0f9b77 100%)",
+            icon: <ShoppingCart size={24} color="#10ac84" />,
+            iconBg: "#e3fff1",
+            cardBg: "#ffffff",
+            buttonBg: "#10ac84",
+            buttonHover: "#0d8c6b",
         },
     },
 };
@@ -101,71 +100,77 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
             elevation={0}
             sx={{
                 p: 0,
-                borderRadius: 4,
+                borderRadius: 2,
                 overflow: "hidden",
                 background: ui.cardBg,
                 border: "1px solid",
-                borderColor: "rgba(0,0,0,0.08)",
+                borderColor: "divider",
                 transition: "0.3s",
                 cursor: "pointer",
                 "&:hover": {
-                    transform: "translateY(-8px)",
-                    boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                 },
             }}
         >
             {/* Header */}
-            <Box sx={{ p: 4, pb: 3, textAlign: "center", background: "rgba(255,255,255,0.7)", backdropFilter: "blur(10px)" }}>
+            <Box sx={{ p: 3, pb: 2, textAlign: "center" }}>
                 <Box
                     sx={{
-                        width: 80,
-                        height: 80,
+                        width: 56,
+                        height: 56,
                         borderRadius: "50%",
                         background: ui.iconBg,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         mx: "auto",
-                        mb: 3,
-                        boxShadow: "0 8px 25px rgba(0,0,0,0.15)",
-                        color: "white",
+                        mb: 2,
                     }}
                 >
                     {ui.icon}
                 </Box>
 
-                <Typography variant="h4" fontWeight={600} sx={{ mb: 1 }}>
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
                     {title}
                 </Typography>
 
-                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 300, mx: "auto", lineHeight: 1.4 }}>
                     {description}
                 </Typography>
             </Box>
 
             {/* Button */}
-            <Box sx={{ p: 4 }}>
+            <Box sx={{ p: 2 }}>
                 <Button
                     fullWidth
-                    variant="contained"
-                    size="large"
+                    variant="outlined"
+                    size="medium"
                     onClick={onClick}
                     disabled={loading}
-                    startIcon={loading ? <CircularProgress size={20} /> : <Sparkles size={20} />}
+                    startIcon={loading ? <CircularProgress size={16} /> : ''}
                     sx={{
-                        py: 2,
-                        borderRadius: 2,
+                        py: 1,
+                        borderRadius: 1.5,
                         textTransform: "none",
-                        fontSize: "1.1rem",
+                        fontSize: "0.95rem",
                         fontWeight: 600,
-                        background: ui.buttonBg,
-                        "&:hover": { background: ui.buttonHover },
+                        borderColor: ui.buttonBg,
+                        color: ui.buttonBg,
+                        background: "transparent",
+                        boxShadow: "none",
+                        "&:hover": {
+                            background: ui.iconBg,
+                            borderColor: ui.buttonHover,
+                            color: ui.buttonHover,
+                            boxShadow: "none"
+                        },
                     }}
                 >
                     {loading ? "Processing..." : `Continue with ${title}`}
                 </Button>
             </Box>
-        </Paper>
+        </Paper >
     );
 };
 
@@ -207,49 +212,62 @@ const CheckoutClient = () => {
     };
 
     return (
-      <GridBackground>
-
-            <Container maxWidth="false" sx={{ position: "relative", zIndex: 2 }}>
+        <GridBackground>
+            <Container maxWidth={false} sx={{ position: "relative", zIndex: 2, px: '0 !important' }}>
                 {/* Header */}
-                <Box sx={{ mb: 6 }}>
+                <Box
+                    sx={{
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 100,
+                        bgcolor: 'gray.100',
+                        backdropFilter: 'blur(12px)',
+                        mb: 4,
+                        p: '8px 16px',
+                    }}
+                >
                     <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             position: "relative",
-                            py: 1,
-                            mb: 1,
-                            borderBottom: 1,
-                            borderColor: "grey.200",
                         }}
                     >
-                        <IconButton onClick={handleBack} sx={{ position: "absolute", left: 0 }}>
-                            <ArrowLeft />
-                        </IconButton>
+                        <Box sx={{ position: "absolute", left: 0, display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <IconButton onClick={handleBack}>
+                                <ArrowLeft size={20} />
+                            </IconButton>
+                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                                {totalItems} products
+                            </Typography>
+                        </Box>
 
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <ShoppingCart size={20} />
                             <Typography variant="h6" fontWeight={600}>
-                                Checkout ({totalItems})
+                                Checkout
                             </Typography>
                         </Box>
                     </Box>
                 </Box>
-
-                {/* Dynamic Config-based Action Cards */}
-                <Grid container spacing={4} justifyContent="center">
-                    {Object.entries(ACTION_CONFIG).map(([key, cfg]) => (
-                        <Grid key={key} size={{ xs: 12, md: 6, lg: 4 }}>
-                            <ActionCard
-                                actionKey={key}
-                                config={cfg}
-                                loading={!!loading[key]}
-                                onClick={() => handleAction(key)}
-                            />
+                <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", px: '10px 16px !important' }}>
+                    <Container maxWidth="lg">
+                        {/* Dynamic Config-based Action Cards */}
+                        <Grid container spacing={3} justifyContent="center" alignItems="center">
+                            {Object.entries(ACTION_CONFIG).map(([key, cfg]) => (
+                                <Grid key={key} size={{ xs: 12, md: 6, lg: 4 }}>
+                                    <ActionCard
+                                        actionKey={key}
+                                        config={cfg}
+                                        loading={!!loading[key]}
+                                        onClick={() => handleAction(key)}
+                                    />
+                                </Grid>
+                            ))}
                         </Grid>
-                    ))}
-                </Grid>
+                    </Container>
+                </Box>
             </Container>
         </GridBackground>
     );

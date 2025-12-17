@@ -12,7 +12,6 @@ export default function GridBackground({ children }) {
         alignItems: 'center',
         justifyContent: 'flex-start',
         position: 'relative',
-        overflow: 'hidden',
       }}
     >
       <Box

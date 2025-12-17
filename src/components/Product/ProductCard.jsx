@@ -181,7 +181,16 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                         <Box sx={{ textAlign: 'center' }}>
                             <Typography
                                 variant="h6"
-                                sx={{ textTransform: 'capitalize', color: 'white', mb: 0.5, lineHeight: 1.2 }}
+                                noWrap
+                                sx={{
+                                    textTransform: 'capitalize',
+                                    color: 'white',
+                                    mb: 0.5,
+                                    lineHeight: 1.2,
+                                    width: '100%',
+                                    textAlign: 'center',
+                                    fontSize: { xs: '1rem', md: '1rem', lg: '1rem', xl: '1.25rem' }
+                                }}
                             >
                                 {displayTitle}
                             </Typography>
@@ -192,7 +201,9 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                                     backgroundColor: '#fff',
                                     fontWeight: 'bold',
                                     color: '#6b6b6bff',
-                                    height: 24
+                                    height: 24,
+                                    maxWidth: '100%',
+                                    fontSize: { xs: '0.75rem', xl: '0.8125rem' }
                                 }}
                             />
                         </Box>
@@ -209,7 +220,9 @@ export default function ProductCard({ product, products = [], index = 0, onSearc
                                 sx={{
                                     backgroundColor: isInCart ? "#f44336" : "#7367f0",
                                     color: "white",
-                                    width: '80%',
+                                    width: '90%',
+                                    fontSize: '0.8rem',
+                                    whiteSpace: 'nowrap',
                                     '&:hover': {
                                         backgroundColor: isInCart ? "#d32f2f" : "#5e56d6",
                                     },

@@ -10,7 +10,8 @@ const ProductGrid = memo(function ProductGrid({
   clearAllFilters,
   onSearchSimilar,
   loading = false,
-  urlParamsFlag
+  urlParamsFlag,
+  isFilterOpen
 }) {
   const ITEMS_PER_LOAD = 24;
 
@@ -51,7 +52,7 @@ const ProductGrid = memo(function ProductGrid({
       },
       {
         threshold: 0,
-        rootMargin: '800px'   // 👈 load before reaching end
+        rootMargin: '500px'   // 👈 load before reaching end
       }
     );
 
@@ -76,7 +77,7 @@ const ProductGrid = memo(function ProductGrid({
           {Array.from({ length: 24 }).map((_, index) => (
             <Grid
               key={`skeleton-${index}`}
-              size={{ xs: 6, sm: 4, md: 3, lg: 3, xl: 2 }}
+              size={{ xs: 6, sm: 4, md: isFilterOpen ? 4 : 3, lg: 3, xl: 2 }}
             >
               <Box sx={{
                 borderRadius: '16px',
@@ -147,13 +148,14 @@ const ProductGrid = memo(function ProductGrid({
         {visibleItems.map((product, index) => (
           <Grid
             key={`${product.id}-${index}`}
-            size={{ xs: 6, sm: 4, md: 3, lg: 3, xl: 2 }}
+            size={{ xs: 6, sm: 4, md: isFilterOpen ? 4 : 3, lg: 3, xl: 2 }}
           >
             <ProductCard
               product={product}
               products={designData}
               index={index}
               onSearchSimilar={onSearchSimilar}
+              urlParamsFlag={urlParamsFlag}
             />
           </Grid>
         ))}

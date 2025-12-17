@@ -103,7 +103,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
             maxWidth="lg"
             fullWidth
             sx={{
-                height: isFrontendFeRoute(urlParamsFlag) ? '94%' : "100%",
+                height: isFrontendFeRoute() ? '94%' : "100%",
                 '& .MuiDialog-paper': {
                     borderRadius: 2,
                 },

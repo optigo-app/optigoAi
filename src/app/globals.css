@@ -1,8 +1,14 @@
 /* CSS Variables */
+
 :root {
   --background-light: #fff;
   /* Premium light gray/blue tint */
   --font-poppins: 'Poppins', sans-serif;
+  --scrollbar-size: 6px;
+  --scrollbar-track: rgba(0, 0, 0, 0.06);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.28);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.4);
+  --scrollbar-thumb-active: rgba(0, 0, 0, 0.5);
 }
 
 /* Global Reset */
@@ -15,6 +21,8 @@
 /* Base HTML & Body */
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 body {
@@ -30,35 +38,30 @@ body {
 
 /* Scrollbar Track */
 ::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
-  background-color: #CCCCCC;
+  background-color: var(--scrollbar-track);
 }
 
 /* Scrollbar Width & Background */
 ::-webkit-scrollbar {
-  width: 5px;
-  background-color: #F5F5F5;
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+  background-color: transparent;
 }
 
 /* Scrollbar Thumb with Gradient */
 ::-webkit-scrollbar-thumb {
-  background-color: #FFF;
-  background-image: -webkit-linear-gradient(90deg,
-      rgba(0, 0, 0, 1) 0%,
-      rgba(0, 0, 0, 1) 25%,
-      transparent 50%,
-      rgba(0, 0, 0, 1) 75%,
-      transparent 100%);
-  border-radius: 5px;
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 /* Optional: Hover Effect */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #e0e0e0;
-  background-image: -webkit-linear-gradient(90deg,
-      rgba(0, 0, 0, 0.8) 0%,
-      rgba(0, 0, 0, 0.8) 25%,
-      transparent 50%,
-      rgba(0, 0, 0, 0.8) 75%,
-      transparent 100%);
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Optional: Active Effect */
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
 }

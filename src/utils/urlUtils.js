@@ -1,3 +1,3 @@
-export const isFrontendFeRoute = (urlParamsFlag) => {
-    return urlParamsFlag && urlParamsFlag.toLowerCase() === 'fe';
+export const isFrontendFeRoute = () => {
+    return typeof window !== "undefined" && sessionStorage.getItem("urlParams")?.toLowerCase() === "fe";
 };

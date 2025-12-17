@@ -101,13 +101,16 @@ const CartPageMUI = () => {
 
     return (
         <GridBackground>
-            <Container maxWidth="false" sx={{ position: "relative", zIndex: 2, marginBottom: "60px" }}>
+            <Container maxWidth="false" sx={{ position: "relative", zIndex: 2, marginBottom: "60px", px: '0 !important' }}>
                 <Box
                     sx={{
-                        mb: 1,
-                        borderBottom: 1,
-                        borderColor: 'grey.200',
-                        py: 1,
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 100,
+                        bgcolor: 'gray.600',
+                        backdropFilter: 'blur(12px)',
+                        mb: 2,
+                        p: '8px 16px',
                     }}
                 >
                     <Box
@@ -118,7 +121,7 @@ const CartPageMUI = () => {
                             justifyContent: 'center',
                         }}
                     >
-                        <Box sx={{ position: 'absolute', left: 0 }}>
+                        <Box sx={{ position: 'absolute', left: 0, display: 'flex', alignItems: 'center', gap: 1.5 }}>
                             <IconButton
                                 onClick={handleBack}
                                 sx={{
@@ -126,8 +129,26 @@ const CartPageMUI = () => {
                                     '&:hover': { color: 'text.primary' }
                                 }}
                             >
-                                <ArrowLeft />
+                                <ArrowLeft size={20} />
                             </IconButton>
+                            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                                {totalCount} products
+                            </Typography>
+                            {cartItems.length > 0 && (
+                                <Button
+                                    onClick={handleClearCart}
+                                    variant="text"
+                                    size="small"
+                                    sx={{
+                                        textTransform: 'none',
+                                        textDecoration: 'underline',
+                                        boxShadow: 'none',
+                                        color: 'error.main',
+                                    }}
+                                >
+                                    Clear Cart
+                                </Button>
+                            )}
                         </Box>
 
                         <Box sx={{ textAlign: 'center' }}>
@@ -137,44 +158,33 @@ const CartPageMUI = () => {
                                     variant="h6"
                                     fontWeight={600}
                                 >
-                                    My Cart ({totalCount})
+                                    My Cart
                                 </Typography>
                             </Box>
                         </Box>
+
+                        {cartItems.length > 0 && (
+                            <Box sx={{ position: 'absolute', right: 0, display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    startIcon={<ArrowRightCircle size={16} />}
+                                    onClick={handleContinue}
+                                    sx={{
+                                        textTransform: 'none',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    Continue
+                                </Button>
+                            </Box>
+                        )}
                     </Box>
                 </Box>
 
-                {cartItems.length > 0 && (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <Button
-                            onClick={handleClearCart}
-                            variant="text"
-                            size="small"
-                            sx={{
-                                textTransform: 'none',
-                                textDecoration: 'underline',
-                                boxShadow: 'none',
-                                color: 'error.main',
-                            }}
-                        >
-                            Clear Cart
-                        </Button>
-                        <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<ArrowRightCircle size={16} />}
-                            onClick={handleContinue}
-                            sx={{
-                                textTransform: 'none',
-                                fontWeight: 'bold'
-                            }}
-                        >
-                            Continue
-                        </Button>
-                    </Box>
-                )}
+
                 {cartItems.length > 0 ? (
-                    <Grid container spacing={2}>
+                    <Grid container spacing={2} sx={{ px: '10px 16px !important' }}>
                         {cartItems.map((item, index) => (
                             <Grid
                                 key={`${item.id}-${index}`}

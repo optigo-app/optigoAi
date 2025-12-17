@@ -30,7 +30,7 @@ export default function PaginationControls({
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
             {/* Rows per page selector */}
-            {onItemsPerPageChange && (
+            {/* {onItemsPerPageChange && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
                         Rows per page:
@@ -66,7 +66,7 @@ export default function PaginationControls({
                         ))}
                     </Select>
                 </Box>
-            )}
+            )} */}
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -80,7 +80,7 @@ export default function PaginationControls({
                     showLastButton
                     siblingCount={1}
                     boundaryCount={1}
-                    size="small"
+                    size="medium"
                     renderItem={(item) => (
                         <PaginationItem
                             slots={{

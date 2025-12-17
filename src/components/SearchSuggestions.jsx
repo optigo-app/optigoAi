@@ -195,7 +195,7 @@ const SearchSuggestions = ({
                 ref={containerRef}
                 className={`search-suggestions-container ${suggestionPosition === 'top' ? 'position-top' : ''}`}
                 sx={{
-                    maxHeight: isFrontendFeRoute ? '270px' : "350px",
+                    maxHeight: isFrontendFeRoute() ? '270px' : "350px",
                 }}
                 elevation={8}
             >
