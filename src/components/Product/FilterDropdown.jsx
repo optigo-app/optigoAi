@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Search, Check } from "lucide-react";
 
-export default function FilterDropdown({ title, items, anchorEl, onClose, onSelect, selectedItems, isLoading }) {
+export default function FilterDropdown({ title, items, anchorEl, onClose, onSelect, selectedItems, isLoading, direction = 'bottom' }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [focusedIndex, setFocusedIndex] = useState(-1);
     const listRef = useRef(null);
@@ -84,11 +84,11 @@ export default function FilterDropdown({ title, items, anchorEl, onClose, onSele
             anchorEl={anchorEl}
             onClose={onClose}
             anchorOrigin={{
-                vertical: 'bottom',
+                vertical: direction === 'top' ? 'top' : 'bottom',
                 horizontal: 'left',
             }}
             transformOrigin={{
-                vertical: 'top',
+                vertical: direction === 'top' ? 'bottom' : 'top',
                 horizontal: 'left',
             }}
             PaperProps={{
@@ -98,7 +98,8 @@ export default function FilterDropdown({ title, items, anchorEl, onClose, onSele
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: '12px',
-                    mb: 2.5, // Increasing margin to lift it up slightly more based on user feedback
+                    mb: direction === 'top' ? 1 : 2.5,
+                    mt: direction === 'top' ? 0 : 0,
                     boxShadow: 'rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px !important',
                     bgcolor: 'background.paper',
                     overflow: 'hidden'

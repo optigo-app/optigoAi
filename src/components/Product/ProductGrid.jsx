@@ -11,6 +11,7 @@ const ProductGrid = memo(function ProductGrid({
   onSearchSimilar,
   loading = false,
   urlParamsFlag,
+  restoreTargetIndex,
   isFilterOpen
 }) {
   const ITEMS_PER_LOAD = 48;
@@ -25,6 +26,14 @@ const ProductGrid = memo(function ProductGrid({
   }, [designData, visibleCount]);
 
   const hasMore = visibleCount < designData.length;
+
+  const clampVisibleCount = useCallback((targetIndex) => {
+    const idx = Number(targetIndex);
+    if (!Number.isFinite(idx) || idx < 0) return ITEMS_PER_LOAD;
+    const desired = Math.max(idx + 1, ITEMS_PER_LOAD);
+    const rounded = Math.ceil(desired / ITEMS_PER_LOAD) * ITEMS_PER_LOAD;
+    return Math.min(rounded, designData.length);
+  }, [designData.length]);
 
   // Load more items (24 at a time)
   const loadMore = useCallback(() => {
@@ -65,9 +74,9 @@ const ProductGrid = memo(function ProductGrid({
 
   // Reset when data changes
   useEffect(() => {
-    setVisibleCount(ITEMS_PER_LOAD);
+    setVisibleCount(clampVisibleCount(restoreTargetIndex));
     loadingRef.current = false;
-  }, [designData]);
+  }, [designData, restoreTargetIndex, clampVisibleCount]);
 
   // Loading State
   if (loading) {

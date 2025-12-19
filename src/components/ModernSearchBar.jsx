@@ -764,6 +764,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             onSelect={handleFilterSelect}
                             selectedItems={appliedFilters}
                             isLoading={isLoadingFilters}
+                            direction={suggestionPosition === 'top' ? 'top' : 'bottom'}
                         />
 
                         {/* Search Suggestions */}

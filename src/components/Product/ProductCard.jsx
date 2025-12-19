@@ -59,6 +59,8 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
 
     return (
         <Box
+            data-product-id={product?.id}
+            data-product-index={index}
             sx={{ position: 'relative', height: '100%', zIndex: 1 }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

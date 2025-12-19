@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
     Container,
     Box,
@@ -22,7 +22,7 @@ import PaginationControls from "@/components/PaginationControls";
 import { searchService } from "@/services/apiService";
 import Fuse from "fuse.js";
 import FilterChips from "@/components/Product/FilterChips";
-import { base64ToFile } from "@/utils/globalFunc";
+import { autoScrollToRestoredTarget, base64ToFile } from "@/utils/globalFunc";
 import ProductGrid from "./ProductGrid";
 import SimilarProductsModal from "./SimilarProductsModal";
 import { useCart } from '@/context/CartContext';
@@ -54,11 +54,18 @@ const CATEGORY_FIELD_MAP = {
 };
 
 export default function ProductClient() {
+    const PRODUCT_LIST_RESTORE_KEY = 'productListRestoreState';
     const [isSearchLoading, setIsSearchLoading] = useState(false);
     const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const { totalCount } = useCart();
     const router = useRouter();
+
+    const didAttemptRestoreRef = useRef(false);
+    const skipNextPageResetRef = useRef(false);
+    const isRestoringRef = useRef(false);
+    const pendingRestoreStateRef = useRef(null);
+    const [restoreTargetIndex, setRestoreTargetIndex] = useState(undefined);
 
     // Use product data context
     const { productData: allDesignCollections, isLoading: isLoadingProducts, fetchProductData } = useProductData();
@@ -296,8 +303,137 @@ export default function ProductClient() {
 
     // Reset to page 1 when filters change
     useEffect(() => {
+        if (isRestoringRef.current) {
+            return;
+        }
+        if (skipNextPageResetRef.current) {
+            skipNextPageResetRef.current = false;
+            return;
+        }
         setCurrentPage(1);
     }, [finalFilteredProducts]);
+
+    useEffect(() => {
+        if (didAttemptRestoreRef.current) return;
+        if (typeof window === 'undefined') return;
+
+        const raw = sessionStorage.getItem(PRODUCT_LIST_RESTORE_KEY);
+        if (!raw) {
+            didAttemptRestoreRef.current = true;
+            return;
+        }
+
+        let state = null;
+        try {
+            state = JSON.parse(raw);
+        } catch (e) {
+            sessionStorage.removeItem(PRODUCT_LIST_RESTORE_KEY);
+            didAttemptRestoreRef.current = true;
+            return;
+        }
+
+        didAttemptRestoreRef.current = true;
+        isRestoringRef.current = true;
+        pendingRestoreStateRef.current = state;
+
+        if (typeof state?.searchTerm === 'string') {
+            setSearchTerm(state.searchTerm);
+        }
+        if (Array.isArray(state?.appliedFilters)) {
+            setAppliedFilters(state.appliedFilters);
+        }
+        if (state && Object.prototype.hasOwnProperty.call(state, 'searchResults')) {
+            setSearchResults(state.searchResults);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!pendingRestoreStateRef.current) return;
+        if (!Number.isFinite(totalPages) || totalPages < 1) return;
+
+        const state = pendingRestoreStateRef.current;
+        pendingRestoreStateRef.current = null;
+        sessionStorage.removeItem(PRODUCT_LIST_RESTORE_KEY);
+
+        const nextPageRaw = Number(state?.currentPage);
+        const nextPage = Number.isFinite(nextPageRaw)
+            ? Math.min(Math.max(nextPageRaw, 1), totalPages || 1)
+            : 1;
+
+        const targetIndexRaw = Number(state?.targetIndex);
+        const targetIndex = Number.isFinite(targetIndexRaw) && targetIndexRaw >= 0
+            ? targetIndexRaw
+            : undefined;
+
+        setRestoreTargetIndex(targetIndex);
+        skipNextPageResetRef.current = true;
+        setCurrentPage(nextPage);
+
+        const targetId = state?.productId != null ? String(state.productId) : null;
+        const scrollYRaw = Number(state?.scrollY);
+        const scrollY = Number.isFinite(scrollYRaw) && scrollYRaw >= 0 ? scrollYRaw : null;
+
+        autoScrollToRestoredTarget({
+            targetId,
+            scrollY,
+            dataAttr: 'data-product-id',
+        });
+
+        requestAnimationFrame(() => {
+            isRestoringRef.current = false;
+        });
+    }, [totalPages]);
+
+    const handleOpenCart = useCallback(() => {
+        if (typeof window === 'undefined') {
+            router.push('/cart');
+            return;
+        }
+
+        let productId = null;
+        let targetIndex = null;
+
+        try {
+            const nodes = Array.from(document.querySelectorAll('[data-product-id][data-product-index]'));
+            let bestNode = null;
+            let bestTop = Number.POSITIVE_INFINITY;
+            for (const node of nodes) {
+                const rect = node.getBoundingClientRect();
+                const isVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+                if (!isVisible) continue;
+                if (rect.top < bestTop) {
+                    bestTop = rect.top;
+                    bestNode = node;
+                }
+            }
+
+            if (bestNode) {
+                productId = bestNode.getAttribute('data-product-id');
+                const idx = Number(bestNode.getAttribute('data-product-index'));
+                targetIndex = Number.isFinite(idx) ? idx : null;
+            }
+        } catch (e) {
+        }
+
+        const payload = {
+            currentPage,
+            productId,
+            targetIndex,
+            scrollY: window.scrollY,
+            appliedFilters,
+            searchTerm,
+            searchResults,
+            timestamp: Date.now(),
+        };
+
+        try {
+            sessionStorage.setItem(PRODUCT_LIST_RESTORE_KEY, JSON.stringify(payload));
+        } catch (e) {
+        }
+
+        router.push('/cart');
+    }, [router, currentPage, appliedFilters, searchTerm, searchResults]);
 
     const handleApplyFilters = useCallback((applied) => {
         setIsFilterLoading(true);
@@ -561,7 +697,7 @@ export default function ProductClient() {
 
     return (
         <GridBackground>
-            <Container maxWidth={false} sx={{ px: 0, pb: 50, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
+            <Container maxWidth={false} sx={{ px: 0, pb: finalFilteredProducts.length > 24 ? { xs: 28, sm: 36, md: 50 } : 5, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
                 <PageHeader
                     layout="fluid"
                     leftContent={
@@ -737,7 +873,7 @@ export default function ProductClient() {
                     rightContent={
                         <IconButton
                             color="primary"
-                            onClick={() => router.push('/cart')}
+                            onClick={handleOpenCart}
                         >
                             <Badge
                                 badgeContent={totalCount}
@@ -798,6 +934,7 @@ export default function ProductClient() {
                                 onSearchSimilar={handleSearchSimilar}
                                 loading={isFilterLoading}
                                 isFilterOpen={isFilterOpen}
+                                restoreTargetIndex={restoreTargetIndex}
                             />
                         </Box>
                     </Fade>

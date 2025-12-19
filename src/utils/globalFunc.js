@@ -132,6 +132,7 @@ export const getMatchedDesignCollections = (res = [], allDesignCollections = [])
     const designMatchMap = {};
     for (const item of res) {
         const base = (item.sku || "").split("~")[0].trim().toLowerCase();
+
         const percent = Number(item.match_percent) || 0;
         if (!designMatchMap[base] || designMatchMap[base] < percent) {
             designMatchMap[base] = percent;
@@ -157,4 +158,54 @@ export const getMatchedDesignCollections = (res = [], allDesignCollections = [])
         const { _matchPercent, ...rest } = p;
         return rest;
     });
+};
+
+export const autoScrollToRestoredTarget = ({
+    targetId,
+    scrollY,
+    dataAttr = 'data-product-id',
+    maxAttempts = 40,
+    block = 'start',
+    behavior = 'auto',
+} = {}) => {
+    if (typeof window === 'undefined') return () => { };
+
+    const resolvedTargetId = targetId != null ? String(targetId) : null;
+    const resolvedScrollY = Number.isFinite(Number(scrollY)) && Number(scrollY) >= 0 ? Number(scrollY) : null;
+    let attempts = 0;
+    let cancelled = false;
+
+    const findEl = () => {
+        if (!resolvedTargetId || typeof document === 'undefined') return null;
+        const escaped = (window?.CSS?.escape)
+            ? window.CSS.escape(resolvedTargetId)
+            : resolvedTargetId.replace(/"/g, '\\"');
+        return document.querySelector(`[${dataAttr}="${escaped}"]`);
+    };
+
+    const step = () => {
+        if (cancelled) return;
+        attempts += 1;
+
+        const el = findEl();
+        if (el) {
+            el.scrollIntoView({ behavior, block, inline: 'nearest' });
+            return;
+        }
+
+        if (attempts >= maxAttempts) {
+            if (resolvedScrollY != null) {
+                window.scrollTo({ top: resolvedScrollY, behavior });
+            }
+            return;
+        }
+
+        requestAnimationFrame(step);
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(step));
+
+    return () => {
+        cancelled = true;
+    };
 };

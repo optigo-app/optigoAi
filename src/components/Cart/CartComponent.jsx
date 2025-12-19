@@ -222,7 +222,12 @@ const CartPageMUI = () => {
                                                 transition: "transform 0.3s",
                                                 "&:hover": { transform: "scale(1.1)" },
                                             }}
-                                            onError={() => setImageError(true)}
+                                            onError={() =>
+                                                setImageStates((prev) => ({
+                                                    ...prev,
+                                                    [item.id]: { ...(prev[item.id] || {}), error: true },
+                                                }))
+                                            }
                                         />
                                     </Box>
 
