@@ -11,6 +11,8 @@ import {
     Button,
     Zoom,
     Chip,
+    CircularProgress,
+    Skeleton,
 } from "@mui/material";
 import {
     Image as ImageIcon,
@@ -29,7 +31,7 @@ import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom' }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -70,8 +72,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     // Filter Logic States
     const [filterData, setFilterData] = useState([]);
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+    const [hasLoadedFilters, setHasLoadedFilters] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [anchorEl, setAnchorEl] = useState(null);
+
+    const isCatalogLoading = Boolean(externalLoading || isLoadingFilters);
 
     // Suggestion States
     const [suggestions, setSuggestions] = useState([]);
@@ -217,6 +222,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
             if (cachedFilters) {
                 try {
                     setFilterData(JSON.parse(cachedFilters));
+                    setHasLoadedFilters(true);
                     return;
                 } catch (e) {
                     sessionStorage.removeItem('filterMasterData');
@@ -229,6 +235,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                 const formatted = formatMasterData(data);
                 if (!isMounted) return;
                 setFilterData(formatted);
+                setHasLoadedFilters(true);
                 if (Array.isArray(formatted) && formatted.length > 0) {
                     sessionStorage.setItem('filterMasterData', JSON.stringify(formatted));
                 }
@@ -237,6 +244,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
             } finally {
                 if (isMounted) {
                     setIsLoadingFilters(false);
+                    setHasLoadedFilters(true);
                 }
             }
         };
@@ -354,6 +362,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     }, []);
 
     const handleSend = () => {
+        if (isCatalogLoading) return;
         const trimmedText = text.trim();
 
         // Allow empty search - just navigate to product page
@@ -602,7 +611,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         </Tooltip>
 
                                         <Tooltip title="AI Search" placement="top">
-                                            <IconButton className="iconbuttonsearch" onClick={handleSend} sx={sendIconButtonSx}>
+                                            <IconButton className="iconbuttonsearch" onClick={handleSend} sx={sendIconButtonSx} disabled={isCatalogLoading}>
                                                 <ArrowRight size={20} />
                                             </IconButton>
                                         </Tooltip>
@@ -641,6 +650,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                             className="iconbuttonsearch"
                                             onClick={handleSend}
                                             sx={sendIconButtonSx}
+                                            disabled={isCatalogLoading}
                                         >
                                             <ArrowRight size={20} />
                                         </IconButton>
@@ -686,6 +696,12 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         <X size={16} />
                                     </IconButton>
                                 </Tooltip>
+                            )}
+                            {!hasLoadedFilters && (
+                                <>
+                                    <Skeleton variant="rounded" width={120} height={32} />
+                                    <Skeleton variant="rounded" width={110} height={32} />
+                                </>
                             )}
                             {getItemsForCategory('Category').length > 0 && (
                                 <Chip
@@ -749,8 +765,31 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     size="small"
                                     onClick={handleSend}
                                     className="quick-filter-btn"
+                                    disabled={isCatalogLoading}
+                                    sx={{
+                                        '.MuiButton-startIcon': {
+                                            marginRight: isCatalogLoading ? 1 : 0,
+                                            transition: 'margin-right 200ms ease',
+                                        },
+                                    }}
+                                    startIcon={
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: isCatalogLoading ? 16 : 0,
+                                                opacity: isCatalogLoading ? 1 : 0,
+                                                overflow: 'hidden',
+                                                transition: 'width 200ms ease, opacity 200ms ease',
+                                            }}
+                                        >
+                                            <CircularProgress size={16} color="inherit" />
+                                        </Box>
+                                    }
                                 >
-                                    View Catalogue
+                                    View Catalog
                                 </Button>
                             )}
                         </Box>

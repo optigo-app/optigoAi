@@ -366,6 +366,7 @@ const Home = () => {
                         productData={productData}
                         onSuggestionClick={handleSuggestionClick}
                         autoFocus={true}
+                        externalLoading={isLoadingProducts}
                     />
                 </Box>
 
