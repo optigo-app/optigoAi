@@ -122,7 +122,7 @@ export default function FilterChips({
                             key={item.id}
                             imageSrc={item.imageUrl}
                             altText="Search Image"
-                            triggerMode="click"
+                            triggerMode="hover"
                             maxWidth={300}
                         >
                             {chipContent}

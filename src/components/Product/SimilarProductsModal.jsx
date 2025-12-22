@@ -43,7 +43,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
     const fetchSimilarProducts = useCallback(async (forceFresh = false) => {
         if (!baseProduct) return;
 
-        const imageUrl = baseProduct.ImgUrl || baseProduct.image;
+        const imageUrl = baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl;
         if (!imageUrl) {
             setError("No image available for this product.");
             return;
@@ -62,7 +62,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
         setSimilarProducts([]);
 
         try {
-            const imageUrl = baseProduct.ImgUrl || baseProduct.image;
+            const imageUrl = baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl;
             const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`;
             const response = await fetch(proxyUrl);
 
@@ -179,13 +179,13 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                         {baseProduct && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, bgcolor: 'grey.100', borderRadius: 2 }}>
                                 <ImageHoverPreview
-                                    imageSrc={baseProduct.ImgUrl || baseProduct.image}
+                                    imageSrc={baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl}
                                     altText="Base Large"
                                     triggerMode="hover"
                                 >
                                     <Box
                                         component="img"
-                                        src={baseProduct.ImgUrl || baseProduct.image}
+                                        src={baseProduct.thumbUrl || baseProduct.image || baseProduct.originalUrl}
                                         alt="Base"
                                         sx={{
                                             width: 36,

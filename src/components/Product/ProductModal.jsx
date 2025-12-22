@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
 import {
     Dialog,
@@ -15,6 +15,7 @@ import {
     Paper,
     IconButton,
 } from '@mui/material';
+
 import { ShoppingCart, X, ChevronLeft, ChevronRight, ScanSearch, Trash2 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Navigation, Virtual } from 'swiper/modules';
@@ -45,6 +46,98 @@ const swiperStyles = `
     bottom: 20px !important;
   }
 `;
+
+const MagnifierImage = ({ src, alt }) => {
+    const imgRef = useRef(null);
+    const [isHovering, setIsHovering] = useState(false);
+    const [lens, setLens] = useState({ x: 0, y: 0, bgX: '0%', bgY: '0%' });
+
+    const LENS_SIZE = 140;
+    const ZOOM = 2.6;
+
+    const handleMove = (e) => {
+        if (!imgRef.current) return;
+        const rect = imgRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+            setIsHovering(false);
+            return;
+        }
+
+        const half = LENS_SIZE / 2;
+        const clampedX = Math.max(half, Math.min(x, rect.width - half));
+        const clampedY = Math.max(half, Math.min(y, rect.height - half));
+
+        const xPercent = (clampedX / rect.width) * 100;
+        const yPercent = (clampedY / rect.height) * 100;
+
+        setLens({
+            x: clampedX,
+            y: clampedY,
+            bgX: `${xPercent}%`,
+            bgY: `${yPercent}%`,
+        });
+    };
+
+    return (
+        <Box
+            sx={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '100%',
+                maxHeight: 400,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 1,
+                overflow: 'hidden',
+                cursor: 'zoom-in',
+                userSelect: 'none',
+            }}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+            onMouseMove={handleMove}
+        >
+            <Box
+                ref={imgRef}
+                component="img"
+                src={src}
+                alt={alt}
+                draggable={false}
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                    maxHeight: 400,
+                    objectFit: 'contain',
+                }}
+                onDragStart={(e) => e.preventDefault()}
+            />
+
+            <Box
+                sx={{
+                    position: 'absolute',
+                    left: lens.x - LENS_SIZE / 2,
+                    top: lens.y - LENS_SIZE / 2,
+                    width: LENS_SIZE,
+                    height: LENS_SIZE,
+                    borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,0.9)',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+                    backgroundImage: `url(${src})`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: `${lens.bgX} ${lens.bgY}`,
+                    backgroundSize: `${ZOOM * 100}%`,
+                    pointerEvents: 'none',
+                    opacity: isHovering ? 1 : 0,
+                    transform: isHovering ? 'scale(1)' : 'scale(0.96)',
+                    transition: 'opacity 160ms ease, transform 160ms ease',
+                }}
+            />
+        </Box>
+    );
+};
 
 export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, fromCart, urlParamsFlag }) {
     const [activeIndex, setActiveIndex] = useState(startIndex);
@@ -103,7 +196,9 @@ export default function ProductModal({ open, onClose, product, products = [], st
         : Array(100).fill().map((_, i) => ({
             ...product,
             id: `${product.id || 'product'}-${i}`,
-            image: product.ImgUrl || product.image || "/images/image-not-found.jpg",
+            thumbUrl: product.thumbUrl,
+            originalUrl: product.originalUrl,
+            image: product.thumbUrl || product.image || "/images/image-not-found.jpg",
             designno: `${product.designno || 'PROD'}-${i + 1}`
         }));
 
@@ -169,9 +264,13 @@ export default function ProductModal({ open, onClose, product, products = [], st
                             <Grid container sx={{ height: '100%', minHeight: '500px' }}>
                                 <Grid size={{ xs: 12, md: 6 }}>
                                     <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', height: '100%' }}>
+                                        {/* <MagnifierImage
+                                            src={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
+                                            alt={prod.categoryname || 'Product image'}
+                                        /> */}
                                         <CardMedia
                                             component="img"
-                                            image={prod.ImgUrl || prod.image || "/images/image-not-found.jpg"}
+                                            image={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
                                             alt={prod.categoryname || 'Product image'}
                                             sx={{
                                                 maxWidth: '100%',
@@ -299,8 +398,8 @@ export default function ProductModal({ open, onClose, product, products = [], st
                 </Swiper>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, justifyContent: (onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image)) || fromCart ? 'space-between' : 'flex-end', backgroundColor: '#fcfcfcff' }}>
-                {onSearchSimilar && (sliderProducts[activeIndex]?.ImgUrl || sliderProducts[activeIndex]?.image) && (
+            <DialogActions sx={{ p: 3, justifyContent: (onSearchSimilar && (sliderProducts[activeIndex]?.originalUrl || sliderProducts[activeIndex]?.image || sliderProducts[activeIndex]?.thumbUrl)) || fromCart ? 'space-between' : 'flex-end', backgroundColor: '#fcfcfcff' }}>
+                {onSearchSimilar && (sliderProducts[activeIndex]?.originalUrl || sliderProducts[activeIndex]?.image || sliderProducts[activeIndex]?.thumbUrl) && (
                     <Button
                         variant="outlined"
                         startIcon={<ScanSearch size={18} />}

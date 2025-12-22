@@ -51,10 +51,14 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
 
     const imageSrc = useMemo(() => {
         if (imageError) return "/images/image-not-found.jpg";
-        if (product?.ImgUrl) return product.ImgUrl;
+        if (product?.thumbUrl) return product.thumbUrl;
         if (product?.image) return product.image;
         return "/images/image-not-found.jpg";
     }, [imageError, product]);
+
+    const hasSimilarSearchImage = useMemo(() => {
+        return Boolean(product?.originalUrl || product?.image || product?.thumbUrl);
+    }, [product]);
 
 
     return (
@@ -154,7 +158,7 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                     )}
 
                     {/* SEARCH SIMILAR BUTTON */}
-                    {showSimilarButton && onSearchSimilar && (product?.ImgUrl || product?.image) && (
+                    {showSimilarButton && onSearchSimilar && hasSimilarSearchImage && (
                         <Tooltip title="Search Similar Design" placement="left">
                             <IconButton
                                 size="small"

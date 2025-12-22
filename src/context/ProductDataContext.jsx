@@ -22,8 +22,24 @@ export const ProductDataProvider = ({ children }) => {
         try {
             const res = await designCollectionApi();
             const allProducts = res?.rd || [];
-            setProductData(allProducts);
-            return allProducts;
+            const meta = Array.isArray(res?.rd1) ? res.rd1[0] : undefined;
+            const thumbBaseRaw = meta?.ThumbPath || "";
+            const originalBaseRaw = meta?.OriginalPath || "";
+            const thumbBase = thumbBaseRaw && !thumbBaseRaw.endsWith('/') ? `${thumbBaseRaw}/` : thumbBaseRaw;
+            const originalBase = originalBaseRaw && !originalBaseRaw.endsWith('/') ? `${originalBaseRaw}/` : originalBaseRaw;
+
+            const mapped = allProducts.map((p) => {
+                const thumbUrl = p?.ThumbImageName ? `${thumbBase}${p.ThumbImageName}` : undefined;
+                const originalUrl = p?.OriginalImageName ? `${originalBase}${p.OriginalImageName}` : undefined;
+                return {
+                    ...p,
+                    thumbUrl,
+                    originalUrl,
+                };
+            });
+
+            setProductData(mapped);
+            return mapped;
         } catch (err) {
             console.error('Failed to fetch product data:', err);
             setError(err.message || 'Failed to load products');

@@ -85,7 +85,7 @@ const CartPageMUI = () => {
     };
 
     const getImageSrc = (item) => {
-        const originalSrc = item.ImgUrl || item.image;
+        const originalSrc = item.thumbUrl || item.image;
         if (!originalSrc || imageStates[item.id]?.error) return "/images/image-not-found.jpg";
         return originalSrc;
     };
