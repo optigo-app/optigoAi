@@ -18,7 +18,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #fafafa;
+  background: #ffffff;
   padding: 10px;
 }
 
@@ -97,7 +97,7 @@
   width: 100%;
 
   button {
-    border-radius: 8px;
+    border-radius: 16px !important;
     font-weight: 700;
     text-transform: none;
     padding: 6px 12px;

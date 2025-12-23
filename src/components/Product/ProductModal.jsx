@@ -12,137 +12,46 @@ import {
     Grid,
     CardMedia,
     Box,
-    Paper,
     IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 
-import { ShoppingCart, X, ChevronLeft, ChevronRight, ScanSearch, Trash2 } from 'lucide-react';
+import {
+    ShoppingCart,
+    X,
+    ChevronLeft,
+    ChevronRight,
+    ScanSearch,
+    Trash2,
+    Maximize,
+    Minimize,
+} from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Keyboard, Navigation, Virtual } from 'swiper/modules';
+import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import ReusableConfirmModal from '../Common/ReusableConfirmModal';
-import { isFrontendFeRoute } from '@/utils/urlUtils';
 
-// Custom CSS for Swiper to match theme
-const swiperStyles = `
-  .swiper-pagination-bullet {
-    background-color: #7367f0 !important;
-    opacity: 0.5 !important;
-    width: 10px !important;
-    height: 10px !important;
-    border-radius: 50% !important;
-    transition: all 0.3s ease !important;
-  }
-
-  .swiper-pagination-bullet-active {
-    background-color: #7367f0 !important;
-    opacity: 1 !important;
-    width: 12px !important;
-    height: 12px !important;
-  }
-
-  .swiper-pagination {
-    bottom: 20px !important;
-  }
-`;
-
-const MagnifierImage = ({ src, alt }) => {
-    const imgRef = useRef(null);
-    const [isHovering, setIsHovering] = useState(false);
-    const [lens, setLens] = useState({ x: 0, y: 0, bgX: '0%', bgY: '0%' });
-
-    const LENS_SIZE = 140;
-    const ZOOM = 2.6;
-
-    const handleMove = (e) => {
-        if (!imgRef.current) return;
-        const rect = imgRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
-            setIsHovering(false);
-            return;
-        }
-
-        const half = LENS_SIZE / 2;
-        const clampedX = Math.max(half, Math.min(x, rect.width - half));
-        const clampedY = Math.max(half, Math.min(y, rect.height - half));
-
-        const xPercent = (clampedX / rect.width) * 100;
-        const yPercent = (clampedY / rect.height) * 100;
-
-        setLens({
-            x: clampedX,
-            y: clampedY,
-            bgX: `${xPercent}%`,
-            bgY: `${yPercent}%`,
-        });
-    };
-
-    return (
-        <Box
-            sx={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '100%',
-                maxHeight: 400,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 1,
-                overflow: 'hidden',
-                cursor: 'zoom-in',
-                userSelect: 'none',
-            }}
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
-            onMouseMove={handleMove}
-        >
-            <Box
-                ref={imgRef}
-                component="img"
-                src={src}
-                alt={alt}
-                draggable={false}
-                sx={{
-                    width: '100%',
-                    height: '100%',
-                    maxHeight: 400,
-                    objectFit: 'contain',
-                }}
-                onDragStart={(e) => e.preventDefault()}
-            />
-
-            <Box
-                sx={{
-                    position: 'absolute',
-                    left: lens.x - LENS_SIZE / 2,
-                    top: lens.y - LENS_SIZE / 2,
-                    width: LENS_SIZE,
-                    height: LENS_SIZE,
-                    borderRadius: '50%',
-                    border: '2px solid rgba(255,255,255,0.9)',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
-                    backgroundImage: `url(${src})`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: `${lens.bgX} ${lens.bgY}`,
-                    backgroundSize: `${ZOOM * 100}%`,
-                    pointerEvents: 'none',
-                    opacity: isHovering ? 1 : 0,
-                    transform: isHovering ? 'scale(1)' : 'scale(0.96)',
-                    transition: 'opacity 160ms ease, transform 160ms ease',
-                }}
-            />
-        </Box>
-    );
-};
 
 export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, fromCart, urlParamsFlag }) {
+    const theme = useTheme()
     const [activeIndex, setActiveIndex] = useState(startIndex);
     const { isItemInCart, removeFromCart } = useCart();
     const [openConfirmModal, setOpenConfirmModal] = useState(false);
+    const [swiperRef, setSwiperRef] = useState(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const formatWeight = (value) => {
+        const n = typeof value === 'number' ? value : Number(value);
+        if (!Number.isFinite(n)) return '0.000';
+        return n.toFixed(3);
+    };
 
     const softPrimaryButtonSx = {
         textTransform: 'none',
@@ -172,22 +81,28 @@ export default function ProductModal({ open, onClose, product, products = [], st
         },
     };
 
-    useEffect(() => {
-        const styleElement = document.createElement('style');
-        styleElement.innerHTML = swiperStyles;
-        document.head.appendChild(styleElement);
-
-        return () => {
-            document.head.removeChild(styleElement);
-        };
-    }, []);
+    const sliderButton = {
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        backgroundColor: alpha(theme.palette.secondary?.extraLight || theme.palette.secondary.light, 0.1),
+        color: 'secondary.dark',
+        '&:hover': {
+            bgcolor: 'secondary.extraLight',
+            borderColor: 'transparent',
+            boxShadow: 'none',
+        },
+    }
 
     // When modal opens, ensure slider starts from the provided startIndex
     useEffect(() => {
         if (open) {
             setActiveIndex(startIndex);
+            if (swiperRef) {
+                swiperRef.slideTo(startIndex, 0);
+            }
         }
-    }, [open, startIndex]);
+    }, [open, startIndex, swiperRef]);
 
     if (!product) return null;
 
@@ -219,246 +134,362 @@ export default function ProductModal({ open, onClose, product, products = [], st
         onClose();
     };
 
+    const currentProd = sliderProducts[activeIndex] || product;
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="lg"
+            maxWidth={isFullscreen ? false : "lg"}
             fullWidth
+            fullScreen={isFullscreen}
+            PaperProps={{
+                sx: {
+                    height: isFullscreen ? '100%' : 'calc(90vh)',
+                    maxHeight: isFullscreen ? '100%' : 'calc(90vh)',
+                    borderRadius: isFullscreen ? 0 : 3,
+                    pb: isFullscreen ? '50px' : 0,
+                    m: isFullscreen ? 0 : 2
+                }
+            }}
             sx={{
-                height: isFrontendFeRoute() ? '94%' : "100%",
-                '& .MuiDialog-paper': {
-                    borderRadius: 2,
-                },
+                '& .MuiDialog-container': {
+                    height: isFullscreen ? '100%' : '94%',
+                    maxHeight: isFullscreen ? '100%' : '94%'
+                }
             }}
         >
-            <DialogTitle sx={{ textAlign: 'start', pb: 1, backgroundColor: '#f5f5f5', position: 'relative' }}>
-                <IconButton
-                    onClick={onClose}
-                    sx={{ position: 'absolute', right: 8, top: 8 }}
-                >
-                    <X size={20} />
-                </IconButton>
-                <Typography variant="h5" component="div">
-                    Product Details (<span style={{ fontWeight: 600 }}>{sliderProducts[activeIndex]?.designno || product.designno || ''}</span>)
+            <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="h6" fontWeight="bold">
+                    Product Details
                 </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        size="small"
+                        sx={{ color: theme => theme.palette.grey[500], padding: 1 }}
+                    >
+                        {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                    </IconButton>
+                    <IconButton onClick={onClose} sx={{ color: theme => theme.palette.grey[500], padding: 1 }}>
+                        <X size={20} />
+                    </IconButton>
+                </Box>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 0, position: 'relative', minHeight: '500px' }}>
+            <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
                 <Swiper
-                    modules={[Virtual, Keyboard, Navigation]}
-                    spaceBetween={20}
+                    modules={[Virtual, Keyboard, Mousewheel]}
+                    onSwiper={setSwiperRef}
+                    spaceBetween={0}
                     slidesPerView={1}
                     keyboard={{ enabled: true }}
+                    mousewheel={{ enabled: true }}
                     virtual={{ enabled: true }}
                     initialSlide={startIndex}
-                    navigation={{
-                        nextEl: '.swiper-button-next',
-                        prevEl: '.swiper-button-prev',
-                    }}
                     onSlideChange={handleSlideChange}
                     style={{ width: '100%', height: '100%' }}
                 >
-                    {sliderProducts.map((prod, index) => (
-                        <SwiperSlide key={`${prod.id || 'product'}-${index}`} virtualIndex={index}>
-                            <Grid container sx={{ height: '100%', minHeight: '500px' }}>
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                    <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', height: '100%' }}>
-                                        {/* <MagnifierImage
-                                            src={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
-                                            alt={prod.categoryname || 'Product image'}
-                                        /> */}
-                                        <CardMedia
-                                            component="img"
-                                            image={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
-                                            alt={prod.categoryname || 'Product image'}
-                                            sx={{
-                                                maxWidth: '100%',
-                                                maxHeight: 400,
-                                                objectFit: 'contain',
-                                                borderRadius: 1,
-                                            }}
-                                        />
-                                    </Box>
+                    {sliderProducts.map((prod, index) => {
+                        // Recalculate conditional flags per product
+                        const pDiamonds = (prod.diamondpcs > 0) || (prod.diamondweight > 0);
+                        const pStones = (prod.stonepcs > 0) || (prod.stoneweight > 0);
+
+                        return (
+                            <SwiperSlide key={`${prod.id || 'product'}-${index}`} virtualIndex={index}>
+                                <Grid container sx={{ height: '100%' }}>
+                                    {/* Image Section - Priority (Cover + No Shadow) */}
+                                    <Grid size={{ xs: 12, md: isFullscreen ? 9.5 : 8 }} sx={{ height: { xs: '50%', md: '100%' } }}>
+                                        <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <CardMedia
+                                                component="img"
+                                                image={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
+                                                alt={prod.categoryname || 'Product image'}
+                                                sx={{
+                                                    objectFit: isFullscreen ? 'contain' : 'cover',
+                                                    borderRadius: 2,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+
+                                    {/* Details Section - REFINED & CONDITIONAL */}
+                                    <Grid size={{ xs: 12, md: isFullscreen ? 2.5 : 4 }} sx={{ height: { xs: '50%', md: '100%' }, overflowY: 'auto', bgcolor: 'background.paper', borderLeft: '1px solid', borderColor: 'divider' }}>
+                                        <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+                                            {/* Design Number */}
+                                            <Box sx={{ pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                                                <Typography variant="h5" fontWeight="600" color="#2c2c2c" sx={{ mt: 0.5 }}>
+                                                    {prod.designno || "N/A"}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mt: 0.75, color: 'text.secondary' }}>
+                                                    {[{ value: prod.brandname, isBrand: true }, { value: prod.collectionname }, { value: prod.categoryname }, { value: prod.subcategoryname }, { value: prod.producttype }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
+                                                        <Box key={`${part.value}-${idx}`} component="span">
+                                                            <Box component="span" sx={part.isBrand ? { color: 'text.primary', fontWeight: 700 } : undefined}>
+                                                                {part.value}
+                                                            </Box>
+                                                            {idx < arr.length - 1 ? <Box component="span" sx={{ mx: 0.5 }}>-</Box> : null}
+                                                        </Box>
+                                                    ))}
+                                                </Typography>
+                                                {(prod.metaltype || prod.metalpurity || prod.metalcolor) && (
+                                                    <Typography
+                                                        variant="body2"
+                                                        fontWeight={600}
+                                                        color="secondary.main"
+                                                        sx={{
+                                                            mt: 1,
+                                                            width: 'fit-content',
+                                                            maxWidth: '100%',
+                                                            bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                                            px: 1,
+                                                            py: 0.5,
+                                                            borderRadius: 2,
+                                                            lineHeight: 1.2,
+                                                        }}
+                                                    >
+                                                        {[prod.metaltype, prod.metalpurity, prod.metalcolor].filter(Boolean).join(' ')}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+
+                                            {/* Weights */}
+                                            <Box>
+                                                <Grid container spacing={2}>
+                                                    {prod.MetalWeight > 0 && (
+                                                        <Grid size={{ xs: 6 }}>
+                                                            <Box>
+                                                                <Typography variant="caption" display="block" color="text.disabled">Net Weight(Gms)</Typography>
+                                                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.3rem' }}>{formatWeight(prod.MetalWeight)}</Typography>
+                                                            </Box>
+                                                        </Grid>
+                                                    )}
+                                                    {prod.ActualGrossweight > 0 && (
+                                                        <Grid size={{ xs: 6 }}>
+                                                            <Box>
+                                                                <Typography variant="caption" display="block" color="text.disabled">Gross Weight(Gms)</Typography>
+                                                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.3rem' }}>{formatWeight(prod.ActualGrossweight)}</Typography>
+                                                            </Box>
+                                                        </Grid>
+                                                    )}
+                                                </Grid>
+                                            </Box>
+
+                                            {/* Specifications (Conditional) */}
+                                            {(pDiamonds || pStones) && (
+                                                <Box sx={{ mt: 1 }}>
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                        {pDiamonds && (
+                                                            <Box sx={{ border: '1px solid', borderColor: alpha(theme.palette.divider, 0.6), borderRadius: 2, overflow: 'hidden' }}>
+                                                                <Box
+                                                                    sx={{
+                                                                        px: 1.25,
+                                                                        py: 0.9,
+                                                                        display: 'flex',
+                                                                        justifyContent: 'space-between',
+                                                                        alignItems: 'center',
+                                                                        bgcolor: alpha(theme.palette.primary.main, 0.06),
+                                                                        borderBottom: '1px solid',
+                                                                        borderColor: alpha(theme.palette.divider, 0.6),
+                                                                    }}
+                                                                >
+                                                                    <Typography variant="body2" fontWeight={700} sx={{ color: 'text.primary' }}>
+                                                                        Diamond
+                                                                    </Typography>
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary', textAlign: 'right' }}>
+                                                                        {[
+                                                                            prod.diamondpcs ? `${prod.diamondpcs} pcs` : null,
+                                                                            prod.diamondweight ? `${formatWeight(prod.diamondweight)} ct` : null,
+                                                                        ].filter(Boolean).join(' • ') || ''}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <TableContainer sx={{ bgcolor: 'background.paper' }}>
+                                                                    <Table
+                                                                        size="small"
+                                                                        sx={{
+                                                                            '& .MuiTableCell-root': { py: 0.8, px: 1.1 },
+                                                                            '& th': { color: 'text.secondary', fontWeight: 700, bgcolor: alpha(theme.palette.text.primary, 0.03) },
+                                                                            '& td': { borderBottom: '1px solid rgba(0,0,0,0.06)' },
+                                                                            '& tbody tr:last-child td': { borderBottom: 0 },
+                                                                        }}
+                                                                    >
+                                                                        <TableHead>
+                                                                            <TableRow>
+                                                                                <TableCell>Shape</TableCell>
+                                                                                <TableCell>Clarity</TableCell>
+                                                                                <TableCell>Color</TableCell>
+                                                                                <TableCell>Size</TableCell>
+                                                                                <TableCell align="right">Pcs</TableCell>
+                                                                            </TableRow>
+                                                                        </TableHead>
+                                                                        <TableBody>
+                                                                            <TableRow sx={{ '& td': { color: 'secondary.main', fontWeight: 600 } }}>
+                                                                                <TableCell>{prod.diamondshape || '-'}</TableCell>
+                                                                                <TableCell>{prod.diamondclarity || prod.clarity || '-'}</TableCell>
+                                                                                <TableCell>{prod.diamondcolor || prod.color || '-'}</TableCell>
+                                                                                <TableCell>
+                                                                                    {prod.diamondsize || (prod.diamondweight ? `${formatWeight(prod.diamondweight)} ct` : '-')}
+                                                                                </TableCell>
+                                                                                <TableCell align="right">{prod.diamondpcs || 0}</TableCell>
+                                                                            </TableRow>
+                                                                        </TableBody>
+                                                                    </Table>
+                                                                </TableContainer>
+                                                            </Box>
+                                                        )}
+
+                                                        {pStones && (
+                                                            <Box sx={{ border: '1px solid', borderColor: alpha(theme.palette.divider, 0.6), borderRadius: 2, overflow: 'hidden' }}>
+                                                                <Box
+                                                                    sx={{
+                                                                        px: 1.25,
+                                                                        py: 0.9,
+                                                                        display: 'flex',
+                                                                        justifyContent: 'space-between',
+                                                                        alignItems: 'center',
+                                                                        bgcolor: alpha(theme.palette.secondary.main, 0.06),
+                                                                        borderBottom: '1px solid',
+                                                                        borderColor: alpha(theme.palette.divider, 0.6),
+                                                                    }}
+                                                                >
+                                                                    <Typography variant="body2" fontWeight={700} sx={{ color: 'text.primary' }}>
+                                                                        Colorstone
+                                                                    </Typography>
+                                                                    <Typography variant="caption" sx={{ color: 'text.secondary', textAlign: 'right' }}>
+                                                                        {[
+                                                                            prod.stonepcs ? `${prod.stonepcs} pcs` : null,
+                                                                            prod.stoneweight ? `${formatWeight(prod.stoneweight)} ct` : null,
+                                                                        ].filter(Boolean).join(' • ') || ''}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <TableContainer sx={{ bgcolor: 'background.paper' }}>
+                                                                    <Table
+                                                                        size="small"
+                                                                        sx={{
+                                                                            '& .MuiTableCell-root': { py: 0.8, px: 1.1 },
+                                                                            '& th': { color: 'text.secondary', fontWeight: 700, bgcolor: alpha(theme.palette.text.primary, 0.03) },
+                                                                            '& td': { borderBottom: '1px solid rgba(0,0,0,0.06)' },
+                                                                            '& tbody tr:last-child td': { borderBottom: 0 },
+                                                                        }}
+                                                                    >
+                                                                        <TableHead>
+                                                                            <TableRow>
+                                                                                <TableCell>Shape</TableCell>
+                                                                                <TableCell>Clarity</TableCell>
+                                                                                <TableCell>Color</TableCell>
+                                                                                <TableCell>Size</TableCell>
+                                                                                <TableCell align="right">Pcs</TableCell>
+                                                                            </TableRow>
+                                                                        </TableHead>
+                                                                        <TableBody>
+                                                                            <TableRow sx={{ '& td': { color: 'secondary.main', fontWeight: 600 } }}>
+                                                                                <TableCell>{prod.stoneshape || prod.stoneshapename || '-'}</TableCell>
+                                                                                <TableCell>{prod.stoneclarity || '-'}</TableCell>
+                                                                                <TableCell>{prod.stonecolor || '-'}</TableCell>
+                                                                                <TableCell>
+                                                                                    {prod.stonesize || (prod.stoneweight ? `${formatWeight(prod.stoneweight)} ct` : '-')}
+                                                                                </TableCell>
+                                                                                <TableCell align="right">{prod.stonepcs || 0}</TableCell>
+                                                                            </TableRow>
+                                                                        </TableBody>
+                                                                    </Table>
+                                                                </TableContainer>
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </Grid>
                                 </Grid>
-
-                                <Grid size={{ xs: 12, md: 6 }} sx={{ p: 3, height: '100%' }}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
-                                        <Paper sx={{ p: 2, flex: 1 }}>
-                                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                                                Product Information
-                                            </Typography>
-                                            <Grid container spacing={1}>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Design No:</Typography>
-                                                    <Typography variant="body1">{prod.designno}</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Auto Code:</Typography>
-                                                    <Typography variant="body1">{prod.autocode}</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Category:</Typography>
-                                                    <Typography variant="body1">{prod.categoryname}</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Subcategory:</Typography>
-                                                    <Typography variant="body1">{prod.subcategoryname}</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Collection:</Typography>
-                                                    <Typography variant="body1">{prod.collectionname}</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Brand:</Typography>
-                                                    <Typography variant="body1">{prod.brandname}</Typography>
-                                                </Grid>
-                                            </Grid>
-                                        </Paper>
-
-                                        <Paper sx={{ p: 2, flex: 1 }}>
-                                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                                                Specifications
-                                            </Typography>
-                                            <Grid container spacing={1}>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Metal Type:</Typography>
-                                                    <Typography variant="body1">{prod.metaltype}</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Metal Weight:</Typography>
-                                                    <Typography variant="body1">{prod.MetalWeight}g</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Gross Weight:</Typography>
-                                                    <Typography variant="body1">{prod.ActualGrossweight}g</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Diamonds:</Typography>
-                                                    <Typography variant="body1">{prod.diamondpcs} pcs</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Stones:</Typography>
-                                                    <Typography variant="body1">{prod.stonepcs} pcs</Typography>
-                                                </Grid>
-                                                <Grid size={{ xs: 6 }}>
-                                                    <Typography variant="body2" color="text.secondary">Stone CTW:</Typography>
-                                                    <Typography variant="body1">{prod.stonectw} ct</Typography>
-                                                </Grid>
-                                            </Grid>
-                                        </Paper>
-                                    </Box>
-                                </Grid>
-                            </Grid>
-                        </SwiperSlide>
-                    ))}
-
-                    {/* Custom Navigation Buttons */}
-                    <IconButton
-                        className="swiper-button-prev"
-                        sx={{
-                            position: 'absolute',
-                            left: 16,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            zIndex: 10,
-                            backgroundColor: 'rgba(115, 103, 240, 0.8)',
-                            color: 'white',
-                            '&:hover': {
-                                backgroundColor: 'rgba(115, 103, 240, 0.9)',
-                            },
-                            transition: 'all 0.3s ease',
-                            width: 40,
-                            height: 40
-                        }}
-                    >
-                        <ChevronLeft size={24} color='white' />
-                    </IconButton>
-
-                    <IconButton
-                        className="swiper-button-next"
-                        sx={{
-                            position: 'absolute',
-                            right: 16,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            zIndex: 10,
-                            backgroundColor: 'rgba(115, 103, 240, 0.8)',
-                            color: 'white',
-                            '&:hover': {
-                                backgroundColor: 'rgba(115, 103, 240, 0.9)',
-                            },
-                            transition: 'all 0.3s ease',
-                            width: 40,
-                            height: 40
-                        }}
-                    >
-                        <ChevronRight size={24} color='white' />
-                    </IconButton>
+                            </SwiperSlide>
+                        );
+                    })}
                 </Swiper>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, justifyContent: (onSearchSimilar && (sliderProducts[activeIndex]?.originalUrl || sliderProducts[activeIndex]?.image || sliderProducts[activeIndex]?.thumbUrl)) || fromCart ? 'space-between' : 'flex-end', backgroundColor: '#fcfcfcff' }}>
-                {onSearchSimilar && (sliderProducts[activeIndex]?.originalUrl || sliderProducts[activeIndex]?.image || sliderProducts[activeIndex]?.thumbUrl) && (
-                    <Button
-                        variant="outlined"
-                        startIcon={<ScanSearch size={18} />}
-                        onClick={() => {
-                            onSearchSimilar(sliderProducts[activeIndex] || product);
-                            onClose();
+            <DialogActions sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'background.paper', borderTop: '1px solid', borderColor: 'divider' }}>
+
+                {/* Left Area: Secondary Actions */}
+                <Box sx={{ display: 'flex', gap: 1, flex: 1 }}>
+                    {onSearchSimilar && (currentProd?.originalUrl || currentProd?.image || currentProd?.thumbUrl) && (
+                        <Button
+                            variant="outlined"
+                            startIcon={<ScanSearch size={18} />}
+                            onClick={() => {
+                                onSearchSimilar(currentProd);
+                                onClose();
+                            }}
+                            sx={softPrimaryButtonSx}
+                        >
+                            Search Similar
+                        </Button>
+                    )}
+                    {fromCart && (
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Trash2 size={18} />}
+                            onClick={handleRemoveItem}
+                            sx={softDangerButtonSx}
+                        >
+                            Remove
+                        </Button>
+                    )}
+                </Box>
+
+                {/* Center Area: Navigation Controls */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, justifyContent: 'center' }}>
+                    <IconButton
+                        onClick={() => swiperRef?.slidePrev()}
+                        disabled={activeIndex === 0}
+                        sx={{
+                            ...sliderButton,
+                            opacity: activeIndex === 0 ? 0.5 : 1
                         }}
-                        sx={softPrimaryButtonSx}
                     >
-                        Search Similar
-                    </Button>
-                )}
-                {fromCart && (
-                    <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<Trash2 size={18} />}
-                        onClick={handleRemoveItem}
-                        sx={softDangerButtonSx}
-                    >
-                        Remove
-                    </Button>
-                )}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Typography variant="body2" sx={{
-                        fontWeight: 500,
-                        position: 'absolute',
-                        bottom: 25,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        backgroundColor: 'rgba(141, 141, 141, 0.5)',
-                        color: 'white',
-                        padding: '6px 16px',
-                        borderRadius: '16px',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        zIndex: 10,
-                    }}>
+                        <ChevronLeft size={24} />
+                    </IconButton>
+
+                    <Typography variant="body2" sx={{ fontWeight: 600, minWidth: '60px', textAlign: 'center', color: 'secondary.light' }}>
                         {activeIndex + 1} / {sliderProducts.length}
                     </Typography>
+
+                    <IconButton
+                        onClick={() => swiperRef?.slideNext()}
+                        disabled={activeIndex === sliderProducts.length - 1}
+                        sx={{
+                            ...sliderButton,
+                            opacity: activeIndex === sliderProducts.length - 1 ? 0.5 : 1
+                        }}
+                    >
+                        <ChevronRight size={24} />
+                    </IconButton>
+                </Box>
+
+                {/* Right Area: Primary Action */}
+                <Box sx={{ display: 'flex', gap: 2, flex: 1, justifyContent: 'flex-end' }}>
                     <Button
                         variant="contained"
                         startIcon={<ShoppingCart size={18} />}
                         onClick={() => {
-                            const currentProduct = sliderProducts[activeIndex] || product;
-                            if (!isItemInCart(currentProduct.id)) {
-                                onAddToCart(currentProduct);
+                            if (!isItemInCart(currentProd.id)) {
+                                onAddToCart(currentProd);
                             }
                         }}
-                        disabled={isItemInCart((sliderProducts[activeIndex] || product)?.id)}
+                        disabled={isItemInCart(currentProd?.id)}
                         sx={{
                             ...softPrimaryButtonSx,
-                            '&.Mui-disabled': {
-                                bgcolor: 'rgba(0, 0, 0, 0.06)',
-                                color: 'text.disabled',
-                            },
+                            bgcolor: isItemInCart(currentProd?.id) ? 'action.disabledBackground' : 'primary.main',
+                            color: isItemInCart(currentProd?.id) ? 'text.disabled' : 'common.white',
+                            '&:hover': {
+                                bgcolor: isItemInCart(currentProd?.id) ? 'action.disabledBackground' : 'primary.dark',
+                            }
                         }}
                     >
-                        {isItemInCart((sliderProducts[activeIndex] || product)?.id) ? 'In Cart' : 'Add to Cart'}
+                        {isItemInCart(currentProd?.id) ? 'In Cart' : 'Add to Cart'}
                     </Button>
                 </Box>
             </DialogActions>

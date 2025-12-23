@@ -10,7 +10,8 @@ import {
     Chip,
     Skeleton,
     IconButton,
-    Tooltip
+    Tooltip,
+    useTheme
 } from '@mui/material';
 
 import { ShoppingCart, ScanSearch } from 'lucide-react';
@@ -18,6 +19,7 @@ import ProductModal from './ProductModal';
 import { useCart } from '@/context/CartContext';
 
 const ProductCard = React.memo(function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true, urlParamsFlag }) {
+    const theme = useTheme();
     const [isHovered, setIsHovered] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -40,7 +42,12 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
     };
 
     const displayTitle = useMemo(
-        () => product?.categoryname || product?.producttype || product?.type || "",
+        () => product?.producttype || product?.type || "",
+        [product]
+    );
+
+    const displayCategory = useMemo(
+        () => product?.categoryname || product?.category || product?.categoryName || "",
         [product]
     );
 
@@ -111,7 +118,7 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                             component="img"
                             loading="lazy"
                             image={imageSrc}
-                            alt={displayTitle}
+                            alt={displayTitle || displayCategory}
                             onLoad={() => setIsImageLoaded(true)}
                             onError={() => {
                                 setImageError(true);
@@ -190,16 +197,30 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                         sx={{
                             position: "absolute",
                             inset: 0,
-                            backdropFilter: 'blur(2px)',
-                            background: 'linear-gradient(135deg, rgba(115, 103, 240, 0.85), rgba(224,224,224,0.85))',
+                            backdropFilter: 'blur(0.2px)',
+                            background: 'transparent',
                             display: 'flex',
                             flexDirection: 'column',
-                            justifyContent: 'center',
+                            justifyContent: 'flex-end',
                             alignItems: 'center',
                             opacity: isHovered ? 1 : 0,
                             transition: 'opacity 0.3s ease',
                             p: 2,
-                            gap: 1.5
+                            gap: 1.5,
+                            '&:before': {
+                                content: '""',
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                height: '95px',
+                                background: 'linear-gradient(180deg, rgba(115, 103, 240, 0) 0%, rgba(115, 103, 240, 0.55) 100%)',
+                                pointerEvents: 'none',
+                            },
+                            '& > *': {
+                                position: 'relative',
+                                zIndex: 1,
+                            }
                         }}
                         onClick={(e) => {
                             e.stopPropagation();
@@ -207,12 +228,12 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                         }}
                     >
                         <Box sx={{ textAlign: 'center' }}>
-                            <Typography
+                            {/* <Typography
                                 variant="h6"
                                 noWrap
                                 sx={{
                                     textTransform: 'capitalize',
-                                    color: 'white',
+                                    color: 'text.primary',
                                     mb: 0.5,
                                     lineHeight: 1.2,
                                     width: '100%',
@@ -221,19 +242,21 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                                 }}
                             >
                                 {displayTitle}
-                            </Typography>
-                            <Chip
-                                label={`${displayDesignNo}`}
-                                size="small"
-                                sx={{
-                                    backgroundColor: '#fff',
-                                    fontWeight: 'bold',
-                                    color: '#6b6b6bff',
-                                    height: 24,
-                                    maxWidth: '100%',
-                                    fontSize: { xs: '0.75rem', xl: '0.8125rem' }
-                                }}
-                            />
+                            </Typography> */}
+                            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                <Chip
+                                    label={`${displayDesignNo}`}
+                                    size="small"
+                                    sx={{
+                                        backgroundColor: '#fff',
+                                        fontWeight: 'bold',
+                                        color: '#6b6b6bff',
+                                        height: 24,
+                                        maxWidth: '100%',
+                                        fontSize: { xs: '0.75rem', xl: '0.8125rem' }
+                                    }}
+                                />
+                            </Box>
                         </Box>
 
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', alignItems: 'center' }}>
@@ -246,13 +269,14 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                                     handleToggleCart(product);
                                 }}
                                 sx={{
-                                    backgroundColor: isInCart ? "#f44336" : "#7367f0",
+                                    background: isInCart ? theme.gradients?.secondary : theme.gradients?.primary,
                                     color: "white",
-                                    width: '90%',
                                     fontSize: '0.8rem',
                                     whiteSpace: 'nowrap',
+                                    borderRadius: 2,
                                     '&:hover': {
-                                        backgroundColor: isInCart ? "#d32f2f" : "#5e56d6",
+                                        background: isInCart ? theme.gradients?.secondary : theme.gradients?.primary,
+                                        boxShadow: 'none',
                                     },
                                 }}
                             >

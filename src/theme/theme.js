@@ -47,7 +47,7 @@ const theme = createTheme({
       primary: '#404040ff',
       secondary: '#757575',
       disabled: '#bdbdbd',
-      white:'#fffff'
+      white: '#ffffff'
     },
     divider: '#e0e0e0',
     grey: {
@@ -65,7 +65,7 @@ const theme = createTheme({
   },
   gradients: {
     primary: 'linear-gradient(270deg, rgba(115, 103, 240, 0.7) 0%, #7367f0 100%)',
-    text: 'linear-gradient(135deg, #7367f0 0%, #9c27b0 100%)',
+    secondary: 'linear-gradient(135deg, #dc3545 0%, #ca8080ff 100%)',
   },
   typography: {
     fontFamily: 'var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
@@ -222,7 +222,7 @@ const theme = createTheme({
         elevation2: {
           boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
         },
-        elevation3: { 
+        elevation3: {
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
         },
       },

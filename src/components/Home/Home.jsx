@@ -7,7 +7,7 @@ import ModernSearchBar from "../ModernSearchBar";
 import { Sparkles, ShoppingBag, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { fileToBase64 } from "@/utils/globalFunc";
-import { ModeSwitch } from "../Common/HomeCommon";
+import { ModeSwitch, SearchModeToggle } from "../Common/HomeCommon";
 import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
@@ -310,7 +310,7 @@ const Home = () => {
                 </Box>
 
                 {/* Hero Text */}
-                <Box sx={{ mb: 3, textAlign: "center" }}>
+                <Box sx={{ mb: 4, textAlign: "center" }}>
                     <Typography
                         variant="h1"
                         fontWeight="600"
@@ -338,14 +338,15 @@ const Home = () => {
                     </motion.div>
                 </Box>
 
-                {/* Mode Selection Pill */}
-                {/* <motion.div
+                {/* Mode Selection Toggle */}
+                <Box
+                    component={motion.div}
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 1.3, duration: 0.5 }}
+                    transition={{ delay: 0.7, duration: 0.5 }}
                 >
-                    <ModeSwitch selectedMode={selectedMode} onSelect={setSelectedMode} />
-                </motion.div> */}
+                    <SearchModeToggle activeMode={selectedMode} onModeChange={setSelectedMode} />
+                </Box>
 
                 {/* Search Bar */}
                 <Box
@@ -353,7 +354,7 @@ const Home = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.8, duration: 0.6, type: "spring", stiffness: 100 }}
-                    sx={{ width: "100%", maxWidth: 800, mt: 2 }}
+                    sx={{ width: "100%", maxWidth: 800 }}
                 >
                     <ModernSearchBar
                         onSubmit={handleSearch}

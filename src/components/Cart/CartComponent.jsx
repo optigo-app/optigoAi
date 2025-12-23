@@ -13,7 +13,9 @@ import {
     Card,
     CardMedia,
     CardContent,
+    Chip,
 } from '@mui/material';
+
 import { useCart } from '@/context/CartContext';
 import GridBackground from '../Common/GridBackground';
 import ReusableConfirmModal from '../Common/ReusableConfirmModal';
@@ -208,6 +210,30 @@ const CartPageMUI = () => {
                                             overflow: "hidden",
                                         }}
                                     >
+                                        {item.designno && (
+                                            <Chip
+                                                label={`${item.designno}`}
+                                                size="small"
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 8,
+                                                    right: 50,
+                                                    zIndex: 9,
+                                                    bgcolor: 'rgba(255, 255, 255, 0.88)',
+                                                    backdropFilter: 'blur(4px)',
+                                                    fontWeight: 800,
+                                                    color: 'text.primary',
+                                                    height: 24,
+                                                    maxWidth: 'calc(100% - 66px)',
+                                                    '& .MuiChip-label': {
+                                                        display: 'block',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                    },
+                                                    pointerEvents: 'none',
+                                                }}
+                                            />
+                                        )}
                                         <CardMedia
                                             component="img"
                                             image={getImageSrc(item)}

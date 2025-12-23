@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Search, Check } from "lucide-react";
 
-export default function FilterDropdown({ title, items, anchorEl, onClose, onSelect, selectedItems, isLoading, direction = 'bottom' }) {
+export default function FilterDropdown({ title, items, anchorEl, onClose, onSelect, selectedItems = [], isLoading, direction = 'bottom' }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [focusedIndex, setFocusedIndex] = useState(-1);
     const listRef = useRef(null);

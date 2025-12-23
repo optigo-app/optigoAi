@@ -684,7 +684,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         sx={{
                                             borderRadius: 2,
                                             bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                            color: 'text.white',
+                                            color: 'text.primary',
                                             border: '1px solid rgba(0, 0, 0, 0.10)',
                                             mr: 0.5,
                                             '&:hover': {
