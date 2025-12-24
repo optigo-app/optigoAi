@@ -1,14 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { logErrorToServer } from "@/utils/errorLogger";
-import { Box, Typography, Container, Button } from "@mui/material";
+import { Box, Typography, Container } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import ModernSearchBar from "../ModernSearchBar";
-import { Sparkles, ShoppingBag, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { fileToBase64 } from "@/utils/globalFunc";
-import { ModeSwitch, SearchModeToggle } from "../Common/HomeCommon";
+import { SearchModeToggle } from "../Common/HomeCommon";
 import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";

@@ -20,6 +20,7 @@ import {
     TableHead,
     TableRow,
     Collapse,
+    Slide,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 
@@ -40,6 +41,10 @@ import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import ReusableConfirmModal from '../Common/ReusableConfirmModal';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 
 
 export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, fromCart, urlParamsFlag }) {
@@ -143,6 +148,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
     return (
         <Dialog
             open={open}
+            TransitionComponent={Transition}
             onClose={onClose}
             maxWidth={isFullscreen ? false : "lg"}
             fullWidth

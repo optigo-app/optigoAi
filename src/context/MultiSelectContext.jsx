@@ -42,6 +42,22 @@ export function MultiSelectProvider({ children }) {
         return selectedProductIds.has(productId);
     }, [selectedProductIds]);
 
+    const selectBatch = useCallback((productIds) => {
+        setSelectedProductIds(prev => {
+            const newSet = new Set(prev);
+            productIds.forEach(id => newSet.add(id));
+            return newSet;
+        });
+    }, []);
+
+    const deselectBatch = useCallback((productIds) => {
+        setSelectedProductIds(prev => {
+            const newSet = new Set(prev);
+            productIds.forEach(id => newSet.delete(id));
+            return newSet;
+        });
+    }, []);
+
     const getSelectedProducts = useCallback((allProducts) => {
         return allProducts.filter(product => selectedProductIds.has(product.id));
     }, [selectedProductIds]);
@@ -55,6 +71,8 @@ export function MultiSelectProvider({ children }) {
         toggleMultiSelectMode,
         toggleProductSelection,
         selectAll,
+        selectBatch,
+        deselectBatch,
         clearSelection,
         isProductSelected,
         getSelectedProducts,
@@ -65,6 +83,8 @@ export function MultiSelectProvider({ children }) {
         toggleMultiSelectMode,
         toggleProductSelection,
         selectAll,
+        selectBatch,
+        deselectBatch,
         clearSelection,
         isProductSelected,
         getSelectedProducts,

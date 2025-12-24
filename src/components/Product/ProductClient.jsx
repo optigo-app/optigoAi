@@ -8,53 +8,30 @@ import {
     Typography,
     Fade,
     Popover,
-    Chip,
-    IconButton,
-    Badge,
     Tooltip,
 } from "@mui/material";
-import { ShoppingCart, ChevronLeft, ChevronRight, CheckSquare, X as XIcon } from "lucide-react";
+
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import FullPageLoader from "@/components/FullPageLoader";
 import FilterSidebar from "@/components/Product/FilterSidebar";
 import PaginationControls from "@/components/PaginationControls";
-import { ModeSwitch, SearchModeToggle } from "../Common/HomeCommon";
+import { SearchModeToggle } from "../Common/HomeCommon";
 import { searchService } from "@/services/apiService";
-import Fuse from "fuse.js";
-import FilterChips from "@/components/Product/FilterChips";
 import { autoScrollToRestoredTarget, base64ToFile, compressImagesToWebP } from "@/utils/globalFunc";
 import ProductGrid from "./ProductGrid";
 import SimilarProductsModal from "./SimilarProductsModal";
+import { getMatchedDesignCollections, filterProducts, createSearchChip } from "./ProductHelpers";
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { useProductData } from '@/context/ProductDataContext';
 import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
-import Image from "next/image";
-import PageHeader from "@/components/Common/PageHeader";
+
+import ProductPageHeader from "@/components/Product/ProductPageHeader";
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 
-const CATEGORY_FIELD_MAP = {
-    'category': 'categoryname',
-    'subcategory': 'subcategoryname',
-    'collection': 'collectionname',
-    'product type': 'producttype',
-    'type': 'producttype',
-    'brand': 'brandname',
-    'gender': 'gendername',
-    'style': 'stylename',
-    'ocassion': 'occassionname',
-    'lab': 'labname',
-    'metal color': 'metalcolor',
-    'metal': 'metaltype',
-    'metal type': 'metaltype',
-    'diamond shape': 'diamondshape',
-    'shape': 'diamondshape',
-    'design#': 'designno',
-    'designno': 'designno'
-};
 
 function ProductClientContent() {
     const PRODUCT_LIST_RESTORE_KEY = 'productListRestoreState';
@@ -70,7 +47,11 @@ function ProductClientContent() {
         selectedCount,
         toggleMultiSelectMode,
         clearSelection,
-        getSelectedProducts
+        getSelectedProducts,
+        selectAll,
+        selectBatch,
+        deselectBatch,
+        isProductSelected
     } = useMultiSelect();
 
     const didAttemptRestoreRef = useRef(false);
@@ -88,7 +69,7 @@ function ProductClientContent() {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [searchMode, setSearchMode] = useState('ai');
+    const [searchMode, setSearchMode] = useState('design');
 
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
@@ -99,45 +80,7 @@ function ProductClientContent() {
     const [anchorElFilter, setAnchorElFilter] = useState(null);
     const [filterPopoverItems, setFilterPopoverItems] = useState([]);
 
-    // Filter Chips Scroll State
-    const filterScrollRef = React.useRef(null);
-    const [showLeftScroll, setShowLeftScroll] = useState(false);
-    const [showRightScroll, setShowRightScroll] = useState(false);
-    const [isClearAllInside, setIsClearAllInside] = useState(true);
 
-    const checkScrollButtons = useCallback(() => {
-        if (filterScrollRef.current) {
-            const { scrollLeft, scrollWidth, clientWidth } = filterScrollRef.current;
-            setShowLeftScroll(scrollLeft > 0);
-            setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 5);
-            const hasOverflow = scrollWidth > clientWidth + 2;
-            setIsClearAllInside(!hasOverflow);
-        }
-    }, []);
-
-    useEffect(() => {
-        checkScrollButtons();
-        window.addEventListener('resize', checkScrollButtons);
-        const transitionTimer = setTimeout(() => {
-            checkScrollButtons();
-        }, 450);
-
-        return () => {
-            window.removeEventListener('resize', checkScrollButtons);
-            clearTimeout(transitionTimer);
-        };
-    }, [checkScrollButtons, appliedFilters, searchTerm, isFilterOpen]);
-
-    const scrollFilters = (direction) => {
-        if (filterScrollRef.current) {
-            const scrollAmount = 400;
-            filterScrollRef.current.scrollBy({
-                left: direction === 'left' ? -scrollAmount : scrollAmount,
-                behavior: 'smooth'
-            });
-            setTimeout(checkScrollButtons, 300);
-        }
-    };
 
     useEffect(() => {
         const flag = sessionStorage.getItem("urlParams");
@@ -247,62 +190,7 @@ function ProductClientContent() {
     }, [searchResults, allDesignCollections]);
 
     const finalFilteredProducts = useMemo(() => {
-        let temp = baseDataset;
-        // Apply drawer filters (exclude search chips)
-        const drawerFilters = appliedFilters.filter(
-            (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
-        );
-        if (drawerFilters.length > 0) {
-            const filtersByCategory = drawerFilters.reduce((acc, { category, item }) => {
-                if (!acc[category]) acc[category] = [];
-                acc[category].push(item);
-                return acc;
-            }, {});
-
-            temp = temp.filter((product) => {
-                return Object.entries(filtersByCategory).every(([category, items]) => {
-                    return items.some((item) => {
-                        const categoryLower = category.toLowerCase();
-                        let productKey = CATEGORY_FIELD_MAP[categoryLower];
-
-                        // Fallback: try to find a partial match if exact match fails
-                        if (!productKey) {
-                            const match = Object.keys(CATEGORY_FIELD_MAP).find(key => categoryLower.includes(key));
-                            if (match) productKey = CATEGORY_FIELD_MAP[match];
-                        }
-
-                        const fieldValue = productKey ? product[productKey] : "";
-                        const fieldValueLower = (fieldValue || "").toLowerCase();
-                        const itemNameLower = (item.name || "").toLowerCase();
-
-                        return (
-                            fieldValueLower === itemNameLower ||
-                            product.MasterManagement_DiamondStoneTypeid === item.id
-                        );
-                    });
-                });
-            });
-        }
-
-        // Apply search filter (only for terms with 2+ characters)
-        if (debouncedSearchTerm.trim() && debouncedSearchTerm.trim().length >= 2) {
-            const fuse = new Fuse(temp, {
-                keys: [
-                    'autocode', 'designno', 'categoryname', 'subcategoryname',
-                    'collectionname', 'producttype', 'brandname', 'labname',
-                    'metaltype', 'metalcolor', 'diamondshape'
-                ],
-                threshold: 0.6,
-                distance: 1000,
-                minMatchCharLength: 2,
-                ignoreLocation: true,
-                useExtendedSearch: false,
-            });
-            const results = fuse.search(debouncedSearchTerm.trim());
-            temp = results.map(result => result.item);
-        }
-
-        return temp;
+        return filterProducts(baseDataset, appliedFilters, debouncedSearchTerm);
     }, [baseDataset, appliedFilters, debouncedSearchTerm]);
 
     // Calculate total pages
@@ -476,6 +364,20 @@ function ProductClientContent() {
         console.log(`${addedCount} items added to cart`);
     }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode]);
 
+    const isAllSelected = useMemo(() => {
+        if (!displayedProducts.length) return false;
+        return displayedProducts.every(p => isProductSelected(p.id));
+    }, [displayedProducts, isProductSelected]);
+
+    const handleSelectAllToggle = useCallback(() => {
+        const ids = displayedProducts.map(p => p.id);
+        if (isAllSelected) {
+            deselectBatch(ids);
+        } else {
+            selectBatch(ids);
+        }
+    }, [isAllSelected, displayedProducts, selectBatch, deselectBatch]);
+
     const handleCancelMultiSelect = useCallback(() => {
         toggleMultiSelectMode();
     }, [toggleMultiSelectMode]);
@@ -552,37 +454,7 @@ function ProductClientContent() {
         }, 100);
     }, []);
 
-    function getMatchedDesignCollections(res = [], allDesignCollections = []) {
-        if (!Array.isArray(res) || !Array.isArray(allDesignCollections)) return [];
-        const designMatchMap = {};
-        for (const item of res) {
-            const base = (item.sku || "").split("~")[0].trim().toLowerCase();
-            const percent = Number(item.match_percent) || 0;
-            if (!designMatchMap[base] || designMatchMap[base] < percent) {
-                designMatchMap[base] = percent;
-            }
-        }
-        const matched = allDesignCollections
-            .map((p) => {
-                const designno = (p.designno || "").replace("#", "").trim().toLowerCase();
-                const autocode = (p.autocode || "").trim().toLowerCase();
 
-                const matchPercent = designMatchMap[designno] || designMatchMap[autocode] || 0;
-
-                return {
-                    ...p,
-                    _matchPercent: matchPercent,
-                };
-            })
-            .filter((p) => p._matchPercent > 0);
-
-        matched.sort((a, b) => b._matchPercent - a._matchPercent);
-
-        return matched.map((p) => {
-            const { _matchPercent, ...rest } = p;
-            return rest;
-        });
-    }
 
     const handleSubmit = useCallback(async (searchData) => {
         const modeToUse = searchData?.mode || searchMode;
@@ -593,12 +465,21 @@ function ProductClientContent() {
 
         // In design mode, we don't call the search API, just navigate/filter
         if (modeToUse === 'design') {
-            setSearchResults(null);
-            setAppliedFilters(prev =>
-                prev.filter(
-                    (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
-                )
-            );
+            setIsSearchLoading(true);
+            setLastSearchData(searchData);
+            setError(null);
+
+            // Synthetic delay to show the search loader and prevent flicker
+            setTimeout(() => {
+                setSearchResults(null);
+                setSearchTerm(searchData.text || '');
+                setAppliedFilters(prev =>
+                    prev.filter(
+                        (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
+                    )
+                );
+                setIsSearchLoading(false);
+            }, 600);
             return;
         }
 
@@ -658,35 +539,7 @@ function ProductClientContent() {
             // Store search results - drawer filters will be applied on top
             setSearchResults(sortedMatchedDesigns);
 
-            let searchChip = null;
-            if (searchData?.isSearchFlag === 1) {
-                searchChip = {
-                    category: "Text",
-                    item: { id: "text-search", name: searchData.text?.trim() || "" },
-                };
-            } else if (searchData?.isSearchFlag === 2) {
-                const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
-                searchChip = {
-                    category: "Image",
-                    item: {
-                        id: "image-search",
-                        name: "Image Search",
-                        icon: true,
-                        imageUrl: imageUrl
-                    },
-                };
-            } else if (searchData?.isSearchFlag === 3) {
-                const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
-                searchChip = {
-                    category: "Hybrid",
-                    item: {
-                        id: "hybrid-search",
-                        name: searchData.text?.trim() || "Hybrid Search",
-                        imageUrl: imageUrl,
-                        text: searchData.text?.trim()
-                    },
-                };
-            }
+            const searchChip = createSearchChip(searchData);
 
             if (searchChip) {
                 setAppliedFilters((prev) => [
@@ -710,41 +563,7 @@ function ProductClientContent() {
             setSearchResults([]);
 
             // Create error chip to show failed search
-            let errorChip = null;
-            if (searchData?.isSearchFlag === 1) {
-                errorChip = {
-                    category: "Text",
-                    item: {
-                        id: "text-search",
-                        name: searchData.text?.trim() || "",
-                        error: true
-                    },
-                };
-            } else if (searchData?.isSearchFlag === 2) {
-                const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
-                errorChip = {
-                    category: "Image",
-                    item: {
-                        id: "image-search",
-                        name: "Image Search",
-                        icon: true,
-                        imageUrl: imageUrl,
-                        error: true
-                    },
-                };
-            } else if (searchData?.isSearchFlag === 3) {
-                const imageUrl = searchData.image ? URL.createObjectURL(searchData.image) : null;
-                errorChip = {
-                    category: "Hybrid",
-                    item: {
-                        id: "hybrid-search",
-                        name: searchData.text?.trim() || "Hybrid Search",
-                        imageUrl: imageUrl,
-                        text: searchData.text?.trim(),
-                        error: true
-                    },
-                };
-            }
+            const errorChip = createSearchChip(searchData, true);
 
             if (errorChip) {
                 setAppliedFilters((prev) => [
@@ -757,7 +576,7 @@ function ProductClientContent() {
         } finally {
             setIsSearchLoading(false);
         }
-    }, [allDesignCollections]);
+    }, [allDesignCollections, searchMode]);
 
     useEffect(() => {
         let mounted = true;
@@ -781,265 +600,25 @@ function ProductClientContent() {
     return (
         <GridBackground>
             <Container maxWidth={false} sx={{ px: 0, pb: finalFilteredProducts.length > 24 ? { xs: 28, sm: 36, md: 50 } : 5, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
-                <PageHeader
-                    layout="fluid"
-                    leftContent={
-                        isMultiSelectMode ? (
-                            <Button
-                                variant="text"
-                                startIcon={<XIcon size={18} />}
-                                onClick={handleCancelMultiSelect}
-                                sx={{
-                                    textTransform: 'none',
-                                    color: 'text.primary',
-                                    fontWeight: 600,
-                                    '&:hover': {
-                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                    }
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                        ) : (
-                            <>
-                                <Image
-                                    src="/favicon.svg"
-                                    alt="Hero Image"
-                                    width={35}
-                                    height={35}
-                                    priority
-                                    draggable={false}
-                                    style={{
-                                        maxWidth: '100%',
-                                        height: 'auto',
-                                        borderRadius: '50%',
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => router.push('/')}
-                                    onDragStart={(e) => e.preventDefault()}
-                                />
-                                <Box>
-                                    <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                                        Magic Catalog / AI
-                                    </Typography>
-                                    <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-                                        {finalFilteredProducts.length} products found
-                                    </Typography>
-                                </Box>
-                            </>
-                        )
-                    }
-                    centerContent={
-                        isMultiSelectMode ? (
-                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'primary.main' }}>
-                                {selectedCount} Selected
-                            </Typography>
-                        ) : (
-                            <Box sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                width: "100%", // Take full available width in the center slot
-                                minWidth: 0,
-                                position: "relative"
-                            }}>
-                                <Fade in={showLeftScroll}>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => scrollFilters('left')}
-                                        sx={{
-                                            p: 0.5,
-                                            mr: 0.5,
-                                            flexShrink: 0,
-                                            bgcolor: 'background.paper',
-                                            boxShadow: 1,
-                                            '&:hover': { bgcolor: 'action.hover' }
-                                        }}
-                                    >
-                                        <ChevronLeft size={16} />
-                                    </IconButton>
-                                </Fade>
-
-                                <Box
-                                    className="filterScrollBox"
-                                    ref={filterScrollRef}
-                                    onScroll={checkScrollButtons}
-                                    sx={{
-                                        display: "flex",
-                                        gap: 1,
-                                        overflowX: "auto",
-                                        scrollbarWidth: "none",
-                                        "&::-webkit-scrollbar": { display: "none" },
-                                        alignItems: "center",
-                                        flex: 1,
-                                        scrollBehavior: "smooth",
-                                        p: 0.5,
-                                    }}
-                                >
-                                    {searchTerm && (
-                                        <Chip
-                                            key="drawer-search"
-                                            label={`Search: ${searchTerm}`}
-                                            size="small"
-                                            onDelete={() => setSearchTerm('')}
-                                            sx={{
-                                                borderRadius: 2,
-                                                bgcolor: 'rgba(115, 103, 240, 0.08)',
-                                                color: 'primary.dark',
-                                                border: '1px solid rgba(115, 103, 240, 0.18)',
-                                                flexShrink: 0,
-                                                '&:hover': {
-                                                    bgcolor: 'rgba(115, 103, 240, 0.12)',
-                                                },
-                                                '& .MuiChip-deleteIcon': {
-                                                    color: 'primary.dark',
-                                                    opacity: 0.8,
-                                                    '&:hover': { opacity: 1 }
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                    <FilterChips
-                                        appliedFilters={appliedFilters}
-                                        onRemoveFilter={removeFilter}
-                                        onFilterPopoverOpen={handleFilterPopoverOpen}
-                                    />
-
-                                    {appliedFilters.length > 0 && isClearAllInside && (
-                                        <Button
-                                            variant="text"
-                                            size="small"
-                                            onClick={clearAllFilters}
-                                            sx={{
-                                                textTransform: "none",
-                                                fontSize: 12.5,
-                                                borderRadius: 2,
-                                                bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                                color: 'text.primary',
-                                                border: '1px solid rgba(0, 0, 0, 0.10)',
-                                                whiteSpace: "nowrap",
-                                                minWidth: "auto",
-                                                flexShrink: 0,
-                                                padding: '0px 10px',
-                                                '&:hover': {
-                                                    bgcolor: 'rgba(0, 0, 0, 0.06)',
-                                                    borderColor: 'rgba(0, 0, 0, 0.12)'
-                                                }
-                                            }}
-                                        >
-                                            Clear All
-                                        </Button>
-                                    )}
-                                </Box>
-
-                                <Fade in={showRightScroll}>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => scrollFilters('right')}
-                                        sx={{
-                                            p: 0.5,
-                                            ml: 0.5,
-                                            flexShrink: 0,
-                                            bgcolor: 'background.paper',
-                                            boxShadow: 1,
-                                            '&:hover': { bgcolor: 'action.hover' }
-                                        }}
-                                    >
-                                        <ChevronRight size={16} />
-                                    </IconButton>
-                                </Fade>
-
-                                {appliedFilters.length > 0 && !isClearAllInside && (
-                                    <Button
-                                        variant="text"
-                                        size="small"
-                                        onClick={clearAllFilters}
-                                        sx={{
-                                            textTransform: "none",
-                                            fontSize: 13,
-                                            borderRadius: 2,
-                                            bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                            color: 'text.primary',
-                                            border: '1px solid rgba(0, 0, 0, 0.10)',
-                                            whiteSpace: "nowrap",
-                                            minWidth: "auto",
-                                            flexShrink: 0,
-                                            ml: 1,
-                                            padding: '0px 10px',
-                                            '&:hover': {
-                                                bgcolor: 'rgba(0, 0, 0, 0.06)',
-                                                borderColor: 'rgba(0, 0, 0, 0.12)'
-                                            }
-                                        }}
-                                    >
-                                        Clear All
-                                    </Button>
-                                )}
-                            </Box>
-                        )
-                    }
-                    rightContent={
-                        isMultiSelectMode ? (
-                            <Button
-                                variant="contained"
-                                startIcon={<ShoppingCart size={18} />}
-                                onClick={handleBulkAddToCart}
-                                disabled={selectedCount === 0}
-                                sx={{
-                                    textTransform: 'none',
-                                    borderRadius: 2,
-                                    fontWeight: 600,
-                                    px: 2.5,
-                                    boxShadow: 'none',
-                                    '&:hover': {
-                                        boxShadow: 'none',
-                                    }
-                                }}
-                            >
-                                Add to Cart
-                            </Button>
-                        ) : (
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                <Tooltip title="Multi-Select Mode">
-                                    <IconButton
-                                        onClick={toggleMultiSelectMode}
-                                        sx={{
-                                            color: 'text.secondary',
-                                            '&:hover': {
-                                                bgcolor: 'rgba(115, 103, 240, 0.08)',
-                                                color: 'primary.main',
-                                            }
-                                        }}
-                                    >
-                                        <CheckSquare size={22} />
-                                    </IconButton>
-                                </Tooltip>
-                                <IconButton
-                                    color="primary"
-                                    onClick={handleOpenCart}
-                                >
-                                    <Badge
-                                        badgeContent={totalCount}
-                                        color="primary"
-                                        max={99}
-                                        sx={{
-                                            '& .MuiBadge-badge': {
-                                                fontSize: 12,
-                                                minWidth: 22,
-                                                height: 22,
-                                                lineHeight: '22px',
-                                                borderRadius: 12,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                            },
-                                        }}
-                                    >
-                                        <ShoppingCart size={25} />
-                                    </Badge>
-                                </IconButton>
-                            </Box>
-                        )
-                    }
+                <ProductPageHeader
+                    isMultiSelectMode={isMultiSelectMode}
+                    selectedCount={selectedCount}
+                    isAllSelected={isAllSelected}
+                    onCancelMultiSelect={handleCancelMultiSelect}
+                    onSelectAllToggle={handleSelectAllToggle}
+                    onBulkAddToCart={handleBulkAddToCart}
+                    onToggleMultiSelectMode={toggleMultiSelectMode}
+                    onHomeClick={() => router.push('/')}
+                    onOpenCart={handleOpenCart}
+                    totalCartItems={totalCount}
+                    productCount={finalFilteredProducts.length}
+                    appliedFilters={appliedFilters}
+                    searchTerm={searchTerm}
+                    onRemoveFilter={removeFilter}
+                    onClearSearchTerm={() => setSearchTerm('')}
+                    onClearAllFilters={clearAllFilters}
+                    onFilterPopoverOpen={handleFilterPopoverOpen}
+                    isFilterOpen={isFilterOpen}
                 />
 
                 {error ? (
@@ -1079,6 +658,7 @@ function ProductClientContent() {
                                 loading={isFilterLoading}
                                 isFilterOpen={isFilterOpen}
                                 restoreTargetIndex={restoreTargetIndex}
+                                searchTerm={searchTerm}
                             />
                         </Box>
                     </Fade>

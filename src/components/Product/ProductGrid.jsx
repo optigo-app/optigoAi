@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from '
 import { Grid, Box, Typography, Button, Skeleton } from '@mui/material';
 import { SearchX } from 'lucide-react';
 import ProductCard from './ProductCard';
+import { useMultiSelect } from '@/context/MultiSelectContext';
 
 const ProductGrid = memo(function ProductGrid({
   designData,
@@ -12,8 +13,10 @@ const ProductGrid = memo(function ProductGrid({
   loading = false,
   urlParamsFlag,
   restoreTargetIndex,
-  isFilterOpen
+  isFilterOpen,
+  searchTerm
 }) {
+  const { isMultiSelectMode, isProductSelected, toggleProductSelection } = useMultiSelect();
   const ITEMS_PER_LOAD = 48;
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
@@ -118,7 +121,7 @@ const ProductGrid = memo(function ProductGrid({
   }
 
   // Empty result UI
-  if (designData.length === 0 && appliedFilters.length > 0) {
+  if (designData.length === 0 && (appliedFilters.length > 0 || searchTerm)) {
     return (
       <Box display="flex" flexDirection="column" alignItems="center" py={8}>
         <Box
@@ -137,7 +140,7 @@ const ProductGrid = memo(function ProductGrid({
         </Box>
 
         <Typography variant="h5" fontWeight="medium" mb={2}>
-          No products found
+          No match product found
         </Typography>
 
         <Typography variant="body1" color="text.secondary" mb={4}>
@@ -182,6 +185,9 @@ const ProductGrid = memo(function ProductGrid({
               index={index}
               onSearchSimilar={onSearchSimilar}
               urlParamsFlag={urlParamsFlag}
+              isMultiSelectMode={isMultiSelectMode}
+              isSelected={isProductSelected(product.id)}
+              onToggleSelection={toggleProductSelection}
             />
           </Grid>
         ))}
