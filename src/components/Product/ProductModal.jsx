@@ -19,6 +19,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Collapse,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 
@@ -27,6 +28,8 @@ import {
     X,
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
+    ChevronUp,
     ScanSearch,
     Trash2,
     Maximize,
@@ -46,6 +49,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
     const [openConfirmModal, setOpenConfirmModal] = useState(false);
     const [swiperRef, setSwiperRef] = useState(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showAllDetails, setShowAllDetails] = useState(false);
 
     const formatWeight = (value) => {
         const n = typeof value === 'number' ? value : Number(value);
@@ -230,7 +234,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                             <Box component="span" sx={part.isBrand ? { color: 'text.primary', fontWeight: 700 } : undefined}>
                                                                 {part.value}
                                                             </Box>
-                                                            {idx < arr.length - 1 ? <Box component="span" sx={{ mx: 0.5 }}>-</Box> : null}
+                                                            {idx < arr.length - 1 ? <Box component="span" sx={{ mx: 0.5 }}>/</Box> : null}
                                                         </Box>
                                                     ))}
                                                 </Typography>
@@ -277,8 +281,26 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                 </Grid>
                                             </Box>
 
-                                            {/* Specifications (Conditional) */}
+                                            {/* View More Toggle */}
                                             {(pDiamonds || pStones) && (
+                                                <Box sx={{ textAlign: 'end' }}>
+                                                    <Button
+                                                        variant="text"
+                                                        onClick={() => setShowAllDetails(!showAllDetails)}
+                                                        endIcon={showAllDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                        sx={{
+                                                            padding: '0.5rem',
+                                                            '&:hover': {
+                                                            },
+                                                        }}
+                                                    >
+                                                        {showAllDetails ? "Show Less" : "Show More"}
+                                                    </Button>
+                                                </Box>
+                                            )}
+
+                                            {/* Specifications (Conditional) */}
+                                            <Collapse in={showAllDetails}>
                                                 <Box sx={{ mt: 1 }}>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                         {pDiamonds && (
@@ -310,7 +332,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                                         size="small"
                                                                         sx={{
                                                                             '& .MuiTableCell-root': { py: 0.8, px: 1.1 },
-                                                                            '& th': { color: 'text.secondary', fontWeight: 700, bgcolor: alpha(theme.palette.text.primary, 0.03) },
+                                                                            '& th': { color: 'text.secondary', fontWeight: 400, bgcolor: alpha(theme.palette.text.primary, 0.03) },
                                                                             '& td': { borderBottom: '1px solid rgba(0,0,0,0.06)' },
                                                                             '& tbody tr:last-child td': { borderBottom: 0 },
                                                                         }}
@@ -325,7 +347,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                                             </TableRow>
                                                                         </TableHead>
                                                                         <TableBody>
-                                                                            <TableRow sx={{ '& td': { color: 'secondary.main', fontWeight: 600 } }}>
+                                                                            <TableRow sx={{ '& td': { color: 'text.primary', fontWeight: 600 } }}>
                                                                                 <TableCell>{prod.diamondshape || '-'}</TableCell>
                                                                                 <TableCell>{prod.diamondclarity || prod.clarity || '-'}</TableCell>
                                                                                 <TableCell>{prod.diamondcolor || prod.color || '-'}</TableCell>
@@ -400,7 +422,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                         )}
                                                     </Box>
                                                 </Box>
-                                            )}
+                                            </Collapse>
                                         </Box>
                                     </Grid>
                                 </Grid>

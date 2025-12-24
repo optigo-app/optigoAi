@@ -25,6 +25,8 @@ const poppins = Poppins({
   ],
 });
 
+import ClientWrappers from "@/components/Common/ClientWrappers";
+
 export const metadata = {
   title: "Optigo Ai Studio",
   description: "Find the perfect jewelry using advanced AI-powered search technology",
@@ -47,9 +49,11 @@ export default function RootLayout({ children }) {
                 <AuthProvider>
                   <CartProvider>
                     <ProductDataProvider>
-                      <Suspense>
-                      </Suspense>
-                      {children}
+                      <ClientWrappers>
+                        <Suspense>
+                        </Suspense>
+                        {children}
+                      </ClientWrappers>
                     </ProductDataProvider>
                   </CartProvider>
                 </AuthProvider>

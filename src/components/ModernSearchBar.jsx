@@ -22,7 +22,8 @@ import {
     Settings2,
     Layers,
     Users,
-    Check
+    Check,
+    Search
 } from "lucide-react";
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
@@ -31,7 +32,7 @@ import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, searchMode = 'ai' }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -68,6 +69,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [isDragging, setIsDragging] = useState(false);
     const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
     const [isMultiline, setIsMultiline] = useState(false);
+    const isDesignMode = searchMode === 'design';
 
     // Filter Logic States
     const [filterData, setFilterData] = useState([]);
@@ -127,7 +129,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     }, [text]);
 
     useEffect(() => {
-        if (!showSuggestions || !debouncedText.trim() || debouncedText.trim().length < 2) {
+        if (!showSuggestions || !debouncedText.trim() || debouncedText.trim().length < 2 || searchMode === 'ai') {
             setSuggestions(prev => prev.length > 0 ? [] : prev);
             setShowSuggestionsDropdown(prev => prev ? false : prev);
             return;
@@ -279,6 +281,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     };
 
     const handleUpload = (e) => {
+        if (isDesignMode) return;
         const file = e.target.files?.[0];
         if (!file) return;
         setImageFile(file);
@@ -298,6 +301,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     };
 
     const processDroppedFiles = (files) => {
+        if (isDesignMode) return;
         const fileList = Array.from(files || []);
         const image = fileList.find((file) => file.type.startsWith("image/"));
 
@@ -462,7 +466,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     return (
         <ClickAwayListener onClickAway={handleClickAway}>
             <Box sx={{ position: 'relative', width: '100%' }}>
-                {isDragging && (
+                {(isDragging && !isDesignMode) && (
                     <Box
                         sx={{
                             position: "fixed",
@@ -504,8 +508,8 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                     elevation={isExpanded ? 12 : 2}
                     className={`chat-input-container ${isExpanded ? 'expanded' : 'minimized'}`}
                     onPaste={handlePaste}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
+                    onDrop={isDesignMode ? undefined : handleDrop}
+                    onDragOver={isDesignMode ? undefined : handleDragOver}
                     sx={{
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         zIndex: isExpanded ? 1100 : 1,
@@ -539,13 +543,16 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                         <Box className="input-flex-row">
                             {/* Upload Icon */}
                             {!isMultiline && (
-                                <Tooltip title="Upload image">
+                                <Tooltip title={isDesignMode ? "Global Search" : "Upload image"}>
                                     <IconButton
                                         className="iconbuttonsearch"
-                                        onClick={() => fileRef.current.click()}
-                                        sx={actionIconButtonSx}
+                                        onClick={() => isDesignMode ? handleSend() : fileRef.current.click()}
+                                        sx={{
+                                            ...actionIconButtonSx,
+                                            cursor: isDesignMode && !text.trim() ? 'default' : 'pointer'
+                                        }}
                                     >
-                                        <ImagePlus size={22} />
+                                        {isDesignMode ? <Search size={20} /> : <ImagePlus size={22} />}
                                     </IconButton>
                                 </Tooltip>
                             )}
@@ -559,7 +566,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             />
 
                             <TextField
-                                placeholder="Describe your idea, and I'll bring it to life"
+                                placeholder={isDesignMode ? "Search your jewelry designs..." : "Describe your idea, and I'll bring it to life"}
                                 variant="standard"
                                 fullWidth
                                 multiline

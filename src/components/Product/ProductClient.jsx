@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { logErrorToServer } from "@/utils/errorLogger";
 import {
     Container,
     Box,
@@ -12,17 +13,18 @@ import {
     Badge,
     Tooltip,
 } from "@mui/material";
-import { ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, ChevronLeft, ChevronRight, CheckSquare, X as XIcon } from "lucide-react";
 import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import FullPageLoader from "@/components/FullPageLoader";
 import FilterSidebar from "@/components/Product/FilterSidebar";
 import PaginationControls from "@/components/PaginationControls";
+import { ModeSwitch, SearchModeToggle } from "../Common/HomeCommon";
 import { searchService } from "@/services/apiService";
 import Fuse from "fuse.js";
 import FilterChips from "@/components/Product/FilterChips";
-import { autoScrollToRestoredTarget, base64ToFile } from "@/utils/globalFunc";
+import { autoScrollToRestoredTarget, base64ToFile, compressImagesToWebP } from "@/utils/globalFunc";
 import ProductGrid from "./ProductGrid";
 import SimilarProductsModal from "./SimilarProductsModal";
 import { useCart } from '@/context/CartContext';
@@ -32,6 +34,7 @@ import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
 import Image from "next/image";
 import PageHeader from "@/components/Common/PageHeader";
+import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 
 const CATEGORY_FIELD_MAP = {
     'category': 'categoryname',
@@ -53,13 +56,22 @@ const CATEGORY_FIELD_MAP = {
     'designno': 'designno'
 };
 
-export default function ProductClient() {
+function ProductClientContent() {
     const PRODUCT_LIST_RESTORE_KEY = 'productListRestoreState';
     const [isSearchLoading, setIsSearchLoading] = useState(false);
     const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const { totalCount } = useCart();
+    const { totalCount, addToCart } = useCart();
     const router = useRouter();
+
+    // Multi-select context
+    const {
+        isMultiSelectMode,
+        selectedCount,
+        toggleMultiSelectMode,
+        clearSelection,
+        getSelectedProducts
+    } = useMultiSelect();
 
     const didAttemptRestoreRef = useRef(false);
     const skipNextPageResetRef = useRef(false);
@@ -76,6 +88,7 @@ export default function ProductClient() {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [searchMode, setSearchMode] = useState('ai');
 
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
@@ -180,7 +193,10 @@ export default function ProductClient() {
                     if (searchData.image && typeof searchData.image === "string" && searchData.image.startsWith("data:")) {
                         searchData.image = base64ToFile(searchData.image, "uploaded-image.png");
                     }
-                    handleSubmit(searchData);
+                    if (searchData.mode) {
+                        setSearchMode(searchData.mode);
+                    }
+                    handleSubmit({ ...searchData, mode: searchData.mode || 'ai' });
                     if (Array.isArray(searchData.filters) && searchData.filters.length > 0) {
                         setAppliedFilters(searchData.filters);
                     }
@@ -345,6 +361,9 @@ export default function ProductClient() {
         if (state && Object.prototype.hasOwnProperty.call(state, 'searchResults')) {
             setSearchResults(state.searchResults);
         }
+        if (state?.searchMode) {
+            setSearchMode(state.searchMode);
+        }
     }, []);
 
     useEffect(() => {
@@ -424,6 +443,7 @@ export default function ProductClient() {
             appliedFilters,
             searchTerm,
             searchResults,
+            searchMode,
             timestamp: Date.now(),
         };
 
@@ -434,6 +454,31 @@ export default function ProductClient() {
 
         router.push('/cart');
     }, [router, currentPage, appliedFilters, searchTerm, searchResults]);
+
+    // Multi-select handlers
+    const handleBulkAddToCart = useCallback(() => {
+        const selectedProducts = getSelectedProducts(finalFilteredProducts);
+
+        if (selectedProducts.length === 0) {
+            return;
+        }
+
+        let addedCount = 0;
+        selectedProducts.forEach(product => {
+            addToCart(product);
+            addedCount++;
+        });
+
+        // Exit multi-select mode and clear selections
+        toggleMultiSelectMode();
+
+        // Show success feedback (you can add a toast notification here)
+        console.log(`${addedCount} items added to cart`);
+    }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode]);
+
+    const handleCancelMultiSelect = useCallback(() => {
+        toggleMultiSelectMode();
+    }, [toggleMultiSelectMode]);
 
     const handleApplyFilters = useCallback((applied) => {
         setIsFilterLoading(true);
@@ -540,10 +585,23 @@ export default function ProductClient() {
     }
 
     const handleSubmit = useCallback(async (searchData) => {
-        if (!searchData?.isSearchFlag || searchData.isSearchFlag === 0) {
+        const modeToUse = searchData?.mode || searchMode;
+        if ((!searchData?.isSearchFlag || searchData.isSearchFlag === 0) && modeToUse === 'ai') {
             console.log('No search criteria provided, showing all products');
             return;
         }
+
+        // In design mode, we don't call the search API, just navigate/filter
+        if (modeToUse === 'design') {
+            setSearchResults(null);
+            setAppliedFilters(prev =>
+                prev.filter(
+                    (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
+                )
+            );
+            return;
+        }
+
         setLastSearchData(searchData);
         setError(null);
         setIsSearchLoading(true);
@@ -553,16 +611,33 @@ export default function ProductClient() {
                 min_percent: searchData?.accuracy || "50.0",
             };
 
+            let finalImage = searchData.image;
+            if (finalImage && (searchData.isSearchFlag === 2 || searchData.isSearchFlag === 3)) {
+                try {
+                    const compressedResults = await compressImagesToWebP(finalImage);
+                    if (compressedResults.length > 0) {
+                        finalImage = compressedResults[0].blob;
+                        console.log(`original image size: ${compressedResults[0].originalSize} compressed image size: ${compressedResults[0].compressedSize}`);
+                    }
+                } catch (compressErr) {
+                    console.error("Compression failed, using original image", compressErr);
+                    logErrorToServer({
+                        shortReason: "Image compression failed on Product page",
+                        detailedReason: compressErr
+                    });
+                }
+            }
+
             const res = await (async () => {
                 if (searchData?.isSearchFlag === 1) {
                     return searchService.searchByText(searchData.text?.trim(), options);
                 }
                 if (searchData?.isSearchFlag === 2) {
-                    return searchService.searchByImage(searchData.image, options);
+                    return searchService.searchByImage(finalImage, options);
                 }
                 if (searchData?.isSearchFlag === 3) {
                     return searchService.searchHybrid(
-                        { file: searchData.image, query: searchData.text?.trim() },
+                        { file: finalImage, query: searchData.text?.trim() },
                         options
                     );
                 }
@@ -623,6 +698,14 @@ export default function ProductClient() {
             }
         } catch (err) {
             console.error("Search Error:", err);
+            logErrorToServer({
+                shortReason: "Search execution failed on Product page",
+                detailedReason: {
+                    message: err.message,
+                    stack: err.stack,
+                    searchData
+                }
+            });
             setError("Search failed. Try again.");
             setSearchResults([]);
 
@@ -701,111 +784,178 @@ export default function ProductClient() {
                 <PageHeader
                     layout="fluid"
                     leftContent={
-                        <>
-                            <Image
-                                src="/favicon.svg"
-                                alt="Hero Image"
-                                width={35}
-                                height={35}
-                                priority
-                                draggable={false}
-                                style={{
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                    borderRadius: '50%',
-                                    cursor: 'pointer',
-                                }}
-                                onClick={() => router.push('/')}
-                                onDragStart={(e) => e.preventDefault()}
-                            />
-                            <Box>
-                                <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
-                                    Magic Catalog / AI
-                                </Typography>
-                                <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-                                    {finalFilteredProducts.length} products found
-                                </Typography>
-                            </Box>
-                        </>
-                    }
-                    centerContent={
-                        <Box sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            width: "100%", // Take full available width in the center slot
-                            minWidth: 0,
-                            position: "relative"
-                        }}>
-                            <Fade in={showLeftScroll}>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => scrollFilters('left')}
-                                    sx={{
-                                        p: 0.5,
-                                        mr: 0.5,
-                                        flexShrink: 0,
-                                        bgcolor: 'background.paper',
-                                        boxShadow: 1,
-                                        '&:hover': { bgcolor: 'action.hover' }
-                                    }}
-                                >
-                                    <ChevronLeft size={16} />
-                                </IconButton>
-                            </Fade>
-
-                            <Box
-                                className="filterScrollBox"
-                                ref={filterScrollRef}
-                                onScroll={checkScrollButtons}
+                        isMultiSelectMode ? (
+                            <Button
+                                variant="text"
+                                startIcon={<XIcon size={18} />}
+                                onClick={handleCancelMultiSelect}
                                 sx={{
-                                    display: "flex",
-                                    gap: 1,
-                                    overflowX: "auto",
-                                    scrollbarWidth: "none",
-                                    "&::-webkit-scrollbar": { display: "none" },
-                                    alignItems: "center",
-                                    flex: 1,
-                                    scrollBehavior: "smooth",
-                                    p: 0.5,
+                                    textTransform: 'none',
+                                    color: 'text.primary',
+                                    fontWeight: 600,
+                                    '&:hover': {
+                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                    }
                                 }}
                             >
-                                {searchTerm && (
-                                    <Chip
-                                        key="drawer-search"
-                                        label={`Search: ${searchTerm}`}
-                                        size="small"
-                                        onDelete={() => setSearchTerm('')}
-                                        sx={{
-                                            borderRadius: 2,
-                                            bgcolor: 'rgba(115, 103, 240, 0.08)',
-                                            color: 'primary.dark',
-                                            border: '1px solid rgba(115, 103, 240, 0.18)',
-                                            flexShrink: 0,
-                                            '&:hover': {
-                                                bgcolor: 'rgba(115, 103, 240, 0.12)',
-                                            },
-                                            '& .MuiChip-deleteIcon': {
-                                                color: 'primary.dark',
-                                                opacity: 0.8,
-                                                '&:hover': { opacity: 1 }
-                                            }
-                                        }}
-                                    />
-                                )}
-                                <FilterChips
-                                    appliedFilters={appliedFilters}
-                                    onRemoveFilter={removeFilter}
-                                    onFilterPopoverOpen={handleFilterPopoverOpen}
+                                Cancel
+                            </Button>
+                        ) : (
+                            <>
+                                <Image
+                                    src="/favicon.svg"
+                                    alt="Hero Image"
+                                    width={35}
+                                    height={35}
+                                    priority
+                                    draggable={false}
+                                    style={{
+                                        maxWidth: '100%',
+                                        height: 'auto',
+                                        borderRadius: '50%',
+                                        cursor: 'pointer',
+                                    }}
+                                    onClick={() => router.push('/')}
+                                    onDragStart={(e) => e.preventDefault()}
                                 />
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                                        Magic Catalog / AI
+                                    </Typography>
+                                    <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                                        {finalFilteredProducts.length} products found
+                                    </Typography>
+                                </Box>
+                            </>
+                        )
+                    }
+                    centerContent={
+                        isMultiSelectMode ? (
+                            <Typography variant="subtitle1" fontWeight={700} sx={{ color: 'primary.main' }}>
+                                {selectedCount} Selected
+                            </Typography>
+                        ) : (
+                            <Box sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "100%", // Take full available width in the center slot
+                                minWidth: 0,
+                                position: "relative"
+                            }}>
+                                <Fade in={showLeftScroll}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => scrollFilters('left')}
+                                        sx={{
+                                            p: 0.5,
+                                            mr: 0.5,
+                                            flexShrink: 0,
+                                            bgcolor: 'background.paper',
+                                            boxShadow: 1,
+                                            '&:hover': { bgcolor: 'action.hover' }
+                                        }}
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </IconButton>
+                                </Fade>
 
-                                {appliedFilters.length > 0 && isClearAllInside && (
+                                <Box
+                                    className="filterScrollBox"
+                                    ref={filterScrollRef}
+                                    onScroll={checkScrollButtons}
+                                    sx={{
+                                        display: "flex",
+                                        gap: 1,
+                                        overflowX: "auto",
+                                        scrollbarWidth: "none",
+                                        "&::-webkit-scrollbar": { display: "none" },
+                                        alignItems: "center",
+                                        flex: 1,
+                                        scrollBehavior: "smooth",
+                                        p: 0.5,
+                                    }}
+                                >
+                                    {searchTerm && (
+                                        <Chip
+                                            key="drawer-search"
+                                            label={`Search: ${searchTerm}`}
+                                            size="small"
+                                            onDelete={() => setSearchTerm('')}
+                                            sx={{
+                                                borderRadius: 2,
+                                                bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                                color: 'primary.dark',
+                                                border: '1px solid rgba(115, 103, 240, 0.18)',
+                                                flexShrink: 0,
+                                                '&:hover': {
+                                                    bgcolor: 'rgba(115, 103, 240, 0.12)',
+                                                },
+                                                '& .MuiChip-deleteIcon': {
+                                                    color: 'primary.dark',
+                                                    opacity: 0.8,
+                                                    '&:hover': { opacity: 1 }
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                    <FilterChips
+                                        appliedFilters={appliedFilters}
+                                        onRemoveFilter={removeFilter}
+                                        onFilterPopoverOpen={handleFilterPopoverOpen}
+                                    />
+
+                                    {appliedFilters.length > 0 && isClearAllInside && (
+                                        <Button
+                                            variant="text"
+                                            size="small"
+                                            onClick={clearAllFilters}
+                                            sx={{
+                                                textTransform: "none",
+                                                fontSize: 12.5,
+                                                borderRadius: 2,
+                                                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                                color: 'text.primary',
+                                                border: '1px solid rgba(0, 0, 0, 0.10)',
+                                                whiteSpace: "nowrap",
+                                                minWidth: "auto",
+                                                flexShrink: 0,
+                                                padding: '0px 10px',
+                                                '&:hover': {
+                                                    bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                                    borderColor: 'rgba(0, 0, 0, 0.12)'
+                                                }
+                                            }}
+                                        >
+                                            Clear All
+                                        </Button>
+                                    )}
+                                </Box>
+
+                                <Fade in={showRightScroll}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => scrollFilters('right')}
+                                        sx={{
+                                            p: 0.5,
+                                            ml: 0.5,
+                                            flexShrink: 0,
+                                            bgcolor: 'background.paper',
+                                            boxShadow: 1,
+                                            '&:hover': { bgcolor: 'action.hover' }
+                                        }}
+                                    >
+                                        <ChevronRight size={16} />
+                                    </IconButton>
+                                </Fade>
+
+                                {appliedFilters.length > 0 && !isClearAllInside && (
                                     <Button
                                         variant="text"
                                         size="small"
                                         onClick={clearAllFilters}
                                         sx={{
                                             textTransform: "none",
-                                            fontSize: 12.5,
+                                            fontSize: 13,
                                             borderRadius: 2,
                                             bgcolor: 'rgba(0, 0, 0, 0.04)',
                                             color: 'text.primary',
@@ -813,6 +963,7 @@ export default function ProductClient() {
                                             whiteSpace: "nowrap",
                                             minWidth: "auto",
                                             flexShrink: 0,
+                                            ml: 1,
                                             padding: '0px 10px',
                                             '&:hover': {
                                                 bgcolor: 'rgba(0, 0, 0, 0.06)',
@@ -824,77 +975,70 @@ export default function ProductClient() {
                                     </Button>
                                 )}
                             </Box>
-
-                            <Fade in={showRightScroll}>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => scrollFilters('right')}
-                                    sx={{
-                                        p: 0.5,
-                                        ml: 0.5,
-                                        flexShrink: 0,
-                                        bgcolor: 'background.paper',
-                                        boxShadow: 1,
-                                        '&:hover': { bgcolor: 'action.hover' }
-                                    }}
-                                >
-                                    <ChevronRight size={16} />
-                                </IconButton>
-                            </Fade>
-
-                            {appliedFilters.length > 0 && !isClearAllInside && (
-                                <Button
-                                    variant="text"
-                                    size="small"
-                                    onClick={clearAllFilters}
-                                    sx={{
-                                        textTransform: "none",
-                                        fontSize: 13,
-                                        borderRadius: 2,
-                                        bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                        color: 'text.primary',
-                                        border: '1px solid rgba(0, 0, 0, 0.10)',
-                                        whiteSpace: "nowrap",
-                                        minWidth: "auto",
-                                        flexShrink: 0,
-                                        ml: 1,
-                                        padding: '0px 10px',
-                                        '&:hover': {
-                                            bgcolor: 'rgba(0, 0, 0, 0.06)',
-                                            borderColor: 'rgba(0, 0, 0, 0.12)'
-                                        }
-                                    }}
-                                >
-                                    Clear All
-                                </Button>
-                            )}
-                        </Box>
+                        )
                     }
                     rightContent={
-                        <IconButton
-                            color="primary"
-                            onClick={handleOpenCart}
-                        >
-                            <Badge
-                                badgeContent={totalCount}
-                                color="primary"
-                                max={99}
+                        isMultiSelectMode ? (
+                            <Button
+                                variant="contained"
+                                startIcon={<ShoppingCart size={18} />}
+                                onClick={handleBulkAddToCart}
+                                disabled={selectedCount === 0}
                                 sx={{
-                                    '& .MuiBadge-badge': {
-                                        fontSize: 12,
-                                        minWidth: 22,
-                                        height: 22,
-                                        lineHeight: '22px',
-                                        borderRadius: 12,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    },
+                                    textTransform: 'none',
+                                    borderRadius: 2,
+                                    fontWeight: 600,
+                                    px: 2.5,
+                                    boxShadow: 'none',
+                                    '&:hover': {
+                                        boxShadow: 'none',
+                                    }
                                 }}
                             >
-                                <ShoppingCart size={25} />
-                            </Badge>
-                        </IconButton>
+                                Add to Cart
+                            </Button>
+                        ) : (
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                <Tooltip title="Multi-Select Mode">
+                                    <IconButton
+                                        onClick={toggleMultiSelectMode}
+                                        sx={{
+                                            color: 'text.secondary',
+                                            '&:hover': {
+                                                bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                                color: 'primary.main',
+                                            }
+                                        }}
+                                    >
+                                        <CheckSquare size={22} />
+                                    </IconButton>
+                                </Tooltip>
+                                <IconButton
+                                    color="primary"
+                                    onClick={handleOpenCart}
+                                >
+                                    <Badge
+                                        badgeContent={totalCount}
+                                        color="primary"
+                                        max={99}
+                                        sx={{
+                                            '& .MuiBadge-badge': {
+                                                fontSize: 12,
+                                                minWidth: 22,
+                                                height: 22,
+                                                lineHeight: '22px',
+                                                borderRadius: 12,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            },
+                                        }}
+                                    >
+                                        <ShoppingCart size={25} />
+                                    </Badge>
+                                </IconButton>
+                            </Box>
+                        )
                     }
                 />
 
@@ -964,6 +1108,9 @@ export default function ProductClient() {
                 transition: 'left 0.4s cubic-bezier(0.86, 0, 0.07, 1)'
             }}>
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: -0.5 }}>
+                        <SearchModeToggle activeMode={searchMode} onModeChange={setSearchMode} />
+                    </Box>
                     <ModernSearchBar
                         onSubmit={handleSubmit}
                         onFilterClick={() => setIsFilterOpen(true)}
@@ -974,6 +1121,8 @@ export default function ProductClient() {
                         showSuggestions={true}
                         productData={allDesignCollections}
                         onSuggestionClick={handleSuggestionClick}
+                        searchMode={searchMode}
+                        alwaysExpanded={true}
                     />
                 </Box>
                 <ScrollToTop bottom={isFrontendFeRoute() ? 70 : 24} />
@@ -1099,5 +1248,14 @@ export default function ProductClient() {
                 }
             />
         </GridBackground >
+    );
+}
+
+// Wrap with MultiSelectProvider
+export default function ProductClient() {
+    return (
+        <MultiSelectProvider>
+            <ProductClientContent />
+        </MultiSelectProvider>
     );
 }

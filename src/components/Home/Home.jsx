@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { logErrorToServer } from "@/utils/errorLogger";
 import { Box, Typography, Container, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -122,45 +123,79 @@ const Home = () => {
     }, [fetchProductData, isAuthReady]);
 
     const handleSearch = async (searchData) => {
-        let imageBase64 = null;
-        if (searchData.image instanceof File) {
-            imageBase64 = await fileToBase64(searchData.image);
+        try {
+            let imageToUse = searchData.image;
+            if (imageToUse instanceof File && (searchData.isSearchFlag === 2 || searchData.isSearchFlag === 3)) {
+                try {
+                    const compressedResults = await compressImagesToWebP(imageToUse);
+                    if (compressedResults.length > 0) {
+                        imageToUse = compressedResults[0].blob;
+                    }
+                } catch (compressErr) {
+                    console.error("Compression failed on Home", compressErr);
+                    logErrorToServer({
+                        shortReason: "Image compression failed on Home",
+                        detailedReason: compressErr
+                    });
+                }
+            }
+
+            let imageBase64 = null;
+            if (imageToUse instanceof File) {
+                imageBase64 = await fileToBase64(imageToUse);
+            }
+
+            const searchPayload = {
+                ...searchData,
+                image: imageBase64,
+                isSearchFlag: selectedMode === 'design' ? 0 : searchData.isSearchFlag,
+                mode: selectedMode,
+                timestamp: Date.now(),
+                filters: appliedFilters,
+            };
+            const jsonString = JSON.stringify(searchPayload);
+            const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+            sessionStorage.setItem("homeSearchData", encoded);
+            router.push("/product");
+        } catch (error) {
+            console.error("handleSearch Error:", error);
+            logErrorToServer({
+                shortReason: "Search execution failed on Home",
+                detailedReason: error
+            });
         }
-        const searchPayload = {
-            ...searchData,
-            image: imageBase64,
-            mode: selectedMode,
-            timestamp: Date.now(),
-            filters: appliedFilters,
-        };
-        const jsonString = JSON.stringify(searchPayload);
-        const encoded = btoa(unescape(encodeURIComponent(jsonString)));
-        sessionStorage.setItem("homeSearchData", encoded);
-        router.push("/product");
     };
 
     const handleSuggestionClick = (suggestion) => {
-        // Create filter object based on suggestion
-        const filter = {
-            category: suggestion.filterCategory,
-            item: {
-                id: `suggestion-${suggestion.type}-${Date.now()}`,
-                name: suggestion.value
-            }
-        };
+        try {
+            // Create filter object based on suggestion
+            const filter = {
+                category: suggestion.filterCategory,
+                item: {
+                    id: `suggestion-${suggestion.type}-${Date.now()}`,
+                    name: suggestion.value
+                }
+            };
 
-        // Navigate to product page with filter applied
-        const searchPayload = {
-            isSearchFlag: 0, // No API search, just filter
-            mode: selectedMode,
-            timestamp: Date.now(),
-            filters: [filter],
-        };
+            // Navigate to product page with filter applied
+            const searchPayload = {
+                isSearchFlag: 0, // No API search, just filter
+                mode: selectedMode,
+                timestamp: Date.now(),
+                filters: [filter],
+            };
 
-        const jsonString = JSON.stringify(searchPayload);
-        const encoded = btoa(unescape(encodeURIComponent(jsonString)));
-        sessionStorage.setItem("homeSearchData", encoded);
-        router.push("/product");
+            const jsonString = JSON.stringify(searchPayload);
+            const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+            sessionStorage.setItem("homeSearchData", encoded);
+            router.push("/product");
+        } catch (error) {
+            console.error("handleSuggestionClick Error:", error);
+            logErrorToServer({
+                shortReason: "Search suggestion navigation failed",
+                detailedReason: error
+            });
+        }
     };
 
     return (
@@ -368,6 +403,7 @@ const Home = () => {
                         onSuggestionClick={handleSuggestionClick}
                         autoFocus={true}
                         externalLoading={isLoadingProducts}
+                        searchMode={selectedMode}
                     />
                 </Box>
 

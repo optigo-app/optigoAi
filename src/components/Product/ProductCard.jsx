@@ -14,9 +14,10 @@ import {
     useTheme
 } from '@mui/material';
 
-import { ShoppingCart, ScanSearch } from 'lucide-react';
+import { ShoppingCart, ScanSearch, Check } from 'lucide-react';
 import ProductModal from './ProductModal';
 import { useCart } from '@/context/CartContext';
+import { useMultiSelect } from '@/context/MultiSelectContext';
 
 const ProductCard = React.memo(function ProductCard({ product, products = [], index = 0, onSearchSimilar, showSimilarButton = true, urlParamsFlag }) {
     const theme = useTheme();
@@ -24,6 +25,8 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
     const [imageError, setImageError] = useState(false);
     const [isImageLoaded, setIsImageLoaded] = useState(false);
     const [openModal, setOpenModal] = useState(false);
+
+    const { isMultiSelectMode, isProductSelected, toggleProductSelection } = useMultiSelect();
 
     const { addToCart, removeFromCart, items: cartItems } = useCart();
 
@@ -67,6 +70,19 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
         return Boolean(product?.originalUrl || product?.image || product?.thumbUrl);
     }, [product]);
 
+    const isSelected = useMemo(() => {
+        return isProductSelected(product?.id);
+    }, [isProductSelected, product?.id]);
+
+    const handleCardClick = (e) => {
+        if (isMultiSelectMode) {
+            e.stopPropagation();
+            toggleProductSelection(product?.id);
+        } else {
+            setOpenModal(true);
+        }
+    };
+
 
     return (
         <Box
@@ -83,12 +99,11 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                     cursor: 'pointer',
                     borderRadius: '16px',
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                    transform: isHovered ? 'translateY(-8px)' : 'none',
+                    transform: isHovered && !isMultiSelectMode ? 'translateY(-8px)' : 'none',
                     boxShadow: isHovered
                         ? '0 20px 40px rgba(0,0,0,0.12)'
                         : '0 4px 12px rgba(0,0,0,0.03)',
                     height: '100%',
-                    bgcolor: '#fff',
                 }}
             >
                 <Box sx={{ position: 'relative', overflow: 'hidden' }}>
@@ -137,8 +152,46 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                         />
                     </Box>
 
+                    {/* CHECKMARK CIRCLE - Multi-Select Mode */}
+                    {isMultiSelectMode && (
+                        <Box
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleProductSelection(product?.id);
+                            }}
+                            sx={{
+                                position: 'absolute',
+                                top: 8,
+                                left: 8,
+                                zIndex: 3,
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: isSelected ? 'primary.main' : 'rgba(255, 255, 255, 0.95)',
+                                border: isSelected ? 'none' : '2px solid rgba(0, 0, 0, 0.2)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                '&:hover': {
+                                    transform: 'scale(1.1)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.95)',
+                                }
+                            }}
+                        >
+                            {isSelected && (
+                                <Check size={18} color="white" strokeWidth={3} />
+                            )}
+                        </Box>
+                    )}
+
                     {/* IN CART BADGE */}
-                    {isInCart && (
+                    {isInCart && !isMultiSelectMode && (
                         <Box
                             sx={{
                                 position: 'absolute',
@@ -193,42 +246,43 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                     )}
 
                     {/* HOVER OVERLAY */}
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            inset: 0,
-                            backdropFilter: 'blur(0.2px)',
-                            background: 'transparent',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                            opacity: isHovered ? 1 : 0,
-                            transition: 'opacity 0.3s ease',
-                            p: 2,
-                            gap: 1.5,
-                            '&:before': {
-                                content: '""',
-                                position: 'absolute',
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                height: '95px',
-                                background: 'linear-gradient(180deg, rgba(115, 103, 240, 0) 0%, rgba(115, 103, 240, 0.55) 100%)',
-                                pointerEvents: 'none',
-                            },
-                            '& > *': {
-                                position: 'relative',
-                                zIndex: 1,
-                            }
-                        }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenModal(true);
-                        }}
-                    >
-                        <Box sx={{ textAlign: 'center' }}>
-                            {/* <Typography
+                    {!isMultiSelectMode && (
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                inset: 0,
+                                backdropFilter: 'blur(0.2px)',
+                                background: 'transparent',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'flex-end',
+                                alignItems: 'center',
+                                opacity: isHovered ? 1 : 0,
+                                transition: 'opacity 0.3s ease',
+                                p: 2,
+                                gap: 1.5,
+                                '&:before': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    height: '95px',
+                                    background: 'linear-gradient(180deg, rgba(115, 103, 240, 0) 0%, rgba(115, 103, 240, 0.55) 100%)',
+                                    pointerEvents: 'none',
+                                },
+                                '& > *': {
+                                    position: 'relative',
+                                    zIndex: 1,
+                                }
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenModal(true);
+                            }}
+                        >
+                            <Box sx={{ textAlign: 'center' }}>
+                                {/* <Typography
                                 variant="h6"
                                 noWrap
                                 sx={{
@@ -243,48 +297,70 @@ const ProductCard = React.memo(function ProductCard({ product, products = [], in
                             >
                                 {displayTitle}
                             </Typography> */}
-                            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                <Chip
-                                    label={`${displayDesignNo}`}
+                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                    <Chip
+                                        label={`${displayDesignNo}`}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: '#fff',
+                                            fontWeight: 'bold',
+                                            color: '#6b6b6bff',
+                                            height: 24,
+                                            maxWidth: '100%',
+                                            fontSize: { xs: '0.75rem', xl: '0.8125rem' }
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', alignItems: 'center' }}>
+                                <Button
+                                    variant="contained"
                                     size="small"
-                                    sx={{
-                                        backgroundColor: '#fff',
-                                        fontWeight: 'bold',
-                                        color: '#6b6b6bff',
-                                        height: 24,
-                                        maxWidth: '100%',
-                                        fontSize: { xs: '0.75rem', xl: '0.8125rem' }
+                                    startIcon={<ShoppingCart size={16} />}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleCart(product);
                                     }}
-                                />
+                                    sx={{
+                                        background: isInCart ? theme.gradients?.secondary : theme.gradients?.primary,
+                                        color: "white",
+                                        fontSize: '0.8rem',
+                                        whiteSpace: 'nowrap',
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            background: isInCart ? theme.gradients?.secondary : theme.gradients?.primary,
+                                            boxShadow: 'none',
+                                        },
+                                    }}
+                                >
+                                    {isInCart ? "Remove" : "Add to Cart"}
+                                </Button>
+
                             </Box>
                         </Box>
+                    )}
 
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', alignItems: 'center' }}>
-                            <Button
-                                variant="contained"
-                                size="small"
-                                startIcon={<ShoppingCart size={16} />}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleCart(product);
-                                }}
-                                sx={{
-                                    background: isInCart ? theme.gradients?.secondary : theme.gradients?.primary,
-                                    color: "white",
-                                    fontSize: '0.8rem',
-                                    whiteSpace: 'nowrap',
-                                    borderRadius: 2,
-                                    '&:hover': {
-                                        background: isInCart ? theme.gradients?.secondary : theme.gradients?.primary,
-                                        boxShadow: 'none',
-                                    },
-                                }}
-                            >
-                                {isInCart ? "Remove" : "Add to Cart"}
-                            </Button>
-
-                        </Box>
-                    </Box>
+                    {/* CLICK OVERLAY FOR MULTI-SELECT */}
+                    {isMultiSelectMode && (
+                        <Box
+                            onClick={handleCardClick}
+                            sx={{
+                                position: 'absolute',
+                                inset: 0,
+                                cursor: 'pointer',
+                                zIndex: 1,
+                                '&:active': {
+                                    animation: 'clickPulse 0.3s ease-out',
+                                },
+                                '@keyframes clickPulse': {
+                                    '0%': { transform: 'scale(1)' },
+                                    '50%': { transform: 'scale(0.98)' },
+                                    '100%': { transform: 'scale(1)' },
+                                },
+                            }}
+                        />
+                    )}
                 </Box>
 
                 <ProductModal
