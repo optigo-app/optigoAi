@@ -5,10 +5,11 @@ import path from 'path';
 export async function POST(request) {
     try {
         const errorData = await request.json();
-        const { tokenNo, timestamp, shortReason, detailedReason } = errorData;
+        const { userId, tokenNo, timestamp, shortReason, detailedReason } = errorData;
 
+        const atkKey = tokenNo || 'Guest';
         const logEntry = {
-            tokenNo: tokenNo || 'Guest',
+            userId: userId || 'Guest',
             timestamp: timestamp || new Date().toISOString(),
             shortReason: shortReason || 'Unknown Error',
             detailedReason: detailedReason || 'No details provided',
@@ -16,17 +17,23 @@ export async function POST(request) {
 
         const logFilePath = path.join(process.cwd(), 'public', 'logs', 'error_logs.json');
 
-        let logs = [];
+        let logs = {};
         try {
             const fileContent = await fs.readFile(logFilePath, 'utf8');
-            logs = JSON.parse(fileContent);
-            if (!Array.isArray(logs)) logs = [];
+            const parsed = JSON.parse(fileContent);
+            if (Array.isArray(parsed)) {
+                logs = {};
+            } else {
+                logs = parsed || {};
+            }
         } catch (err) {
-            // File doesn't exist or is empty
-            logs = [];
+            logs = {};
         }
 
-        logs.push(logEntry);
+        if (!logs[atkKey]) {
+            logs[atkKey] = [];
+        }
+        logs[atkKey].push(logEntry);
 
         await fs.writeFile(logFilePath, JSON.stringify(logs, null, 2), 'utf8');
 

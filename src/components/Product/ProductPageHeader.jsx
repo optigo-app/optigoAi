@@ -91,7 +91,7 @@ export default function ProductPageHeader({
                         sx={{
                             bgcolor: 'rgba(244, 67, 54, 0.08)',
                             color: '#f44336',
-                            borderRadius: '10px',
+                            borderRadius: '50%',
                             p: 1,
                             '&:hover': {
                                 bgcolor: 'rgba(244, 67, 54, 0.15)',
@@ -300,8 +300,7 @@ export default function ProductPageHeader({
                                 onClick={onSelectAllToggle}
                                 sx={{
                                     color: isAllSelected ? 'primary.main' : 'text.secondary',
-                                    bgcolor: isAllSelected ? 'rgba(115, 103, 240, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                                    borderRadius: '10px',
+                                    borderRadius: '50%',
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         bgcolor: isAllSelected ? 'rgba(115, 103, 240, 0.12)' : 'rgba(0, 0, 0, 0.08)',
@@ -338,19 +337,24 @@ export default function ProductPageHeader({
                             <IconButton
                                 onClick={onToggleMultiSelectMode}
                                 sx={{
-                                    color: 'text.secondary',
-                                    bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                    borderRadius: '10px',
-                                    p: 1.25,
-                                    '&:hover': {
-                                        bgcolor: 'rgba(115, 103, 240, 0.08)',
-                                        color: 'primary.main',
-                                        transform: 'scale(1.05)'
-                                    },
-                                    transition: 'all 0.2s ease'
+                                    width: 42,
+                                    height: 42,
+                                    borderRadius: "50%",
+                                    color: isMultiSelectMode ? "primary.main" : "text.secondary",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                        bgcolor: isMultiSelectMode
+                                            ? "rgba(115,103,240,0.22)"
+                                            : "rgba(0,0,0,0.08)",
+                                        transform: "scale(1.06)"
+                                    }
                                 }}
                             >
-                                <CheckSquare size={20} />
+                                {isMultiSelectMode ? (
+                                    <CheckSquare size={20} strokeWidth={2.2} />
+                                ) : (
+                                    <Square size={20} strokeWidth={2} />
+                                )}
                             </IconButton>
                         </Tooltip>
                         <IconButton

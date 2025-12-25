@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import {
     Dialog,
@@ -217,7 +217,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                 alt={prod.categoryname || 'Product image'}
                                                 sx={{
                                                     objectFit: isFullscreen ? 'contain' : 'cover',
-                                                    borderRadius: 2,
+                                                    borderRadius: 0,
                                                     width: '100%',
                                                     height: '100%',
                                                 }}
@@ -234,8 +234,21 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                 <Typography variant="h5" fontWeight="600" color="#2c2c2c" sx={{ mt: 0.5 }}>
                                                     {prod.designno || "N/A"}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ mt: 0.75, color: 'text.secondary' }}>
-                                                    {[{ value: prod.brandname, isBrand: true }, { value: prod.collectionname }, { value: prod.categoryname }, { value: prod.subcategoryname }, { value: prod.producttype }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
+                                                <Typography
+                                                    className="dt_titleline"
+                                                    variant="body2"
+                                                    component="div"
+                                                    sx={{
+                                                        mt: 0.75,
+                                                        color: 'text.secondary',
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'center',
+                                                        lineHeight: 1.6,
+                                                        wordBreak: 'break-word'
+                                                    }}
+                                                >
+                                                    {[{ value: prod.brandname, isBrand: true }, { value: prod.collectionname }, { value: prod.gendername }, { value: prod.categoryname }, { value: prod.subcategoryname }, { value: prod.producttype }, { value: prod.occasionname }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
                                                         <Box key={`${part.value}-${idx}`} component="span">
                                                             <Box component="span" sx={part.isBrand ? { color: 'text.primary', fontWeight: 700 } : undefined}>
                                                                 {part.value}

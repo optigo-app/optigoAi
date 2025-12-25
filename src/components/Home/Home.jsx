@@ -94,7 +94,12 @@ const typeWriterText = [
 
 const Home = () => {
     const router = useRouter();
-    const [selectedMode, setSelectedMode] = useState("design");
+    const [selectedMode, setSelectedMode] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem('searchMode') || 'design';
+        }
+        return 'design';
+    });
     const [isLoaded, setIsLoaded] = useState(false);
     const [featureIndex, setFeatureIndex] = useState(0);
     const [appliedFilters, setAppliedFilters] = useState([]);
@@ -106,6 +111,12 @@ const Home = () => {
     useEffect(() => {
         setIsLoaded(true);
     }, []);
+
+    useEffect(() => {
+        if (selectedMode) {
+            sessionStorage.setItem('searchMode', selectedMode);
+        }
+    }, [selectedMode]);
 
     useEffect(() => {
         if (!upcomingFeatures.length) return;
@@ -148,7 +159,7 @@ const Home = () => {
             const searchPayload = {
                 ...searchData,
                 image: imageBase64,
-                isSearchFlag: selectedMode === 'design' ? 0 : searchData.isSearchFlag,
+                isSearchFlag: (selectedMode === 'design' && !imageToUse) ? 0 : searchData.isSearchFlag,
                 mode: selectedMode,
                 timestamp: Date.now(),
                 filters: appliedFilters,
@@ -404,6 +415,7 @@ const Home = () => {
                         autoFocus={true}
                         externalLoading={isLoadingProducts}
                         searchMode={selectedMode}
+                        onImageUpload={() => setSelectedMode('ai')}
                     />
                 </Box>
 

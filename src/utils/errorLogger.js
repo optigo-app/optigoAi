@@ -9,9 +9,11 @@ import { getAuthData } from './globalFunc';
 export const logErrorToServer = async ({ shortReason, detailedReason }) => {
     try {
         const authData = getAuthData();
-        const tokenNo = authData?.uid || authData?.username || 'Guest';
+        const userId = authData?.uid || authData?.username || 'Guest';
+        const tokenNo = authData?.atk || 'Guest';
 
         const payload = {
+            userId,
             tokenNo,
             timestamp: new Date().toISOString(),
             shortReason,

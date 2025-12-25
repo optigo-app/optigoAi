@@ -9,7 +9,7 @@ export const CATEGORY_FIELD_MAP = {
     'brand': 'brandname',
     'gender': 'gendername',
     'style': 'stylename',
-    'ocassion': 'occassionname',
+    'occasion': 'occasionname',
     'lab': 'labname',
     'metal color': 'metalcolor',
     'metal': 'metaltype',
@@ -95,8 +95,7 @@ export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm)
         const fuse = new Fuse(temp, {
             keys: [
                 'autocode', 'designno', 'categoryname', 'subcategoryname',
-                'collectionname', 'producttype', 'brandname', 'labname',
-                'metaltype', 'metalcolor', 'diamondshape'
+                'collectionname', 'producttype', 'brandname', 'labname', 'occassionname', 'stylename', 'gendername', 'diamondshape', 'metaltype', 'metalcolor'
             ],
             threshold: 0.15,
             distance: 100,

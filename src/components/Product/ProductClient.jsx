@@ -11,7 +11,6 @@ import {
     Tooltip,
 } from "@mui/material";
 
-import productsData from "@/data/Product.json";
 import ModernSearchBar from "@/components/ModernSearchBar";
 import ScrollToTop from "@/components/ScrollToTop";
 import FullPageLoader from "@/components/FullPageLoader";
@@ -69,7 +68,12 @@ function ProductClientContent() {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [searchMode, setSearchMode] = useState('design');
+    const [searchMode, setSearchMode] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem('searchMode') || 'design';
+        }
+        return 'design';
+    });
 
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
@@ -253,6 +257,12 @@ function ProductClientContent() {
             setSearchMode(state.searchMode);
         }
     }, []);
+
+    useEffect(() => {
+        if (searchMode) {
+            sessionStorage.setItem('searchMode', searchMode);
+        }
+    }, [searchMode]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -460,11 +470,21 @@ function ProductClientContent() {
         const modeToUse = searchData?.mode || searchMode;
         if ((!searchData?.isSearchFlag || searchData.isSearchFlag === 0) && modeToUse === 'ai') {
             console.log('No search criteria provided, showing all products');
+            setIsSearchLoading(true);
+            setLastSearchData(searchData);
+            setError(null);
+
+            setTimeout(() => {
+                setSearchResults(null);
+                setSearchTerm(searchData?.text || '');
+                setIsSearchLoading(false);
+            }, 300);
             return;
         }
 
         // In design mode, we don't call the search API, just navigate/filter
-        if (modeToUse === 'design') {
+        // UNLESS an image is provided, then we force AI search
+        if (modeToUse === 'design' && !searchData?.image) {
             setIsSearchLoading(true);
             setLastSearchData(searchData);
             setError(null);
@@ -597,9 +617,16 @@ function ProductClientContent() {
     const loading = isLoadingProducts;
     if (loading) return <FullPageLoader open={true} />;
 
+    const getBottomPadding = () => {
+        if (finalFilteredProducts.length > 13) {
+            return { xs: 28, sm: 36, md: 50 };
+        }
+        return 5;
+    };
+
     return (
         <GridBackground>
-            <Container maxWidth={false} sx={{ px: 0, pb: finalFilteredProducts.length > 24 ? { xs: 28, sm: 36, md: 50 } : 5, position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
+            <Container maxWidth={false} sx={{ px: 0, pb: getBottomPadding(), position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
                 <ProductPageHeader
                     isMultiSelectMode={isMultiSelectMode}
                     selectedCount={selectedCount}
@@ -650,7 +677,6 @@ function ProductClientContent() {
                     <Fade in={!isTransitioning} timeout={200}>
                         <Box sx={{ p: '10px 16px !important', mt: 2 }}>
                             <ProductGrid
-                                products={productsData}
                                 designData={displayedProducts}
                                 appliedFilters={appliedFilters}
                                 clearAllFilters={clearAllFilters}
@@ -703,6 +729,7 @@ function ProductClientContent() {
                         onSuggestionClick={handleSuggestionClick}
                         searchMode={searchMode}
                         alwaysExpanded={true}
+                        onImageUpload={() => setSearchMode('ai')}
                     />
                 </Box>
                 <ScrollToTop bottom={isFrontendFeRoute() ? 70 : 24} />
