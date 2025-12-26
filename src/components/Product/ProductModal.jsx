@@ -56,6 +56,9 @@ export default function ProductModal({ open, onClose, product, products = [], st
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showAllDetails, setShowAllDetails] = useState(false);
 
+    // for hide diamond, colorstone information
+    const [showMore, setShowMore] = useState(false);
+
     const formatWeight = (value) => {
         const n = typeof value === 'number' ? value : Number(value);
         if (!Number.isFinite(n)) return '0.000';
@@ -140,7 +143,6 @@ export default function ProductModal({ open, onClose, product, products = [], st
             removeFromCart(currentProduct.id);
         }
         setOpenConfirmModal(false);
-        onClose();
     };
 
     const currentProd = sliderProducts[activeIndex] || product;
@@ -231,9 +233,29 @@ export default function ProductModal({ open, onClose, product, products = [], st
 
                                             {/* Design Number */}
                                             <Box sx={{ pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                                                <Typography variant="h5" fontWeight="600" color="#2c2c2c" sx={{ mt: 0.5 }}>
-                                                    {prod.designno || "N/A"}
-                                                </Typography>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, gap: 1 }}>
+                                                    <Typography variant="h5" fontWeight="600" color="#2c2c2c" sx={{ wordBreak: 'break-all' }}>
+                                                        {prod.designno || "N/A"}
+                                                    </Typography>
+                                                    {prod.brandname && (
+                                                        <Typography
+                                                            variant="body2"
+                                                            fontWeight="700"
+                                                            color="primary.main"
+                                                            sx={{
+                                                                textAlign: 'right',
+                                                                whiteSpace: 'nowrap',
+                                                                bgcolor: 'rgba(115, 103, 240, 0.1)',
+                                                                px: 1.2,
+                                                                py: 0.4,
+                                                                borderRadius: 1.5,
+                                                                fontSize: '0.85rem'
+                                                            }}
+                                                        >
+                                                            {prod.brandname}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
                                                 <Typography
                                                     className="dt_titleline"
                                                     variant="body2"
@@ -248,7 +270,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                         wordBreak: 'break-word'
                                                     }}
                                                 >
-                                                    {[{ value: prod.brandname, isBrand: true }, { value: prod.collectionname }, { value: prod.gendername }, { value: prod.categoryname }, { value: prod.subcategoryname }, { value: prod.producttype }, { value: prod.occasionname }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
+                                                    {[{ value: prod.collectionname }, { value: prod.gendername }, { value: prod.categoryname }, { value: prod.subcategoryname }, { value: prod.producttype }, { value: prod.occasionname }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
                                                         <Box key={`${part.value}-${idx}`} component="span">
                                                             <Box component="span" sx={part.isBrand ? { color: 'text.primary', fontWeight: 700 } : undefined}>
                                                                 {part.value}
@@ -260,7 +282,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                 {(prod.metaltype || prod.metalpurity || prod.metalcolor) && (
                                                     <Typography
                                                         variant="body2"
-                                                        fontWeight={600}
+                                                        fontWeight={500}
                                                         color="secondary.main"
                                                         sx={{
                                                             mt: 1,
@@ -301,7 +323,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                             </Box>
 
                                             {/* View More Toggle */}
-                                            {(pDiamonds || pStones) && (
+                                            {showMore && (pDiamonds || pStones) && (
                                                 <Box sx={{ textAlign: 'end' }}>
                                                     <Button
                                                         variant="text"
@@ -468,17 +490,6 @@ export default function ProductModal({ open, onClose, product, products = [], st
                             Search Similar
                         </Button>
                     )}
-                    {fromCart && (
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<Trash2 size={18} />}
-                            onClick={handleRemoveItem}
-                            sx={softDangerButtonSx}
-                        >
-                            Remove
-                        </Button>
-                    )}
                 </Box>
 
                 {/* Center Area: Navigation Controls */}
@@ -514,23 +525,32 @@ export default function ProductModal({ open, onClose, product, products = [], st
                 <Box sx={{ display: 'flex', gap: 2, flex: 1, justifyContent: 'flex-end' }}>
                     <Button
                         variant="contained"
-                        startIcon={<ShoppingCart size={18} />}
+                        startIcon={isItemInCart(currentProd?.id) ? <Trash2 size={18} /> : <ShoppingCart size={18} />}
                         onClick={() => {
-                            if (!isItemInCart(currentProd.id)) {
+                            if (isItemInCart(currentProd?.id)) {
+                                handleRemoveItem();
+                            } else {
                                 onAddToCart(currentProd);
                             }
                         }}
-                        disabled={isItemInCart(currentProd?.id)}
                         sx={{
-                            ...softPrimaryButtonSx,
-                            bgcolor: isItemInCart(currentProd?.id) ? 'action.disabledBackground' : 'primary.main',
-                            color: isItemInCart(currentProd?.id) ? 'text.disabled' : 'common.white',
+                            background: isItemInCart(currentProd?.id) ? theme.gradients?.secondary : theme.gradients?.primary,
+                            color: "white",
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            py: 1.25,
+                            borderRadius: 2,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            textTransform: 'none',
                             '&:hover': {
-                                bgcolor: isItemInCart(currentProd?.id) ? 'action.disabledBackground' : 'primary.dark',
-                            }
+                                background: isItemInCart(currentProd?.id) ? theme.gradients?.secondary : theme.gradients?.primary,
+                                boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
+                                transform: 'translateY(-2px)',
+                            },
+                            transition: 'all 0.1s ease',
                         }}
                     >
-                        {isItemInCart(currentProd?.id) ? 'In Cart' : 'Add to Cart'}
+                        {isItemInCart(currentProd?.id) ? 'Remove from Cart' : 'Add to Cart'}
                     </Button>
                 </Box>
             </DialogActions>
@@ -540,6 +560,6 @@ export default function ProductModal({ open, onClose, product, products = [], st
                 onConfirm={handleConfirmRemove}
                 type="removeItem"
             />
-        </Dialog>
+        </Dialog >
     );
 }

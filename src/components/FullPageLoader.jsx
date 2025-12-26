@@ -3,8 +3,7 @@ import React from 'react';
 import { Box, CircularProgress, Backdrop, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
 
-const FullPageLoader = ({ open, message = "Loading...", subtitle }) => {
-
+const FullPageLoader = ({ open, message = "Loading...", subtitle, showLogo = true }) => {
     if (!open) return null;
 
     return (
@@ -47,17 +46,19 @@ const FullPageLoader = ({ open, message = "Loading...", subtitle }) => {
                                 animationDuration: '1.5s'
                             }}
                         />
-                        <Box
-                            component="img"
-                            src="/icons/base-icon.svg"
-                            alt="Loading"
-                            sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: '50%',
-                                animation: 'pulse 2s infinite ease-in-out'
-                            }}
-                        />
+                        {showLogo && (
+                            <Box
+                                component="img"
+                                src="/icons/base-icon.svg"
+                                alt="Loading"
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: '50%',
+                                    animation: 'pulse 2s infinite ease-in-out'
+                                }}
+                            />
+                        )}
                     </Box>
 
                     <Typography

@@ -155,64 +155,81 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         productData.forEach(product => {
             SEARCH_FIELDS.forEach(field => {
                 const val = product[field.key];
-                if (val && typeof val === 'string' && val.toLowerCase().includes(searchTerm)) {
-                    const key = `${field.type}-${val}`;
-                    if (!suggestionMap.has(key)) {
-                        suggestionMap.set(key, {
-                            type: field.type,
-                            label: val,
-                            value: val,
-                            filterCategory: field.filterCategory,
-                            count: 1
-                        });
-                    } else {
-                        suggestionMap.get(key).count++;
+                if (val && typeof val === 'string') {
+                    const lowerVal = val.toLowerCase();
+                    if (lowerVal.includes(searchTerm)) {
+                        const key = `${field.type}-${val}`;
+                        if (!suggestionMap.has(key)) {
+                            const score = lowerVal.startsWith(searchTerm) ? 100 : 10;
+                            suggestionMap.set(key, {
+                                type: field.type,
+                                label: val,
+                                value: val,
+                                filterCategory: field.filterCategory,
+                                count: 1,
+                                relevanceScore: score
+                            });
+                        } else {
+                            suggestionMap.get(key).count++;
+                        }
                     }
                 }
             });
         });
 
-        if (debouncedText.length >= 2) {
-            const lowerTerm = debouncedText.toLowerCase();
+        if (searchTerm.length >= 2) {
             const designMatches = productData
-                .filter(p => p.designno && p.designno.toLowerCase().includes(lowerTerm))
-                .slice(0, 10)
-                .map(p => ({
-                    type: 'design',
-                    label: p.designno,
-                    value: p.designno,
-                    name: p.designno,
-                    filterCategory: 'Design#',
-                    category: p.categoryname,
-                    id: p.id,
-                    count: 1
-                }));
+                .filter(p => p.designno && p.designno.toLowerCase().includes(searchTerm))
+                .slice(0, 20); // Get more to find better prefix matches first
 
-            designMatches.forEach(match => {
-                const key = `design-${match.label}`;
+            designMatches.forEach(p => {
+                const lowerNo = p.designno.toLowerCase();
+                const score = lowerNo.startsWith(searchTerm) ? 100 : 10;
+                const key = `design-${p.designno}`;
                 if (!suggestionMap.has(key)) {
-                    suggestionMap.set(key, match);
+                    suggestionMap.set(key, {
+                        type: 'design',
+                        label: p.designno,
+                        value: p.designno,
+                        name: p.designno,
+                        filterCategory: 'Design#',
+                        category: p.categoryname,
+                        id: p.id,
+                        count: 1,
+                        relevanceScore: score
+                    });
                 }
             });
         }
 
+        // Final score = relevanceScore + (count / 100) to keep relevance as primary
+        const suggestionArray = Array.from(suggestionMap.values()).map(item => ({
+            ...item,
+            totalScore: item.relevanceScore + (item.count / 1000)
+        }));
 
-        const suggestionArray = Array.from(suggestionMap.values());
-
-        // Group by type and limit each to top 5
+        // Group by type
         const groupedByType = suggestionArray.reduce((acc, item) => {
             if (!acc[item.type]) acc[item.type] = [];
             acc[item.type].push(item);
             return acc;
         }, {});
 
-        const finalSuggestions = Object.values(groupedByType).flatMap(group =>
-            group.sort((a, b) => b.count - a.count).slice(0, 5)
-        );
+        // Sort each group and find the max score per group for group priority
+        const groupPriorities = {};
+        Object.keys(groupedByType).forEach(type => {
+            groupedByType[type].sort((a, b) => b.totalScore - a.totalScore);
+            groupPriorities[type] = Math.max(...groupedByType[type].map(i => i.totalScore));
+        });
+
+        // Flatten back while keeping the most relevant groups first
+        const finalSuggestions = Object.keys(groupedByType)
+            .sort((a, b) => groupPriorities[b] - groupPriorities[a])
+            .flatMap(type => groupedByType[type].slice(0, 5));
 
         setSuggestions(finalSuggestions);
-        setShowSuggestionsDropdown(suggestionArray.length > 0);
-    }, [debouncedText, productData, showSuggestions]);
+        setShowSuggestionsDropdown(finalSuggestions.length > 0);
+    }, [debouncedText, productData, showSuggestions, searchMode]);
 
     useEffect(() => {
         let timeoutId;
@@ -383,7 +400,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         }
     }, [searchMode]);
 
-    const handleSend = (forceCatalog = false) => {
+    const handleSend = (forceCatalogRequested = false) => {
+        const forceCatalog = forceCatalogRequested === true;
+        debugger
         if (isCatalogLoading) return;
         const trimmedText = text.trim();
 
@@ -671,7 +690,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             />
 
                             {!isExpanded && (
-                                <Tooltip title="Settings">
+                                <Tooltip title="Maximize">
                                     <IconButton className="iconbuttonsearch" onClick={() => setIsExpanded(true)} sx={{ ...actionIconButtonSx, ml: 1 }}>
                                         <Settings2 size={20} />
                                     </IconButton>
@@ -682,7 +701,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             {(isExpanded && !isMultiline) && (
                                 <Zoom in={isExpanded || text.length > 0 || Boolean(imagePreview)}>
                                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                        <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
+                                        <Tooltip title={isExpanded ? "Minimize" : "Maximize"}>
                                             <IconButton
                                                 size="small"
                                                 className="iconbuttonsearch"
@@ -697,7 +716,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         </Tooltip>
 
                                         <Tooltip title="AI Search" placement="top">
-                                            <IconButton className="iconbuttonsearch" onClick={handleSend} sx={sendIconButtonSx} disabled={isCatalogLoading}>
+                                            <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading}>
                                                 <ArrowRight size={20} />
                                             </IconButton>
                                         </Tooltip>
@@ -734,7 +753,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     <Tooltip title="AI Search" placement="top">
                                         <IconButton
                                             className="iconbuttonsearch"
-                                            onClick={handleSend}
+                                            onClick={() => handleSend(false)}
                                             sx={sendIconButtonSx}
                                             disabled={isCatalogLoading}
                                         >
@@ -845,7 +864,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
                             <Box sx={{ flexGrow: 1 }} />
 
-                            {!showMoreFiltersButton && (
+                            {(!showMoreFiltersButton && isDesignMode) && (
                                 <Button
                                     variant="contained"
                                     size="small"

@@ -25,6 +25,9 @@ export default function ProductPageHeader({
     onSelectAllToggle,
     onBulkAddToCart,
     onToggleMultiSelectMode,
+    onBulkRemoveFromCart,
+    isRemovalMode,
+    newItemsCount,
 
     // Navigation/Cart props
     onHomeClick,
@@ -92,7 +95,6 @@ export default function ProductPageHeader({
                             bgcolor: 'rgba(244, 67, 54, 0.08)',
                             color: '#f44336',
                             borderRadius: '50%',
-                            p: 1,
                             '&:hover': {
                                 bgcolor: 'rgba(244, 67, 54, 0.15)',
                                 transform: 'scale(1.05)'
@@ -136,14 +138,14 @@ export default function ProductPageHeader({
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography
                             variant="subtitle1"
-                            fontWeight={800}
+                            fontWeight={500}
                             sx={{
-                                color: 'primary.main',
-                                bgcolor: 'rgba(115, 103, 240, 0.1)',
+                                color: 'text.secondary',
+                                bgcolor: 'rgba(0, 0, 0, 0.06)',
                                 px: 1.5,
                                 py: 0.5,
                                 borderRadius: '20px',
-                                fontSize: '0.9rem'
+                                fontSize: '0.7rem'
                             }}
                         >
                             {selectedCount} Items Selected
@@ -314,9 +316,10 @@ export default function ProductPageHeader({
 
                         <Button
                             variant="contained"
-                            startIcon={<ShoppingCart size={18} />}
-                            onClick={onBulkAddToCart}
-                            disabled={selectedCount === 0}
+                            color={isRemovalMode ? "error" : "primary"}
+                            startIcon={isRemovalMode ? <XIcon size={18} /> : <ShoppingCart size={18} />}
+                            onClick={isRemovalMode ? onBulkRemoveFromCart : onBulkAddToCart}
+                            disabled={selectedCount === 0 || (!isRemovalMode && newItemsCount === 0)}
                             sx={{
                                 textTransform: 'none',
                                 borderRadius: 2,
@@ -328,7 +331,11 @@ export default function ProductPageHeader({
                                 }
                             }}
                         >
-                            Add to Cart
+                            {isRemovalMode
+                                ? `Remove ${selectedCount} from Cart`
+                                : newItemsCount > 0
+                                    ? `Add ${newItemsCount} to Cart`
+                                    : "Add to Cart"}
                         </Button>
                     </Box>
                 ) : (
@@ -337,8 +344,6 @@ export default function ProductPageHeader({
                             <IconButton
                                 onClick={onToggleMultiSelectMode}
                                 sx={{
-                                    width: 42,
-                                    height: 42,
                                     borderRadius: "50%",
                                     color: isMultiSelectMode ? "primary.main" : "text.secondary",
                                     transition: "all 0.2s ease",

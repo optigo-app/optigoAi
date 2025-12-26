@@ -8,13 +8,17 @@ export function MultiSelectProvider({ children }) {
     const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
     const [selectedProductIds, setSelectedProductIds] = useState(new Set());
 
-    const toggleMultiSelectMode = useCallback(() => {
+    const toggleMultiSelectMode = useCallback((initialSelectedIds = []) => {
         setIsMultiSelectMode(prev => {
+            const nextMode = !prev;
             // Clear selections when exiting multi-select mode
-            if (prev) {
+            // Or initialize with provided IDs when entering
+            if (nextMode && Array.isArray(initialSelectedIds) && initialSelectedIds.length > 0) {
+                setSelectedProductIds(new Set(initialSelectedIds));
+            } else {
                 setSelectedProductIds(new Set());
             }
-            return !prev;
+            return nextMode;
         });
     }, []);
 

@@ -45,6 +45,14 @@ const ReusableConfirmModal = ({ open, onClose, onConfirm, type }) => {
             cancelText: "Cancel",
             confirmColor: "error",
             cancelColor: "inherit",
+        },
+        bulkRemove: {
+            title: "Remove Items",
+            message: "Are you sure you want to remove the selected items from your cart?",
+            confirmText: "Remove Items",
+            cancelText: "Cancel",
+            confirmColor: "error",
+            cancelColor: "inherit",
         }
     };
 

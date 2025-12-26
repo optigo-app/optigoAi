@@ -29,6 +29,8 @@ import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 import ProductPageHeader from "@/components/Product/ProductPageHeader";
+import { Filter, Grid, List, ChevronUp, ChevronDown, LayoutGrid, Menu, X } from 'lucide-react';
+import ReusableConfirmModal from '@/components/Common/ReusableConfirmModal';
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 
 
@@ -37,7 +39,8 @@ function ProductClientContent() {
     const [isSearchLoading, setIsSearchLoading] = useState(false);
     const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const { totalCount, addToCart } = useCart();
+    const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false); // New state for removal confirm
+    const { totalCount, items: cartItems, addToCart, removeFromCart } = useCart();
     const router = useRouter();
 
     // Multi-select context
@@ -363,16 +366,49 @@ function ProductClientContent() {
 
         let addedCount = 0;
         selectedProducts.forEach(product => {
-            addToCart(product);
-            addedCount++;
+            // Check if already in cart to avoid double-counting/quantity increment in bulk
+            const alreadyInCart = cartItems.some(item => item.id === product.id);
+            if (!alreadyInCart) {
+                addToCart(product);
+                addedCount++;
+            }
         });
 
         // Exit multi-select mode and clear selections
         toggleMultiSelectMode();
 
-        // Show success feedback (you can add a toast notification here)
-        console.log(`${addedCount} items added to cart`);
-    }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode]);
+        // Show success feedback
+        console.log(`${addedCount} new items added to cart`);
+    }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode, cartItems]);
+
+    const isRemovalMode = useMemo(() => {
+        const selectedProducts = getSelectedProducts(finalFilteredProducts);
+        if (selectedProducts.length === 0) return false;
+        // If ALL selected products are already in cart, show "Remove from Cart"
+        return selectedProducts.every(product =>
+            cartItems.some(item => item.id === product.id)
+        );
+    }, [getSelectedProducts, finalFilteredProducts, cartItems]);
+
+    const newItemsCount = useMemo(() => {
+        const selectedProducts = getSelectedProducts(finalFilteredProducts);
+        return selectedProducts.filter(product =>
+            !cartItems.some(item => item.id === product.id)
+        ).length;
+    }, [getSelectedProducts, finalFilteredProducts, cartItems]);
+
+    const handleBulkRemoveFromCart = useCallback(() => {
+        setIsRemoveConfirmOpen(true);
+    }, []);
+
+    const executeBulkRemove = useCallback(() => {
+        const selectedProducts = getSelectedProducts(finalFilteredProducts);
+        selectedProducts.forEach(product => {
+            removeFromCart(product.id);
+        });
+        setIsRemoveConfirmOpen(false);
+        toggleMultiSelectMode();
+    }, [getSelectedProducts, finalFilteredProducts, removeFromCart, toggleMultiSelectMode]);
 
     const isAllSelected = useMemo(() => {
         if (!displayedProducts.length) return false;
@@ -420,6 +456,8 @@ function ProductClientContent() {
             const newApplied = appliedFilters.filter((f) => f.item.id !== item.id);
             if (item && ["text-search", "image-search", "hybrid-search"].includes(item.id)) {
                 setSearchResults(null);
+                setSearchTerm('');
+                setDebouncedSearchTerm('');
                 setError(null);
             }
             setAppliedFilters(newApplied);
@@ -431,6 +469,7 @@ function ProductClientContent() {
         setAppliedFilters([]);
         setSearchResults(null);
         setSearchTerm('');
+        setDebouncedSearchTerm('');
         setError(null);
     }, []);
 
@@ -468,7 +507,16 @@ function ProductClientContent() {
 
     const handleSubmit = useCallback(async (searchData) => {
         const modeToUse = searchData?.mode || searchMode;
-        if ((!searchData?.isSearchFlag || searchData.isSearchFlag === 0) && modeToUse === 'ai') {
+
+        // Resiliency check: if isSearchFlag is 0 or missing but we have content, infer it
+        let effectiveSearchFlag = searchData?.isSearchFlag ?? 0;
+        if (effectiveSearchFlag === 0 && modeToUse === 'ai') {
+            if (searchData?.image && searchData?.text) effectiveSearchFlag = 3;
+            else if (searchData?.image) effectiveSearchFlag = 2;
+            else if (searchData?.text) effectiveSearchFlag = 1;
+        }
+
+        if ((!effectiveSearchFlag || effectiveSearchFlag === 0) && modeToUse === 'ai') {
             console.log('No search criteria provided, showing all products');
             setIsSearchLoading(true);
             setLastSearchData(searchData);
@@ -477,6 +525,7 @@ function ProductClientContent() {
             setTimeout(() => {
                 setSearchResults(null);
                 setSearchTerm(searchData?.text || '');
+                setDebouncedSearchTerm(searchData?.text || '');
                 setIsSearchLoading(false);
             }, 300);
             return;
@@ -493,6 +542,7 @@ function ProductClientContent() {
             setTimeout(() => {
                 setSearchResults(null);
                 setSearchTerm(searchData.text || '');
+                setDebouncedSearchTerm(searchData.text || '');
                 setAppliedFilters(prev =>
                     prev.filter(
                         (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
@@ -530,13 +580,13 @@ function ProductClientContent() {
             }
 
             const res = await (async () => {
-                if (searchData?.isSearchFlag === 1) {
+                if (effectiveSearchFlag === 1) {
                     return searchService.searchByText(searchData.text?.trim(), options);
                 }
-                if (searchData?.isSearchFlag === 2) {
+                if (effectiveSearchFlag === 2) {
                     return searchService.searchByImage(finalImage, options);
                 }
-                if (searchData?.isSearchFlag === 3) {
+                if (effectiveSearchFlag === 3) {
                     return searchService.searchHybrid(
                         { file: finalImage, query: searchData.text?.trim() },
                         options
@@ -634,7 +684,10 @@ function ProductClientContent() {
                     onCancelMultiSelect={handleCancelMultiSelect}
                     onSelectAllToggle={handleSelectAllToggle}
                     onBulkAddToCart={handleBulkAddToCart}
-                    onToggleMultiSelectMode={toggleMultiSelectMode}
+                    onBulkRemoveFromCart={handleBulkRemoveFromCart}
+                    isRemovalMode={isRemovalMode}
+                    newItemsCount={newItemsCount}
+                    onToggleMultiSelectMode={() => toggleMultiSelectMode(cartItems.map(item => item.id))}
                     onHomeClick={() => router.push('/')}
                     onOpenCart={handleOpenCart}
                     totalCartItems={totalCount}
@@ -642,7 +695,10 @@ function ProductClientContent() {
                     appliedFilters={appliedFilters}
                     searchTerm={searchTerm}
                     onRemoveFilter={removeFilter}
-                    onClearSearchTerm={() => setSearchTerm('')}
+                    onClearSearchTerm={() => {
+                        setSearchTerm('');
+                        setDebouncedSearchTerm('');
+                    }}
                     onClearAllFilters={clearAllFilters}
                     onFilterPopoverOpen={handleFilterPopoverOpen}
                     isFilterOpen={isFilterOpen}
@@ -714,9 +770,18 @@ function ProductClientContent() {
                 transition: 'left 0.4s cubic-bezier(0.86, 0, 0.07, 1)'
             }}>
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: -0.5 }}>
-                        <SearchModeToggle activeMode={searchMode} onModeChange={setSearchMode} />
-                    </Box>
+                    <SearchModeToggle
+                        activeMode={searchMode}
+                        onModeChange={setSearchMode}
+                        sx={{
+                            bgcolor: 'white',
+                            borderRadius: 2,
+                            width: 'fit-content',
+                            p: 1,
+                            mb: 0.5,
+                            mx: 'auto',
+                        }}
+                    />
                     <ModernSearchBar
                         onSubmit={handleSubmit}
                         onFilterClick={() => setIsFilterOpen(true)}
@@ -847,12 +912,19 @@ function ProductClientContent() {
 
             <FullPageLoader
                 open={isSearchLoading}
+                showLogo={searchMode === 'ai'}
                 message="Searching designs..."
                 subtitle={
                     lastSearchData?.text?.trim()
                         ? `Finding matches for "${lastSearchData.text.trim()}"`
                         : "Analyzing your design and matching collections"
                 }
+            />
+            <ReusableConfirmModal
+                open={isRemoveConfirmOpen}
+                onClose={() => setIsRemoveConfirmOpen(false)}
+                onConfirm={executeBulkRemove}
+                type="bulkRemove"
             />
         </GridBackground >
     );

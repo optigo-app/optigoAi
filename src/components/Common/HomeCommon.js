@@ -49,7 +49,7 @@ export const ModeSwitch = ({ selectedMode, onSelect }) => {
     );
 };
 
-export const SearchModeToggle = ({ activeMode, onModeChange }) => {
+export const SearchModeToggle = ({ activeMode, onModeChange, sx = {} }) => {
     return (
         <Box
             sx={{
@@ -58,6 +58,7 @@ export const SearchModeToggle = ({ activeMode, onModeChange }) => {
                 mb: 3,
                 width: "100%",
                 justifyContent: "center",
+                ...sx
             }}
         >
             {[
@@ -82,7 +83,7 @@ export const SearchModeToggle = ({ activeMode, onModeChange }) => {
                                 py: 0.75,
                                 borderRadius: "20px",
                                 textTransform: "none",
-                                fontSize: "0.9rem",
+                                fontSize: "0.8rem",
                                 fontWeight: 600,
                                 minHeight: "36px",
 

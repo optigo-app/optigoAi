@@ -104,8 +104,8 @@ const ProductCard = React.memo(function ProductCard({
                     borderRadius: '16px',
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                     boxShadow: isHovered
-                        ? '0 20px 40px rgba(0,0,0,0.12)'
-                        : '0 4px 12px rgba(0,0,0,0.03)',
+                        ? '0 20px 40px rgba(0,0,0,0.05)'
+                        : '0 20px 40px rgba(0,0,0,0.01)',
                     height: '100%',
                 }}
             >
@@ -156,29 +156,25 @@ const ProductCard = React.memo(function ProductCard({
                         />
                     </Box>
 
-                    {/* DESIGN NUMBER CHIP - Top Left (or Top Right if in cart) */}
-                    {!isMultiSelectMode && (
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: -5,
-                                zIndex: 2,
-                                bgcolor: 'rgba(230, 230, 230, 0.4)',
-                                backdropFilter: 'blur(2px)',
-                                color: 'text.secondary',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 2,
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                pointerEvents: 'none',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                            }}
-                        >
-                            {displayDesignNo}
-                        </Box>
-                    )}
+                    {/* DESIGN NUMBER CHIP - Top Left */}
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: -5,
+                            zIndex: 2,
+                            bgcolor: 'rgba(230, 230, 230, 0.2)',
+                            color: 'text.secondary',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 2,
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            pointerEvents: 'none',
+                        }}
+                    >
+                        {displayDesignNo}
+                    </Box>
 
                     {/* CHECKMARK CIRCLE - Multi-Select Mode */}
                     {isMultiSelectMode && (
@@ -190,7 +186,7 @@ const ProductCard = React.memo(function ProductCard({
                             sx={{
                                 position: 'absolute',
                                 top: 8,
-                                left: 8,
+                                right: 8,
                                 zIndex: 3,
                                 width: 28,
                                 height: 28,
@@ -202,7 +198,7 @@ const ProductCard = React.memo(function ProductCard({
                                 border: isSelected ? 'none' : '2px solid rgba(0, 0, 0, 0.2)',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                boxShadow: 'none',
                                 '&:hover': {
                                     transform: 'scale(1.1)',
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
@@ -219,29 +215,26 @@ const ProductCard = React.memo(function ProductCard({
                     )}
 
                     {/* IN CART BADGE */}
-                    {isInCart && !isMultiSelectMode && (
+                    {isInCart && (
                         <Box
                             sx={{
                                 position: 'absolute',
-                                bottom: 0,
-                                left: -5,
+                                top: 28,
+                                left: 5,
                                 zIndex: 2,
-                                bgcolor: 'rgba(230, 230, 230, 0.4)',
+                                bgcolor: 'rgba(115, 103, 240, 0.15)',
                                 backdropFilter: 'blur(4px)',
-                                color: 'text.secondary',
-                                px: 1.5,
-                                py: 0.5,
-                                borderRadius: 2,
-                                fontSize: '0.65rem',
-                                fontWeight: '500',
+                                color: 'primary.main',
+                                p: 0.8,
+                                borderRadius: '50%',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 0.5,
+                                justifyContent: 'center',
                                 pointerEvents: 'none',
+                                boxShadow: '0 2px 8px rgba(115, 103, 240, 0.1)'
                             }}
                         >
-                            <ShoppingCart size={12} />
-                            In Cart
+                            <ShoppingCart size={14} strokeWidth={2.5} />
                         </Box>
                     )}
 
@@ -256,14 +249,19 @@ const ProductCard = React.memo(function ProductCard({
                                 }}
                                 sx={{
                                     position: 'absolute',
-                                    top: 8,
+                                    top: isMultiSelectMode ? 44 : 8,
                                     right: 8,
                                     color: "#555",
                                     bgcolor: 'rgba(255, 255, 255, 0.8)',
                                     backdropFilter: 'blur(4px)',
+                                    opacity: isHovered ? 1 : 0,
+                                    visibility: isHovered ? 'visible' : 'hidden',
+                                    transform: isHovered ? 'translateY(0)' : 'translateY(-10px)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     '&:hover': {
                                         bgcolor: 'rgba(255, 255, 255, 1)',
                                         color: "#7367f0",
+                                        transform: 'scale(1.1)',
                                     },
                                     zIndex: 2
                                 }}
@@ -286,7 +284,7 @@ const ProductCard = React.memo(function ProductCard({
                                 left: 0,
                                 right: 0,
                                 transform: isHovered ? 'translateY(0)' : 'translateY(102%)',
-                                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transition: 'all 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
                                 zIndex: 2,
                             }}
                         >
@@ -312,7 +310,7 @@ const ProductCard = React.memo(function ProductCard({
                                         boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
                                         transform: 'translateY(-2px)',
                                     },
-                                    transition: 'all 0.2s ease',
+                                    transition: 'all 0.1s ease',
                                 }}
                             >
                                 {isInCart ? "Remove from Cart" : "Add to Cart"}
