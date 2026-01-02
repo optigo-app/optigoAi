@@ -787,7 +787,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                     >
                         {/* Quick Filter Buttons */}
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.4, alignItems: 'center' }}>
-                            {appliedFilters.length > 0 && (
+                            {(appliedFilters.length > 0 && isDesignMode) && (
                                 <Tooltip title="Clear all filters">
                                     <IconButton
                                         size="small"

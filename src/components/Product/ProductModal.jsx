@@ -21,6 +21,7 @@ import {
     TableRow,
     Collapse,
     Slide,
+    Skeleton
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 
@@ -45,6 +46,45 @@ import ReusableConfirmModal from '../Common/ReusableConfirmModal';
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
+
+
+const ProductModalImage = ({ src, alt }) => {
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    return (
+        <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {!isLoaded && (
+                <Skeleton
+                    variant="rectangular"
+                    animation="wave"
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        bgcolor: 'rgba(0,0,0,0.05)'
+                    }}
+                />
+            )}
+            <CardMedia
+                component="img"
+                image={src}
+                alt={alt}
+                loading="lazy"
+                onLoad={() => setIsLoaded(true)}
+                sx={{
+                    objectFit: 'contain',
+                    borderRadius: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: isLoaded ? 1 : 0,
+                    transition: 'opacity 0.3s ease-in-out'
+                }}
+            />
+        </Box>
+    );
+};
 
 
 export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, showSimilarButton = true, fromCart, urlParamsFlag }) {
@@ -213,16 +253,9 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                     {/* Image Section - Priority (Cover + No Shadow) */}
                                     <Grid size={{ xs: 12, md: isFullscreen ? 9.5 : 8 }} sx={{ height: { xs: '50%', md: '100%' } }}>
                                         <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <CardMedia
-                                                component="img"
-                                                image={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
+                                            <ProductModalImage
+                                                src={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
                                                 alt={prod.categoryname || 'Product image'}
-                                                sx={{
-                                                    objectFit: 'contain',
-                                                    borderRadius: 0,
-                                                    width: '100%',
-                                                    height: '100%',
-                                                }}
                                             />
                                         </Box>
                                     </Grid>
