@@ -9,6 +9,7 @@ export const ProductDataProvider = ({ children }) => {
     const [productData, setProductData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [pendingSearch, setPendingSearch] = useState(null);
 
     const fetchProductData = useCallback(async (force = false) => {
         // If data already exists and not forcing refresh, return cached data
@@ -60,6 +61,8 @@ export const ProductDataProvider = ({ children }) => {
         error,
         fetchProductData,
         clearProductData,
+        pendingSearch,
+        setPendingSearch
     };
 
     return (

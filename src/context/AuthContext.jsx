@@ -1,159 +1,9 @@
-// 'use client';
-
-// import React, { createContext, useContext, useState, useEffect } from 'react';
-// import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-// import Cookies from 'js-cookie';
-// import { jwtDecode } from 'jwt-decode';
-
-// const decodeBase64 = (str) => {
-//   try {
-//     return atob(str);
-//   } catch (e) {
-//     return str;
-//   }
-// };
-
-// const AuthContext = createContext();
-
-// export const useAuth = () => {
-//   const context = useContext(AuthContext);
-//   if (!context) {
-//     throw new Error('useAuth must be used within an AuthProvider');
-//   }
-//   return context;
-// };
-
-// export const AuthProvider = ({ children }) => {
-//   const router = useRouter();
-//   const searchParams = useSearchParams();
-//   const pathname = usePathname();
-//   const [isReady, setIsReady] = useState(false);
-//   const [pageDataLoaded, setPageDataLoaded] = useState(false);
-//   const [isLoggedIn, setIsLoggedIn] = useState(false);
-//   const [cookieData, setCookieDataState] = useState(null);
-
-//   const setCookieData = (data) => {
-//     setCookieDataState(data);
-//   };
-
-//   const getQueryParams = () => {
-//     // If FE parameter is present, skip authentication redirect
-//     // if (searchParams.get('FE')) {
-//     //   setIsReady(true);
-//     //   setPageDataLoaded(true);
-//     //   return;
-//     // }
-
-//     const isLoggedIn = Cookies.get('isLoggedIn');
-
-//     if (isLoggedIn === 'true') {
-//       const authQueryParams = sessionStorage.getItem("AuthqueryParams");
-//       if (authQueryParams) {
-//         const decodedPayload = JSON.parse(authQueryParams);
-//         setCookieData(decodedPayload);
-//         setIsReady(true);
-//         setPageDataLoaded(true);
-//         setIsLoggedIn(true);
-//         return decodedPayload;
-//       } else {
-//         setIsReady(true);
-//         setPageDataLoaded(true);
-//         setTimeout(() => router.replace('/authenticate', { replace: true }), 2);
-//         return;
-//       }
-//     }
-
-//     const token = Cookies.get('skey');
-//     if (!token) {
-//       const authQueryParams = sessionStorage.getItem("AuthqueryParams");
-//       if (authQueryParams && isLoggedIn) {
-//         const decodedPayload = JSON.parse(authQueryParams);
-//         setCookieData(decodedPayload);
-//         setIsReady(true);
-//         setPageDataLoaded(true);
-//         setIsLoggedIn(true);
-//         return decodedPayload;
-//       } else {
-//         if (!isLoggedIn) {
-//           localStorage.clear();
-//           sessionStorage.clear();
-//         }
-//         setIsReady(true);
-//         setPageDataLoaded(true);
-//         setTimeout(() => router.replace('/authenticate', { replace: true }), 2);
-//         return;
-//       }
-//     }
-
-//     const decoded = jwtDecode(token);
-//     const decodedPayload = {
-//       ...decoded,
-//       uid: decodeBase64(decoded.uid),
-//     };
-
-//     if (decodedPayload) {
-//       sessionStorage.setItem("AuthqueryParams", JSON.stringify(decodedPayload));
-//       setCookieData(decodedPayload);
-//       setIsReady(true);
-//       setPageDataLoaded(true);
-//     }
-
-//     return decodedPayload;
-//   };
-
-//   // useEffect(() => {
-//   //   if (searchParams.get('FE')) {
-//   //     sessionStorage.setItem("urlParams", 'fe')
-//   //     router.push('/product');
-//   //   }
-//   // }, [pathname, searchParams, router]);
-
-//   useEffect(() => {
-//     if (typeof window !== 'undefined') {
-//       if (!Cookies.get('skey')) {
-//         const hostname = window.location.hostname;
-//         const isAllowedHost = hostname === 'localhost' || hostname.includes('nzen') || hostname.includes('optigoai.web');
-//         const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NDMzMDkzMywidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZmMyVmpjbVYwWDJ0bGVWOXRhV0Z2Y21FPSJ9.Q1wI4B8llVZ5SC1V7Zyg3wVjo7SNcvkEzZ_EHePexvA';
-//         if (isAllowedHost) {
-//           const isHttps = window.location.protocol === 'https:';
-//           Cookies.set('skey', token, isHttps ? { sameSite: 'None', secure: true } : { sameSite: 'Lax' });
-//           const authQueryParams = sessionStorage.getItem("AuthqueryParams");
-//           if (authQueryParams) {
-//             const decodedPayload = JSON.parse(authQueryParams);
-//             if (decodedPayload) {
-//               sessionStorage.setItem("AuthqueryParams", JSON.stringify(decodedPayload));
-//             }
-//             return;
-//           }
-//         }
-//       }
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     getQueryParams();
-//   }, []);
-
-
-//   const value = {
-//     isReady,
-//     pageDataLoaded,
-//     isLoggedIn,
-//     cookieData,
-//     getQueryParams,
-//   };
-
-//   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-// };
-
-
-
 'use client';
 
 import React, { createContext, useContext, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 
 const decodeBase64 = (str) => {
   try {
@@ -176,6 +26,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
   const [isAuthReady, setIsAuthReady] = React.useState(false);
 
   const getQueryParams = () => {
@@ -210,17 +61,24 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = () => {
+      if (pathname === '/error_404') {
+        setIsAuthReady(true);
+        return;
+      }
+
       if (typeof window !== 'undefined') {
-        if (!Cookies.get('skey')) {
+        const token = Cookies.get('skey');
+        if (!token) {
           const hostname = window.location.hostname;
           const isAllowedHost = hostname === 'localhost' || hostname.includes('nzen') || hostname.includes('optigoai.web');
-          const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NTQ0MTczOCwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZlkyeHBaVzUwTVY5elpXTnlaWFJmYTJWNVh6RXlNelExIiwiY3V2ZXIiOiJSNTBCMyJ9.Kfx8ylk2omd2zmjP7SwnhN_vjcesCG83jV7M8Nr3ufU';
+
           if (isAllowedHost) {
+            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NTQ0MTczOCwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZlkyeHBaVzUwTVY5elpXTnlaWFJmYTJWNVh6RXlNelExIiwiY3V2ZXIiOiJSNTBCMyJ9.Kfx8ylk2omd2zmjP7SwnhN_vjcesCG83jV7M8Nr3ufU';
             const isHttps = window.location.protocol === 'https:';
-            Cookies.set('skey', token, isHttps ? { sameSite: 'None', secure: true } : { sameSite: 'Lax' });
+            Cookies.set('skey', mockToken, isHttps ? { sameSite: 'None', secure: true } : { sameSite: 'Lax' });
             const authQueryParams = sessionStorage.getItem("AuthqueryParams");
             if (!authQueryParams) {
-              const decoded = jwtDecode(token);
+              const decoded = jwtDecode(mockToken);
               const decodedPayload = {
                 ...decoded,
                 uid: decodeBase64(decoded.uid),
@@ -229,17 +87,32 @@ export const AuthProvider = ({ children }) => {
                 sessionStorage.setItem("AuthqueryParams", JSON.stringify(decodedPayload));
               }
             }
+            // Re-check after setting cookie
+            const params = getQueryParams();
+            if (params) {
+              setIsAuthReady(true);
+            }
+          } else {
+            router.replace('/error_404');
+          }
+        } else {
+          const params = getQueryParams();
+          if (params) {
+            setIsAuthReady(true);
+          } else {
+            router.replace('/error_404');
           }
         }
       }
-
-      // Ensure we check/set query params after potential cookie setting
-      getQueryParams();
-      setIsAuthReady(true);
     };
 
     initAuth();
-  }, []);
+  }, [pathname]);
+
+  // Prevent app rendering until auth check is finalized
+  if (!isAuthReady && pathname !== '/error_404') {
+    return null; // Or a loading spinner
+  }
 
   return <AuthContext.Provider value={{ getQueryParams, isAuthReady }}>{children}</AuthContext.Provider>;
 };

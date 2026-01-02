@@ -14,6 +14,7 @@ import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
 import { useAuth } from "@/context/AuthContext";
 import GridBackground from "../Common/GridBackground";
+import FullPageLoader from "../FullPageLoader";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -101,11 +102,12 @@ const Home = () => {
         return 'design';
     });
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
     const [featureIndex, setFeatureIndex] = useState(0);
     const [appliedFilters, setAppliedFilters] = useState([]);
 
     // Use product data context
-    const { productData, isLoading: isLoadingProducts, fetchProductData } = useProductData();
+    const { productData, isLoading: isLoadingProducts, fetchProductData, setPendingSearch } = useProductData();
     const { isAuthReady } = useAuth();
 
     useEffect(() => {
@@ -130,45 +132,25 @@ const Home = () => {
     useEffect(() => {
         if (isAuthReady) {
             fetchProductData();
+            router.prefetch("/product");
         }
-    }, [fetchProductData, isAuthReady]);
+    }, [fetchProductData, isAuthReady, router]);
 
-    const handleSearch = async (searchData) => {
+    const handleSearch = (searchData) => {
         try {
-            let imageToUse = searchData.image;
-            if (imageToUse instanceof File && (searchData.isSearchFlag === 2 || searchData.isSearchFlag === 3)) {
-                try {
-                    const compressedResults = await compressImagesToWebP(imageToUse);
-                    if (compressedResults.length > 0) {
-                        imageToUse = compressedResults[0].blob;
-                    }
-                } catch (compressErr) {
-                    console.error("Compression failed on Home", compressErr);
-                    logErrorToServer({
-                        shortReason: "Image compression failed on Home",
-                        detailedReason: compressErr
-                    });
-                }
-            }
-
-            let imageBase64 = null;
-            if (imageToUse instanceof File) {
-                imageBase64 = await fileToBase64(imageToUse);
-            }
-
             const searchPayload = {
                 ...searchData,
-                image: imageBase64,
-                isSearchFlag: (selectedMode === 'design' && !imageToUse) ? 0 : searchData.isSearchFlag,
                 mode: selectedMode,
                 timestamp: Date.now(),
                 filters: appliedFilters,
             };
-            const jsonString = JSON.stringify(searchPayload);
-            const encoded = btoa(unescape(encodeURIComponent(jsonString)));
-            sessionStorage.setItem("homeSearchData", encoded);
+
+            // Instant state update and redirect
+            setPendingSearch(searchPayload);
+            setIsRedirecting(true);
             router.push("/product");
         } catch (error) {
+            setIsRedirecting(false);
             console.error("handleSearch Error:", error);
             logErrorToServer({
                 shortReason: "Search execution failed on Home",
@@ -196,11 +178,11 @@ const Home = () => {
                 filters: [filter],
             };
 
-            const jsonString = JSON.stringify(searchPayload);
-            const encoded = btoa(unescape(encodeURIComponent(jsonString)));
-            sessionStorage.setItem("homeSearchData", encoded);
+            setPendingSearch(searchPayload);
+            setIsRedirecting(true);
             router.push("/product");
         } catch (error) {
+            setIsRedirecting(false);
             console.error("handleSuggestionClick Error:", error);
             logErrorToServer({
                 shortReason: "Search suggestion navigation failed",
@@ -212,6 +194,7 @@ const Home = () => {
     return (
         <GridBackground>
             <GradientWaves />
+            {isRedirecting && <FullPageLoader open={true} message="Start Searching..." subtitle="Please wait while we find your results." />}
             {/* --- ANIMATED BLOBS (Side Accents) --- */}
             <motion.div
                 {...floatAnimation}
@@ -370,7 +353,7 @@ const Home = () => {
                             opacity: 0.9,
                         }}
                     >
-                        <TypewriterText text="Private Cloud AI — Built Deep Into Your Business." />
+                        <TypewriterText text="Cloud AI — Built Deep Into Your Business." />
                     </Typography>
 
                     <motion.div

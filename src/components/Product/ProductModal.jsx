@@ -47,7 +47,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 
-export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, fromCart, urlParamsFlag }) {
+export default function ProductModal({ open, onClose, product, products = [], startIndex = 0, onAddToCart, onSearchSimilar, showSimilarButton = true, fromCart, urlParamsFlag }) {
     const theme = useTheme()
     const [activeIndex, setActiveIndex] = useState(startIndex);
     const { isItemInCart, removeFromCart } = useCart();
@@ -477,7 +477,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
 
                 {/* Left Area: Secondary Actions */}
                 <Box sx={{ display: 'flex', gap: 1, flex: 1 }}>
-                    {onSearchSimilar && (currentProd?.originalUrl || currentProd?.image || currentProd?.thumbUrl) && (
+                    {showSimilarButton && onSearchSimilar && (currentProd?.originalUrl || currentProd?.image || currentProd?.thumbUrl) && (
                         <Button
                             variant="outlined"
                             startIcon={<ScanSearch size={18} />}

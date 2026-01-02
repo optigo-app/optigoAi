@@ -32,13 +32,19 @@ import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, searchMode = 'ai', onImageUpload }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, searchMode = 'ai', onImageUpload, onExpandChange }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
     const containerRef = useRef(null);
     const isInternalChangeRef = useRef(false);
+    const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
 
+    useEffect(() => {
+        if (onExpandChange) {
+            onExpandChange(isExpanded);
+        }
+    }, [isExpanded, onExpandChange]);
     const actionIconButtonSx = {
         width: 40,
         height: 40,
@@ -68,7 +74,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [imageFile, setImageFile] = useState(null);
     const [text, setText] = useState("");
     const [isDragging, setIsDragging] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
+
     const [isMultiline, setIsMultiline] = useState(false);
     const isDesignMode = searchMode === 'design';
 
@@ -91,9 +97,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [numResults, setNumResults] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('searchNumResults');
-            return saved ? Number(saved) || 50 : 50;
+            return saved ? Number(saved) || 100 : 100;
         }
-        return 50;
+        return 100;
     });
 
     const [accuracy, setAccuracy] = useState(() => {
@@ -157,17 +163,17 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                 const val = product[field.key];
                 if (val && typeof val === 'string') {
                     const lowerVal = val.toLowerCase();
-                    if (lowerVal.includes(searchTerm)) {
+                    if (lowerVal.startsWith(searchTerm)) {
                         const key = `${field.type}-${val}`;
                         if (!suggestionMap.has(key)) {
-                            const score = lowerVal.startsWith(searchTerm) ? 100 : 10;
+                            // Since we are forcing startsWith, relevance is always high for prefix match
                             suggestionMap.set(key, {
                                 type: field.type,
                                 label: val,
                                 value: val,
                                 filterCategory: field.filterCategory,
                                 count: 1,
-                                relevanceScore: score
+                                relevanceScore: 100
                             });
                         } else {
                             suggestionMap.get(key).count++;
@@ -808,7 +814,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     <Skeleton variant="rounded" width={110} height={32} />
                                 </>
                             )}
-                            {getItemsForCategory('Category').length > 0 && (
+                            {(isDesignMode && getItemsForCategory('Category').length > 0) && (
                                 <Chip
                                     icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
                                     label={getActiveFilterName('Category')}
@@ -823,20 +829,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     }}
                                 />
                             )}
-                            {/* <Chip
-                                icon={hasSelection('Style') ? <Check size={14} /> : <Palette size={15} />}
-                                label={getActiveFilterName('Style')}
-                                clickable
-                                onClick={(e) => openDropdown('Style', e)}
-                                variant={hasSelection('Style') ? "filled" : "outlined"}
-                                color={hasSelection('Style') ? "primary" : "default"}
-                                sx={{
-                                    borderRadius: '8px',
-                                    border: hasSelection('Style') ? 'none' : '1px solid #e0e0e0',
-                                    transition: 'all 0.2s'
-                                }}
-                            /> */}
-                            {getItemsForCategory('Gender').length > 0 && (
+                            {(isDesignMode && getItemsForCategory('Gender').length > 0) && (
                                 <Chip
                                     icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
                                     label={getActiveFilterName('Gender')}
@@ -851,7 +844,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                     }}
                                 />
                             )}
-                            {showMoreFiltersButton && (
+                            {(showMoreFiltersButton && isDesignMode) && (
                                 <Button
                                     variant="contained"
                                     size="small"

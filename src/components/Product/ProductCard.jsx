@@ -137,6 +137,8 @@ const ProductCard = React.memo(function ProductCard({
                             loading="lazy"
                             image={imageSrc}
                             alt={displayTitle || displayCategory}
+                            draggable={false}
+                            onDragStart={(e) => e.preventDefault()}
                             onLoad={() => setIsImageLoaded(true)}
                             onError={() => {
                                 setImageError(true);
@@ -350,6 +352,7 @@ const ProductCard = React.memo(function ProductCard({
                 onAddToCart={handleToggleCart}
                 isInCart={isInCart}
                 onSearchSimilar={onSearchSimilar}
+                showSimilarButton={showSimilarButton}
                 urlParamsFlag={urlParamsFlag}
             />
         </Box>

@@ -29,7 +29,6 @@ import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 import ProductPageHeader from "@/components/Product/ProductPageHeader";
-import { Filter, Grid, List, ChevronUp, ChevronDown, LayoutGrid, Menu, X } from 'lucide-react';
 import ReusableConfirmModal from '@/components/Common/ReusableConfirmModal';
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 
@@ -40,6 +39,7 @@ function ProductClientContent() {
     const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false); // New state for removal confirm
+    const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(true);
     const { totalCount, items: cartItems, addToCart, removeFromCart } = useCart();
     const router = useRouter();
 
@@ -63,7 +63,7 @@ function ProductClientContent() {
     const [restoreTargetIndex, setRestoreTargetIndex] = useState(undefined);
 
     // Use product data context
-    const { productData: allDesignCollections, isLoading: isLoadingProducts, fetchProductData } = useProductData();
+    const { productData: allDesignCollections, isLoading: isLoadingProducts, fetchProductData, pendingSearch, setPendingSearch } = useProductData();
     const [currentPage, setCurrentPage] = useState(1);
     const [error, setError] = useState(null);
     const [appliedFilters, setAppliedFilters] = useState([]);
@@ -130,6 +130,20 @@ function ProductClientContent() {
     const currentSimilarProduct = similarProductHistory[similarProductCurrentIndex] || null;
 
     useEffect(() => {
+        // 1. Priority: Context-based pending search (instant from Home)
+        if (pendingSearch) {
+            const data = { ...pendingSearch };
+            setPendingSearch(null); // Clear it so it doesn't re-run
+
+            if (data.mode) setSearchMode(data.mode);
+            if (Array.isArray(data.filters)) setAppliedFilters(data.filters);
+
+            // Start submission immediately
+            handleSubmit(data);
+            return;
+        }
+
+        // 2. Fallback: Session storage (for refreshes or older flows)
         const encoded = sessionStorage.getItem("homeSearchData");
         if (encoded && allDesignCollections.length > 0) {
             try {
@@ -158,7 +172,7 @@ function ProductClientContent() {
                 sessionStorage.removeItem('homeSearchData');
             }
         }
-    }, [allDesignCollections]);
+    }, [allDesignCollections, pendingSearch, setPendingSearch]);
 
     // Debounce search term for better performance
     useEffect(() => {
@@ -563,7 +577,8 @@ function ProductClientContent() {
             };
 
             let finalImage = searchData.image;
-            if (finalImage && (searchData.isSearchFlag === 2 || searchData.isSearchFlag === 3)) {
+            // Skip compression if already handled (e.g., from Home page)
+            if (finalImage && !searchData.isPreProcessed && (searchData.isSearchFlag === 2 || searchData.isSearchFlag === 3)) {
                 try {
                     const compressedResults = await compressImagesToWebP(finalImage);
                     if (compressedResults.length > 0) {
@@ -702,6 +717,8 @@ function ProductClientContent() {
                     onClearAllFilters={clearAllFilters}
                     onFilterPopoverOpen={handleFilterPopoverOpen}
                     isFilterOpen={isFilterOpen}
+                    searchMode={searchMode}
+                    onFilterClick={() => setIsFilterOpen(true)}
                 />
 
                 {error ? (
@@ -741,6 +758,7 @@ function ProductClientContent() {
                                 isFilterOpen={isFilterOpen}
                                 restoreTargetIndex={restoreTargetIndex}
                                 searchTerm={searchTerm}
+                                searchMode={searchMode}
                             />
                         </Box>
                     </Fade>
@@ -770,18 +788,22 @@ function ProductClientContent() {
                 transition: 'left 0.4s cubic-bezier(0.86, 0, 0.07, 1)'
             }}>
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
-                    <SearchModeToggle
-                        activeMode={searchMode}
-                        onModeChange={setSearchMode}
-                        sx={{
-                            bgcolor: 'white',
-                            borderRadius: 2,
-                            width: 'fit-content',
-                            p: 1,
-                            mb: 0.5,
-                            mx: 'auto',
-                        }}
-                    />
+                    <Fade in={isSearchBarExpanded} unmountOnExit>
+                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <SearchModeToggle
+                                activeMode={searchMode}
+                                onModeChange={setSearchMode}
+                                sx={{
+                                    bgcolor: 'white',
+                                    borderRadius: 2,
+                                    width: 'fit-content',
+                                    p: 1,
+                                    mb: 0.5,
+                                    mx: 'auto',
+                                }}
+                            />
+                        </Box>
+                    </Fade>
                     <ModernSearchBar
                         onSubmit={handleSubmit}
                         onFilterClick={() => setIsFilterOpen(true)}
@@ -795,6 +817,7 @@ function ProductClientContent() {
                         searchMode={searchMode}
                         alwaysExpanded={true}
                         onImageUpload={() => setSearchMode('ai')}
+                        onExpandChange={setIsSearchBarExpanded}
                     />
                 </Box>
                 <ScrollToTop bottom={isFrontendFeRoute() ? 70 : 24} />

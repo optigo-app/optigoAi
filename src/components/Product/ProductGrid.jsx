@@ -14,7 +14,8 @@ const ProductGrid = memo(function ProductGrid({
   urlParamsFlag,
   restoreTargetIndex,
   isFilterOpen,
-  searchTerm
+  searchTerm,
+  searchMode
 }) {
   const { isMultiSelectMode, isProductSelected, toggleProductSelection } = useMultiSelect();
   const ITEMS_PER_LOAD = 48;
@@ -184,6 +185,7 @@ const ProductGrid = memo(function ProductGrid({
               products={designData}
               index={index}
               onSearchSimilar={onSearchSimilar}
+              showSimilarButton={searchMode !== 'design'}
               urlParamsFlag={urlParamsFlag}
               isMultiSelectMode={isMultiSelectMode}
               isSelected={isProductSelected(product.id)}

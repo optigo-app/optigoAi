@@ -1,5 +1,3 @@
-import Fuse from "fuse.js";
-
 export const CATEGORY_FIELD_MAP = {
     'category': 'categoryname',
     'subcategory': 'subcategoryname',
@@ -54,7 +52,6 @@ export function getMatchedDesignCollections(res = [], allDesignCollections = [])
 
 export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm) {
     let temp = baseDataset;
-    // Apply drawer filters (exclude search chips)
     const drawerFilters = appliedFilters.filter(
         (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
     );
@@ -71,7 +68,6 @@ export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm)
                     const categoryLower = category.toLowerCase();
                     let productKey = CATEGORY_FIELD_MAP[categoryLower];
 
-                    // Fallback: try to find a partial match if exact match fails
                     if (!productKey) {
                         const match = Object.keys(CATEGORY_FIELD_MAP).find(key => categoryLower.includes(key));
                         if (match) productKey = CATEGORY_FIELD_MAP[match];
@@ -90,22 +86,43 @@ export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm)
         });
     }
 
-    // Apply search filter (only for terms with 2+ characters)
     if (debouncedSearchTerm.trim() && debouncedSearchTerm.trim().length >= 2) {
-        const fuse = new Fuse(temp, {
-            keys: [
-                'autocode', 'designno', 'categoryname', 'subcategoryname',
-                'collectionname', 'producttype', 'brandname', 'labname', 'occassionname', 'stylename', 'gendername', 'diamondshape', 'metaltype', 'metalcolor'
-            ],
-            threshold: 0.15,
-            distance: 100,
-            minMatchCharLength: 2,
-            ignoreLocation: true,
-            useExtendedSearch: false,
-            includeScore: true
+        const term = debouncedSearchTerm.trim().toLowerCase();
+
+        const matchedItems = [];
+
+        temp.forEach(product => {
+            let priority = -1;
+
+            const designNo = (product.designno || '').toLowerCase();
+
+            if (designNo.startsWith(term)) {
+                priority = 2;
+            } else if (designNo.includes(term)) {
+                priority = 0;
+            }
+            if (priority < 2) {
+                const textFields = [
+                    'categoryname', 'subcategoryname', 'collectionname', 'producttype',
+                    'brandname', 'labname', 'occasionname', 'stylename', 'gendername',
+                    'diamondshape', 'metaltype', 'metalcolor'
+                ];
+
+                const hasStartMatch = textFields.some(field =>
+                    (product[field] || '').toLowerCase().startsWith(term)
+                );
+
+                if (hasStartMatch) {
+                    priority = Math.max(priority, 1);
+                }
+            }
+
+            if (priority > -1) {
+                matchedItems.push({ product, priority });
+            }
         });
-        const results = fuse.search(debouncedSearchTerm.trim());
-        temp = results.map(result => result.item);
+        matchedItems.sort((a, b) => b.priority - a.priority);
+        temp = matchedItems.map(i => i.product);
     }
 
     return temp;
@@ -113,7 +130,6 @@ export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm)
 
 export function createSearchChip(searchData, isError = false) {
     let chip = null;
-    // Helper to safely get image URL
     const getImageUrl = (image) => {
         if (!image) return null;
         if (typeof image === 'string') return image;
