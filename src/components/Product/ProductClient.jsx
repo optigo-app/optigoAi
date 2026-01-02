@@ -683,7 +683,7 @@ function ProductClientContent() {
     if (loading) return <FullPageLoader open={true} />;
 
     const getBottomPadding = () => {
-        if (finalFilteredProducts.length > 13) {
+        if (finalFilteredProducts.length > 7) {
             return { xs: 28, sm: 36, md: 50 };
         }
         return 5;

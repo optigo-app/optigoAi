@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "npx fix-react2shell-next && next dev -p 5051",
     "build": "npx fix-react2shell-next && next build",
-    "start": "next start -p 5002",
+    "start": "next start -p 5003",
     "lint": "eslint"
   },
   "dependencies": {

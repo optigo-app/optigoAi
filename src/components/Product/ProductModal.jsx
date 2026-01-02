@@ -218,7 +218,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                 image={prod.originalUrl || prod.image || prod.thumbUrl || "/images/image-not-found.jpg"}
                                                 alt={prod.categoryname || 'Product image'}
                                                 sx={{
-                                                    objectFit: isFullscreen ? 'contain' : 'cover',
+                                                    objectFit: 'contain',
                                                     borderRadius: 0,
                                                     width: '100%',
                                                     height: '100%',
