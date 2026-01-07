@@ -87,7 +87,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             const searchAccuracy = sessionStorage.getItem("searchAccuracy");
             const searchNumResults = sessionStorage.getItem("searchNumResults");
             const options = {
-                top_k: searchNumResults || 50,
+                top_k: searchNumResults || 200,
                 min_percent: searchAccuracy || 40
             };
             const results = await searchService.searchByImage(file, options);

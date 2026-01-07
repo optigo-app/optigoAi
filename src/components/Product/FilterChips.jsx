@@ -2,8 +2,13 @@
 
 import React from 'react';
 import { Chip, Avatar, Box } from '@mui/material';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, ThumbsDown } from 'lucide-react';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
+import { IconButton, Tooltip } from '@mui/material';
+import { saveAiSearchFeedbackApi } from '@/app/api/saveAiSearchFeedbackApi';
+import { uploadService } from '@/services/uploadService';
+import { compressImagesToWebP } from '@/utils/globalFunc';
+import useCustomToast from '@/hook/useCustomToast';
 
 const softPrimaryChipSx = {
     borderRadius: 2,
@@ -39,12 +44,89 @@ export default function FilterChips({
     appliedFilters,
     onRemoveFilter,
     onImageChipClick,
-    onFilterPopoverOpen
+    onFilterPopoverOpen,
+    searchData // Added searchData prop if needed or we can use item content
 }) {
-    // Separate search filters from drawer filters
+    const { showSuccess, showError, showWarning } = useCustomToast();
+    const [isReporting, setIsReporting] = React.useState(false);
+    const [dislikedIds, setDislikedIds] = React.useState([]);
+
+    // Reset disliked stats when the search content changes
     const searchFilters = appliedFilters.filter(
         (f) => f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id)
     );
+
+    React.useEffect(() => {
+        setDislikedIds([]);
+    }, [JSON.stringify(searchFilters.map(f => ({ id: f.item.id, name: f.item.name, url: f.item.imageUrl })))]);
+
+    const handleDislike = async (category, item) => {
+        if (isReporting || dislikedIds.includes(item.id)) return;
+        setIsReporting(true);
+
+        try {
+            let imageUrl = "";
+            let eventName = "TextSearch";
+
+            if (item.id === "image-search") eventName = "ImageSearch";
+            if (item.id === "hybrid-search") eventName = "HybridSearch";
+
+            // 1. If image search, compress and upload first
+            if ((item.id === "image-search" || item.id === "hybrid-search") && item.imageUrl) {
+                // Fetch cached ukey if available
+                const storedUKey = typeof window !== 'undefined' ? sessionStorage.getItem('ukey') : null;
+
+                const response = await fetch(item.imageUrl);
+                const blob = await response.blob();
+                const file = new File([blob], "search-image.webp", { type: "image/webp" });
+
+                const compressed = await compressImagesToWebP(file);
+                if (compressed && compressed.length > 0) {
+                    // Pass storedUKey if it exists, otherwise service uses default
+                    const uploadResult = await uploadService.uploadFile(
+                        compressed[0].blob,
+                        'OptiogoAiSearch',
+                        storedUKey || undefined
+                    );
+
+                    if (uploadResult && uploadResult.url) {
+                        imageUrl = uploadResult.fileName;
+                    } else {
+                        showError("Failed to upload image. Feedback not sent.");
+                        return; // Abort as per user requirement
+                    }
+                } else {
+                    showError("Failed to process image. Feedback not sent.");
+                    return; // Abort if compression failed
+                }
+            }
+
+            // 2. Call the feedback API
+            let searchText = item.name || "";
+            if (item.id === "image-search") {
+                searchText = "";
+            } else if (item.id === "hybrid-search") {
+                searchText = item.text || (item.name === "Hybrid Search" ? "" : item.name);
+            }
+
+            await saveAiSearchFeedbackApi({
+                EventName: eventName,
+                SearchText: searchText,
+                ImageUrl: imageUrl,
+                IsLiked: "0",
+                Comment: ""
+            });
+
+            setDislikedIds(prev => [...prev, item.id]);
+            showSuccess("Thank you for your feedback!");
+        } catch (error) {
+            console.error("Error reporting feedback:", error);
+            showError("Failed to report feedback.");
+        } finally {
+            setIsReporting(false);
+        }
+    };
+    // Separate search filters from drawer filters
 
     const drawerFilters = appliedFilters.filter(
         (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
@@ -66,9 +148,8 @@ export default function FilterChips({
                 const isImageSearch = item.id === "image-search" || item.id === "hybrid-search";
                 const isError = item.error === true;
 
-                const chipContent = (
+                const chipComponent = (
                     <Chip
-                        key={item.id}
                         avatar={
                             isImageSearch && item.imageUrl ? (
                                 <Avatar
@@ -116,21 +197,63 @@ export default function FilterChips({
                     />
                 );
 
-                if (isImageSearch && item.imageUrl && !isError) {
-                    return (
-                        <ImageHoverPreview
-                            key={item.id}
-                            imageSrc={item.imageUrl}
-                            altText="Search Image"
-                            triggerMode="hover"
-                            maxWidth={300}
-                        >
-                            {chipContent}
-                        </ImageHoverPreview>
-                    );
-                }
+                return (
+                    <Box key={item.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {isImageSearch && item.imageUrl && !isError ? (
+                            <ImageHoverPreview
+                                imageSrc={item.imageUrl}
+                                altText="Search Image"
+                                triggerMode="hover"
+                                maxWidth={300}
+                            >
+                                {chipComponent}
+                            </ImageHoverPreview>
+                        ) : (
+                            chipComponent
+                        )}
 
-                return chipContent;
+                        {true && (
+                            <Tooltip title={dislikedIds.includes(item.id) ? "Feedback recorded" : "Dislike results"}>
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDislike(category, item);
+                                    }}
+                                    disabled={isReporting || dislikedIds.includes(item.id)}
+                                    sx={{
+                                        p: '5px',
+                                        width: 28,
+                                        height: 28,
+                                        bgcolor: dislikedIds.includes(item.id) ? 'error.main' : 'rgba(0, 0, 0, 0.05)',
+                                        color: dislikedIds.includes(item.id) ? 'error.contrastText' : 'text.secondary',
+                                        borderRadius: '50%',
+                                        border: dislikedIds.includes(item.id) ? 'none' : '1px solid rgba(0, 0, 0, 0.1)',
+                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        '&:hover': {
+                                            bgcolor: dislikedIds.includes(item.id) ? 'error.dark' : 'rgba(0, 0, 0, 0.08)',
+                                            transform: 'scale(1.05)',
+                                        },
+                                        '&:active': {
+                                            transform: 'scale(0.9)',
+                                        },
+                                        '&.Mui-disabled': {
+                                            bgcolor: dislikedIds.includes(item.id) ? 'error.main' : 'action.disabledBackground',
+                                            color: dislikedIds.includes(item.id) ? 'error.contrastText' : 'action.disabled',
+                                            opacity: dislikedIds.includes(item.id) ? 0.8 : 0.5,
+                                            transform: 'none'
+                                        },
+                                        '& .lucide': {
+                                            strokeWidth: 2.5
+                                        }
+                                    }}
+                                >
+                                    <ThumbsDown size={14} />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Box>
+                );
             })}
 
             {/* Render Grouped Drawer Chips */}

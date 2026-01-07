@@ -43,3 +43,14 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
+
+export async function DELETE() {
+    try {
+        const logFilePath = path.join(process.cwd(), 'public', 'logs', 'error_logs.json');
+        await fs.writeFile(logFilePath, JSON.stringify({ Guest: [] }, null, 2), 'utf8');
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Logging API DELETE Error:', error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}

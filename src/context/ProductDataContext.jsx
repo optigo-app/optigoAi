@@ -28,7 +28,7 @@ export const ProductDataProvider = ({ children }) => {
             const originalBaseRaw = meta?.OriginalPath || "";
             const thumbBase = thumbBaseRaw && !thumbBaseRaw.endsWith('/') ? `${thumbBaseRaw}/` : thumbBaseRaw;
             const originalBase = originalBaseRaw && !originalBaseRaw.endsWith('/') ? `${originalBaseRaw}/` : originalBaseRaw;
-
+            sessionStorage.setItem('ukey', meta?.ImageuKey);
             const mapped = allProducts.map((p) => {
                 const thumbUrl = p?.ThumbImageName ? `${thumbBase}${p.ThumbImageName}` : undefined;
                 const originalUrl = p?.OriginalImageName ? `${originalBase}${p.OriginalImageName}` : undefined;

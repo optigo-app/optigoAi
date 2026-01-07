@@ -194,7 +194,7 @@ const Home = () => {
     return (
         <GridBackground>
             <GradientWaves />
-            {isRedirecting && <FullPageLoader open={true} message="Start Searching..." subtitle="Please wait while we find your results." />}
+            {isRedirecting && <FullPageLoader open={true} showLogo={selectedMode === 'ai'} message="Start Searching..." subtitle="Please wait while we find your results." />}
             {/* --- ANIMATED BLOBS (Side Accents) --- */}
             <motion.div
                 {...floatAnimation}
@@ -397,6 +397,7 @@ const Home = () => {
                         onSuggestionClick={handleSuggestionClick}
                         autoFocus={true}
                         externalLoading={isLoadingProducts}
+                        isLoading={isRedirecting}
                         searchMode={selectedMode}
                         onImageUpload={() => setSelectedMode('ai')}
                     />

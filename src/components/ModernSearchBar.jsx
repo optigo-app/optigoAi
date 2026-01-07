@@ -23,7 +23,8 @@ import {
     Layers,
     Users,
     Check,
-    Search
+    Search,
+    Filter
 } from "lucide-react";
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
@@ -31,8 +32,9 @@ import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
+import DragDropOverlay from "./Common/DragDropOverlay";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, searchMode = 'ai', onImageUpload, onExpandChange }) {
+export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, isFilterOpen, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, isLoading = false, searchMode = 'ai', onImageUpload, onExpandChange }) {
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -73,7 +75,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [imagePreview, setImagePreview] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [text, setText] = useState("");
-    const [isDragging, setIsDragging] = useState(false);
+    const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
+    const [isDraggingLocal, setIsDraggingLocal] = useState(false);
+    const [isDragging, setIsDragging] = useState(false); // Legacy or for general use if needed
 
     const [isMultiline, setIsMultiline] = useState(false);
     const isDesignMode = searchMode === 'design';
@@ -97,7 +101,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [numResults, setNumResults] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('searchNumResults');
-            return saved ? Number(saved) || 100 : 100;
+            return saved ? Number(saved) || 200 : 200;
         }
         return 100;
     });
@@ -360,38 +364,54 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         e.preventDefault();
     };
 
+    const resetDragStates = () => {
+        setIsDraggingGlobal(false);
+        setIsDraggingLocal(false);
+        setIsDragging(false);
+    };
+
     useEffect(() => {
         const handleWindowDragOver = (e) => {
             e.preventDefault();
             if (e.dataTransfer) {
                 e.dataTransfer.dropEffect = "copy";
             }
-            setIsDragging(true);
-            setIsExpanded(true);
+            if (!isDesignMode) {
+                setIsDraggingGlobal(true);
+            }
         };
 
         const handleWindowDragLeave = (e) => {
             e.preventDefault();
-            if (e.target === document.documentElement || e.target === document.body) {
-                setIsDragging(false);
+            // relatedTarget is null when leaving the window
+            if (!e.relatedTarget) {
+                resetDragStates();
             }
         };
 
         const handleWindowDrop = (e) => {
             e.preventDefault();
-            processDroppedFiles(e.dataTransfer?.files);
+            resetDragStates();
+        };
+
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") {
+                resetDragStates();
+            }
         };
 
         window.addEventListener("dragover", handleWindowDragOver);
         window.addEventListener("dragleave", handleWindowDragLeave);
         window.addEventListener("drop", handleWindowDrop);
+        window.addEventListener("keydown", handleKeyDown);
 
         return () => {
             window.removeEventListener("dragover", handleWindowDragOver);
             window.removeEventListener("dragleave", handleWindowDragLeave);
             window.removeEventListener("drop", handleWindowDrop);
+            window.removeEventListener("keydown", handleKeyDown);
         };
-    }, []);
+    }, [imagePreview, isDesignMode]);
 
     useEffect(() => {
         if (isInternalChangeRef.current) {
@@ -509,100 +529,55 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     return (
         <ClickAwayListener onClickAway={handleClickAway}>
             <Box sx={{ position: 'relative', width: '100%' }}>
-                <AnimatePresence mode="sync">
-                    {isDragging && (
-                        <Box
-                            component={motion.div}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.08, ease: "easeOut" }}
-                            sx={{
-                                position: "fixed",
-                                inset: 0,
-                                zIndex: 1300,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                pointerEvents: "none",
-                                background: "rgba(0, 0, 0, 0.45)",
-                                backdropFilter: "blur(6px)",
-                            }}
-                        >
-                            <Box
-                                component={motion.div}
-                                initial={{ scale: 0.97, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.97, opacity: 0 }}
-                                transition={{ duration: 0.12, ease: "easeOut" }}
-                                sx={{
-                                    border: "2px dashed rgba(255,255,255,0.3)",
-                                    borderRadius: "32px",
-                                    width: "90%",
-                                    height: "90%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "#fff",
-                                    textAlign: "center",
-                                    bgcolor: "rgba(255,255,255,0.03)",
-                                }}
-                            >
-                                <motion.div
-                                    animate={{ y: [0, -8, 0] }}
-                                    transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: "50%",
-                                            background: "rgba(255, 255, 255, 0.1)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            mb: 3,
-                                        }}
-                                    >
-                                        <ImagePlus size={40} strokeWidth={1.5} />
-                                    </Box>
-                                </motion.div>
-
-                                <Box
-                                    component="p"
-                                    sx={{
-                                        m: 0,
-                                        fontWeight: 500,
-                                        fontSize: "1.75rem",
-                                        opacity: 0.9,
-                                    }}
-                                >
-                                    Drop your jewelry image here
-                                </Box>
-
-                                <Box
-                                    component="p"
-                                    sx={{
-                                        m: 0,
-                                        mt: 1,
-                                        fontSize: "1rem",
-                                        opacity: 0.6,
-                                    }}
-                                >
-                                    Supports PNG, JPG, JPEG, WEBP
-                                </Box>
-                            </Box>
-                        </Box>
-                    )}
-                </AnimatePresence>
+                <DragDropOverlay
+                    isDraggingGlobal={isDraggingGlobal}
+                    isDraggingLocal={isDraggingLocal}
+                    onClose={resetDragStates}
+                    onDrop={(e) => {
+                        handleDrop(e);
+                    }}
+                    onDragOver={(e) => {
+                        if (!isDesignMode) {
+                            setIsDraggingGlobal(true);
+                        }
+                    }}
+                    onDragEnter={(e) => {
+                        if (!isDesignMode) {
+                            setIsDraggingLocal(true);
+                        }
+                    }}
+                    onDragLeave={(e) => {
+                        setIsDraggingLocal(false);
+                    }}
+                />
                 <Paper
                     ref={containerRef}
                     elevation={isExpanded ? 12 : 2}
                     className={`chat-input-container ${isExpanded ? 'expanded' : 'minimized'}`}
                     onPaste={handlePaste}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
+                    onDrop={(e) => {
+                        handleDrop(e);
+                    }}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        if (!isDesignMode) {
+                            setIsDraggingLocal(true);
+                            setIsDraggingGlobal(true);
+                        }
+                    }}
+                    onDragEnter={(e) => {
+                        e.preventDefault();
+                        if (!isDesignMode) {
+                            setIsDraggingLocal(true);
+                        }
+                    }}
+                    onDragLeave={(e) => {
+                        e.preventDefault();
+                        // Only hide if we're moving outside the container
+                        if (!e.currentTarget.contains(e.relatedTarget)) {
+                            setIsDraggingLocal(false);
+                        }
+                    }}
                     sx={{
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         zIndex: isExpanded ? 1100 : 1,
@@ -722,8 +697,8 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                         </Tooltip>
 
                                         <Tooltip title="AI Search" placement="top">
-                                            <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading}>
-                                                <ArrowRight size={20} />
+                                            <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
+                                                {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
                                             </IconButton>
                                         </Tooltip>
                                     </Box>
@@ -761,9 +736,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                             className="iconbuttonsearch"
                                             onClick={() => handleSend(false)}
                                             sx={sendIconButtonSx}
-                                            disabled={isCatalogLoading}
+                                            disabled={isCatalogLoading || isLoading}
                                         >
-                                            <ArrowRight size={20} />
+                                            {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
@@ -847,11 +822,15 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             {(showMoreFiltersButton && isDesignMode) && (
                                 <Button
                                     variant="contained"
+                                    startIcon={<Filter size={14} />}
                                     size="small"
-                                    className="more-filter-btn"
+                                    className={`more-filter-btn`}
                                     onClick={onFilterClick}
+                                    sx={{
+                                        transition: 'all 0.2s ease',
+                                    }}
                                 >
-                                    More Filters
+                                    {isFilterOpen ? "Close Filters" : "More Filters"}
                                 </Button>
                             )}
 

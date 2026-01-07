@@ -36,12 +36,16 @@ import {
     Trash2,
     Maximize,
     Minimize,
+    Copy,
+    Check,
 } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
+import { motion, AnimatePresence } from 'framer-motion';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import ReusableConfirmModal from '../Common/ReusableConfirmModal';
+import { toast } from 'react-hot-toast';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -98,6 +102,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
 
     // for hide diamond, colorstone information
     const [showMore, setShowMore] = useState(false);
+    const [copiedId, setCopiedId] = useState(null);
 
     const formatWeight = (value) => {
         const n = typeof value === 'number' ? value : Number(value);
@@ -185,6 +190,27 @@ export default function ProductModal({ open, onClose, product, products = [], st
         setOpenConfirmModal(false);
     };
 
+    const handleCopyDesign = (designNo) => {
+        if (!designNo) return;
+        navigator.clipboard.writeText(designNo);
+
+        setCopiedId(designNo);
+        setTimeout(() => setCopiedId(null), 2000);
+
+        toast.success(`Copied: ${designNo}`, {
+            style: {
+                borderRadius: '10px',
+                background: '#333',
+                color: '#fff',
+                fontSize: '0.875rem'
+            },
+            iconTheme: {
+                primary: '#7367f0',
+                secondary: '#fff',
+            },
+        });
+    };
+
     const currentProd = sliderProducts[activeIndex] || product;
 
     return (
@@ -267,9 +293,43 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                             {/* Design Number */}
                                             <Box sx={{ pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5, gap: 1 }}>
-                                                    <Typography variant="h5" fontWeight="600" color="#2c2c2c" sx={{ wordBreak: 'break-all' }}>
-                                                        {prod.designno || "N/A"}
-                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Typography variant="h5" fontWeight="600" color="#2c2c2c" sx={{ wordBreak: 'break-all' }}>
+                                                            {prod.designno || "N/A"}
+                                                        </Typography>
+                                                        {prod.designno && (
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleCopyDesign(prod.designno)}
+                                                                sx={{
+                                                                    color: copiedId === prod.designno ? 'success.main' : 'primary.main',
+                                                                    bgcolor: copiedId === prod.designno ? alpha(theme.palette.success.main, 0.08) : alpha(theme.palette.primary.main, 0.05),
+                                                                    p: 0.6,
+                                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                                    '&:hover': {
+                                                                        bgcolor: copiedId === prod.designno ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.primary.main, 0.1),
+                                                                        transform: 'scale(1.05)'
+                                                                    },
+                                                                    '&:active': {
+                                                                        transform: 'scale(0.95)'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <AnimatePresence mode="wait">
+                                                                    <motion.div
+                                                                        key={copiedId === prod.designno ? 'check' : 'copy'}
+                                                                        initial={{ scale: 0.5, opacity: 0, rotate: -45 }}
+                                                                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                                                        exit={{ scale: 0.5, opacity: 0, rotate: 45 }}
+                                                                        transition={{ duration: 0.15 }}
+                                                                        style={{ display: 'flex' }}
+                                                                    >
+                                                                        {copiedId === prod.designno ? <Check size={14} /> : <Copy size={14} />}
+                                                                    </motion.div>
+                                                                </AnimatePresence>
+                                                            </IconButton>
+                                                        )}
+                                                    </Box>
                                                     {prod.brandname && (
                                                         <Typography
                                                             variant="body2"
@@ -303,7 +363,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                         wordBreak: 'break-word'
                                                     }}
                                                 >
-                                                    {[{ value: prod.collectionname }, { value: prod.gendername }, { value: prod.categoryname }, { value: prod.subcategoryname }, { value: prod.producttype }, { value: prod.occasionname }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
+                                                    {[{ value: prod.collectionname }, { value: prod.categoryname }, { value: prod.subcategoryname }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
                                                         <Box key={`${part.value}-${idx}`} component="span">
                                                             <Box component="span" sx={part.isBrand ? { color: 'text.primary', fontWeight: 700 } : undefined}>
                                                                 {part.value}
@@ -312,25 +372,70 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                                         </Box>
                                                     ))}
                                                 </Typography>
-                                                {(prod.metaltype || prod.metalpurity || prod.metalcolor) && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        fontWeight={500}
-                                                        color="secondary.main"
-                                                        sx={{
-                                                            mt: 1,
-                                                            width: 'fit-content',
-                                                            maxWidth: '100%',
-                                                            bgcolor: 'rgba(115, 103, 240, 0.08)',
-                                                            px: 1,
-                                                            py: 0.5,
-                                                            borderRadius: 2,
-                                                            lineHeight: 1.2,
-                                                        }}
-                                                    >
-                                                        {[prod.metaltype, prod.metalpurity, prod.metalcolor].filter(Boolean).join(' ')}
-                                                    </Typography>
-                                                )}
+                                                <Typography
+                                                    className="dt_subtitleline"
+                                                    variant="body2"
+                                                    component="div"
+                                                    sx={{
+                                                        mt: 0.25,
+                                                        color: 'text.disabled',
+                                                        display: 'flex',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'center',
+                                                        lineHeight: 1.4,
+                                                        wordBreak: 'break-word',
+                                                        fontSize: '0.8rem'
+                                                    }}
+                                                >
+                                                    {[{ value: prod.gendername }, { value: prod.occasionname }, { value: prod.stylename }].filter(p => Boolean(p.value)).map((part, idx, arr) => (
+                                                        <Box key={`${part.value}-${idx}`} component="span">
+                                                            <Box component="span">
+                                                                {part.value}
+                                                            </Box>
+                                                            {idx < arr.length - 1 ? <Box component="span" sx={{ mx: 0.5 }}>/</Box> : null}
+                                                        </Box>
+                                                    ))}
+                                                </Typography>
+
+                                                <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 1 }}>
+                                                    {(prod.metaltype || prod.metalpurity || prod.metalcolor) && (
+                                                        <Typography
+                                                            variant="body2"
+                                                            fontWeight={600}
+                                                            color="secondary.main"
+                                                            sx={{
+                                                                bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                                                px: 1.2,
+                                                                py: 0.5,
+                                                                borderRadius: 2,
+                                                                lineHeight: 1.2,
+                                                                width: 'fit-content'
+                                                            }}
+                                                        >
+                                                            {[prod.metaltype, prod.metalpurity, prod.metalcolor].filter(Boolean).join(' ')}
+                                                        </Typography>
+                                                    )}
+                                                    {prod.producttype && (
+                                                        <Typography
+                                                            variant="body2"
+                                                            fontWeight={600}
+                                                            color="secondary.main"
+                                                            sx={{
+                                                                bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                                                px: 1.2,
+                                                                py: 0.5,
+                                                                borderRadius: 2,
+                                                                lineHeight: 1.2,
+                                                                width: 'fit-content',
+                                                                textTransform: 'uppercase',
+                                                                fontSize: '0.75rem',
+                                                                letterSpacing: '0.5px'
+                                                            }}
+                                                        >
+                                                            {prod.producttype}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
                                             </Box>
 
                                             {/* Weights */}

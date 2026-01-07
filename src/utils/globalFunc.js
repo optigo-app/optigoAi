@@ -212,8 +212,6 @@ export const autoScrollToRestoredTarget = ({
 };
 
 
-
-
 export async function compressImagesToWebP(files, customOptions = {}) {
     const inputFiles = Array.isArray(files) ? files : [files];
 

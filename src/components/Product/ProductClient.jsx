@@ -718,7 +718,7 @@ function ProductClientContent() {
                     onFilterPopoverOpen={handleFilterPopoverOpen}
                     isFilterOpen={isFilterOpen}
                     searchMode={searchMode}
-                    onFilterClick={() => setIsFilterOpen(true)}
+                    onFilterClick={() => setIsFilterOpen(prev => !prev)}
                 />
 
                 {error ? (
@@ -806,12 +806,14 @@ function ProductClientContent() {
                     </Fade>
                     <ModernSearchBar
                         onSubmit={handleSubmit}
-                        onFilterClick={() => setIsFilterOpen(true)}
+                        onFilterClick={() => setIsFilterOpen(prev => !prev)}
                         appliedFilters={appliedFilters}
                         onApply={handleApplyFilters}
+                        isFilterOpen={isFilterOpen}
                         initialExpanded={true}
                         suggestionPosition="top"
                         showSuggestions={true}
+                        isLoading={isSearchLoading}
                         productData={allDesignCollections}
                         onSuggestionClick={handleSuggestionClick}
                         searchMode={searchMode}

@@ -251,11 +251,14 @@ export default function ProductPageHeader({
                                 variant="contained"
                                 startIcon={<Filter size={16} />}
                                 size="small"
-                                className="more-filter-btn"
+                                className={`more-filter-btn`}
                                 onClick={onFilterClick}
-                                sx={{ mr: 1 }}
+                                sx={{
+                                    mr: 1,
+                                    transition: 'all 0.2s ease',
+                                }}
                             >
-                                More Filters
+                                {isFilterOpen ? "Close Filters" : "More Filters"}
                             </Button>
                             {/* <Tooltip title="Filters">
                                 <IconButton

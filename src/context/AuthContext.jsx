@@ -65,13 +65,19 @@ export const AuthProvider = ({ children }) => {
         setIsAuthReady(true);
         return;
       }
-
       if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        const isAllowedHost = hostname === 'localhost' || hostname.includes('nzen') || hostname.includes('optigoai.web');
+        const isIframe = window.self !== window.top;
         const token = Cookies.get('skey');
-        if (!token) {
-          const hostname = window.location.hostname;
-          const isAllowedHost = hostname === 'localhost' || hostname.includes('nzen') || hostname.includes('optigoai.web');
 
+        // Security check: If NOT an allowed host, must be in an iframe AND have a session cookie
+        if (!isAllowedHost && (!isIframe || !token)) {
+          router.replace('/error_404');
+          return;
+        }
+
+        if (!token) {
           if (isAllowedHost) {
             const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NTQ0MTczOCwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZlkyeHBaVzUwTVY5elpXTnlaWFJmYTJWNVh6RXlNelExIiwiY3V2ZXIiOiJSNTBCMyJ9.Kfx8ylk2omd2zmjP7SwnhN_vjcesCG83jV7M8Nr3ufU';
             const isHttps = window.location.protocol === 'https:';
