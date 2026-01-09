@@ -10,13 +10,21 @@ import {
     Typography,
     CircularProgress,
     Button,
-    Skeleton
+    Skeleton,
+    Popover,
+    Stack,
+    TextField,
+    Tooltip
 } from '@mui/material';
-import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize } from 'lucide-react';
+import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
 import ProductCard from './ProductCard';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 import { searchService } from '@/services/apiService';
-import { getMatchedDesignCollections } from '@/utils/globalFunc';
+import { uploadService } from '@/services/uploadService';
+import { getMatchedDesignCollections, compressImagesToWebP } from '@/utils/globalFunc';
+import { saveAiSearchFeedbackApi } from '@/app/api/saveAiSearchFeedbackApi';
+import useCustomToast from '@/hook/useCustomToast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SimilarProductsModal({ open, onClose, baseProduct, allProducts, onSearchSimilar, onBack, onForward, canGoBack, canGoForward }) {
     const [loading, setLoading] = useState(false);
@@ -26,6 +34,26 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [slideDirection, setSlideDirection] = useState('none'); // 'left', 'right', or 'none'
     const [isNavigating, setIsNavigating] = useState(false);
+    const { showSuccess, showError } = useCustomToast();
+
+    // Feedback States
+    const [likedIds, setLikedIds] = useState([]);
+    const [dislikedIds, setDislikedIds] = useState([]);
+    const [sentIds, setSentIds] = useState([]);
+    const [feedbackIds, setFeedbackIds] = useState({});
+    const [reasonMenuAnchor, setReasonMenuAnchor] = useState(null);
+    const [activeReasonItem, setActiveReasonItem] = useState(null);
+    const [isReporting, setIsReporting] = useState(false);
+    const [showOtherInput, setShowOtherInput] = useState(false);
+    const [commentText, setCommentText] = useState('');
+
+    const DISLIKE_REASONS = [
+        "Not relevant to search",
+        "Inaccurate results",
+        "Poor visual quality",
+        "Too generic",
+        "Other"
+    ];
 
     const searchCacheRef = useRef({});
 
@@ -108,6 +136,136 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             setIsNavigating(false);
         }
     }, [baseProduct, allProducts, isNavigating]);
+
+    // Reset feedback when base product changes
+    useEffect(() => {
+        setLikedIds([]);
+        setDislikedIds([]);
+        setSentIds([]);
+        setFeedbackIds({});
+    }, [baseProduct?.id]);
+
+    const handleFeedback = async (item, isLiked, comment = "") => {
+        const currentlyLiked = likedIds.includes(item.id);
+        const currentlyDisliked = dislikedIds.includes(item.id);
+
+        let isRemoval = false;
+        if (!comment) {
+            if ((isLiked === "1" && currentlyLiked) || (isLiked === "0" && currentlyDisliked)) {
+                isRemoval = true;
+            }
+        }
+
+        if (isRemoval) {
+            setLikedIds(prev => prev.filter(id => id !== item.id));
+            setDislikedIds(prev => prev.filter(id => id !== item.id));
+        } else if (isLiked === "1") {
+            setLikedIds(prev => [...prev.filter(id => id !== item.id), item.id]);
+            setDislikedIds(prev => prev.filter(id => id !== item.id));
+        } else if (isLiked === "0") {
+            setDislikedIds(prev => [...prev.filter(id => id !== item.id), item.id]);
+            setLikedIds(prev => prev.filter(id => id !== item.id));
+        }
+
+        setIsReporting(true);
+        const feedbackKey = `${item.id}-${isLiked}-${comment}${isRemoval ? '-remove' : ''}`;
+        if (sentIds.includes(feedbackKey)) {
+            setIsReporting(false);
+            return;
+        }
+
+        try {
+            let imageUrl = "";
+            let imageFileName = "";
+
+            if (!isRemoval && item.imageUrl) {
+                const storedUKey = typeof window !== 'undefined' ? sessionStorage.getItem('ukey') : null;
+                // Use proxy to avoid CORS errors
+                const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(item.imageUrl)}`;
+                const response = await fetch(proxyUrl);
+                const blob = await response.blob();
+                const file = new File([blob], "similar-search.webp", { type: "image/webp" });
+
+                const compressed = await compressImagesToWebP(file);
+                if (compressed && compressed.length > 0) {
+                    const uploadResult = await uploadService.uploadFile(
+                        compressed[0].blob,
+                        'AiSearch',
+                        storedUKey || undefined
+                    );
+
+                    if (uploadResult && uploadResult.url) {
+                        imageUrl = uploadResult.fileName;
+                        imageFileName = uploadResult.name || uploadResult.fileName || "";
+                    }
+                }
+            }
+
+            const response = await saveAiSearchFeedbackApi({
+                EventName: "SimilarSearch",
+                SearchText: `Visual match for: ${item.name}`,
+                ImageUrl: imageUrl,
+                FileName: imageFileName,
+                IsLiked: isRemoval ? (currentlyLiked ? "1" : "0") : isLiked,
+                FeedbackID: feedbackIds[item.id] || "",
+                Comment: comment,
+                RemoveFeedback: isRemoval
+            });
+
+            if (response && response?.rd?.[0]?.FeedbackID) {
+                setFeedbackIds(prev => ({ ...prev, [item.id]: response.rd[0].FeedbackID }));
+            }
+
+            if (isRemoval) {
+                setFeedbackIds(prev => {
+                    const next = { ...prev };
+                    delete next[item.id];
+                    return next;
+                });
+                setSentIds(prev => prev.filter(key => !key.startsWith(`${item.id}-`)));
+            } else {
+                setSentIds(prev => [...prev.filter(key => !key.startsWith(`${item.id}-`)), feedbackKey]);
+            }
+
+            if (comment) {
+                showSuccess("Thank you for your feedback!");
+                handleCloseReasonMenu();
+            }
+        } catch (error) {
+            console.error("Error reporting feedback:", error);
+            showError("Failed to report feedback.");
+        } finally {
+            setIsReporting(false);
+        }
+    };
+
+    const handleOpenReasonMenu = (event, item) => {
+        setReasonMenuAnchor(event.currentTarget);
+        setActiveReasonItem(item);
+        setShowOtherInput(false);
+        setCommentText('');
+    };
+
+    const handleCloseReasonMenu = () => {
+        setReasonMenuAnchor(null);
+        setActiveReasonItem(null);
+        setShowOtherInput(false);
+        setCommentText('');
+    };
+
+    const handleSelectReason = (reason) => {
+        if (reason === "Other") setShowOtherInput(true);
+        else {
+            handleFeedback(activeReasonItem, "0", reason);
+            handleCloseReasonMenu();
+        }
+    };
+
+    const submitComment = () => {
+        if (!commentText.trim()) return;
+        handleFeedback(activeReasonItem, "0", commentText);
+        handleCloseReasonMenu();
+    };
 
     return (
         <>
@@ -206,6 +364,53 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                                 <Typography variant="body2" color="text.secondary">
                                     Based on: {baseProduct.designno}
                                 </Typography>
+
+                                {/* Like/Dislike Buttons */}
+                                <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
+                                    {['1', '0'].map((type) => {
+                                        const isLiked = type === '1';
+                                        const item = {
+                                            id: `similar-${baseProduct.id}`,
+                                            name: baseProduct.designno,
+                                            imageUrl: baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl
+                                        };
+                                        const active = isLiked ? likedIds.includes(item.id) : dislikedIds.includes(item.id);
+                                        const color = isLiked ? 'success.main' : 'error.main';
+                                        const Icon = isLiked ? ThumbsUp : ThumbsDown;
+                                        const tooltip = isLiked ? (active ? "Liked visual matches" : "Like results") : (active ? "Disliked visual matches" : "Dislike results");
+
+                                        return (
+                                            <Tooltip key={type} title={tooltip}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (isLiked) handleFeedback(item, type);
+                                                        else {
+                                                            if (active) handleFeedback(item, type);
+                                                            else handleOpenReasonMenu(e, item);
+                                                        }
+                                                    }}
+                                                    sx={{
+                                                        p: '4px',
+                                                        width: 26,
+                                                        height: 26,
+                                                        bgcolor: active ? color : 'rgba(0, 0, 0, 0.04)',
+                                                        color: active ? 'white' : 'text.secondary',
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        '&:hover': {
+                                                            bgcolor: active ? color : 'rgba(0, 0, 0, 0.08)',
+                                                            transform: 'scale(1.1)',
+                                                        },
+                                                        '&:active': { transform: 'scale(0.95)' },
+                                                    }}
+                                                >
+                                                    <Icon size={14} style={{ strokeWidth: active ? 2.5 : 2 }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        );
+                                    })}
+                                </Box>
                             </Box>
                         )}
                     </Box>
@@ -331,6 +536,96 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             </Dialog>
 
             {/* Cache Detection Dialog */}
+
+            {/* Dislike Reason Menu */}
+            <Popover
+                open={Boolean(reasonMenuAnchor)}
+                anchorEl={reasonMenuAnchor}
+                onClose={handleCloseReasonMenu}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                PaperProps={{
+                    sx: {
+                        mt: 1,
+                        width: 240,
+                        borderRadius: 3,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        border: '1px solid rgba(0,0,0,0.06)',
+                        p: 1.5,
+                        transition: 'all 0.3s ease'
+                    }
+                }}
+            >
+                <Typography variant="overline" sx={{ px: 1, py: 0.5, opacity: 0.6, display: 'block', fontWeight: 700, color: 'error.main' }}>
+                    Why this result?
+                </Typography>
+                <Stack spacing={0.5}>
+                    {!showOtherInput ? (
+                        DISLIKE_REASONS.map((reason) => (
+                            <Button
+                                key={reason}
+                                onClick={() => handleSelectReason(reason)}
+                                sx={{
+                                    justifyContent: 'flex-start',
+                                    textTransform: 'none',
+                                    color: 'text.primary',
+                                    fontSize: '0.8rem',
+                                    py: 1,
+                                    px: 1.5,
+                                    borderRadius: 1.5,
+                                    fontWeight: 500,
+                                    '&:hover': {
+                                        bgcolor: 'rgba(0,0,0,0.04)',
+                                        color: 'error.main'
+                                    }
+                                }}
+                            >
+                                {reason}
+                            </Button>
+                        ))
+                    ) : (
+                        <Box sx={{ p: 0.5 }}>
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={3}
+                                placeholder="Tell us more..."
+                                size="small"
+                                autoFocus
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value.slice(0, 300))}
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                        fontSize: '0.8rem',
+                                        bgcolor: 'rgba(0,0,0,0.02)',
+                                        '& fieldset': { borderColor: 'rgba(0,0,0,0.1)' }
+                                    }
+                                }}
+                            />
+                            <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    onClick={() => setShowOtherInput(false)}
+                                    sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary' }}
+                                >
+                                    Back
+                                </Button>
+                                <Button
+                                    fullWidth
+                                    size="small"
+                                    variant="contained"
+                                    disabled={!commentText.trim() || isReporting}
+                                    onClick={submitComment}
+                                >
+                                    {isReporting ? <CircularProgress size={12} color="inherit" thickness={5} /> : 'Submit'}
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
+                </Stack>
+            </Popover>
 
         </>
     );

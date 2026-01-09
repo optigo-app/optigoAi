@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 /**
  * Service for uploading files to the external server
  */
@@ -12,7 +14,7 @@ export const uploadService = {
      * @returns {Promise<string|null>} - The URL of the uploaded file or null on failure
      */
 
-    uploadFile: async (file, folderName = 'OptiogoAiSearch', uKey = 'orail25TNBVD0LO2UFPRZ4YH_Image', uniqueNo = crypto.randomUUID()) => {
+    uploadFile: async (file, folderName = 'AiSearch', uKey = '', uniqueNo = uuidv4()) => {
         try {
             const localHostnames = (process.env.NEXT_PUBLIC_LOCAL_HOSTNAMES || "localhost,nzen,optigoai.web").split(',').map(h => h.trim().toLowerCase());
             const currentHost = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : "";

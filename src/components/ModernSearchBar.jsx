@@ -41,6 +41,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const containerRef = useRef(null);
     const isInternalChangeRef = useRef(false);
     const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
+    const isDesignMode = searchMode === 'design';
 
     useEffect(() => {
         if (onExpandChange) {
@@ -80,7 +81,6 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [isDragging, setIsDragging] = useState(false); // Legacy or for general use if needed
 
     const [isMultiline, setIsMultiline] = useState(false);
-    const isDesignMode = searchMode === 'design';
 
     // Filter Logic States
     const [filterData, setFilterData] = useState([]);
@@ -428,7 +428,6 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
 
     const handleSend = (forceCatalogRequested = false) => {
         const forceCatalog = forceCatalogRequested === true;
-        debugger
         if (isCatalogLoading) return;
         const trimmedText = text.trim();
 
@@ -696,11 +695,9 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                             </IconButton>
                                         </Tooltip>
 
-                                        <Tooltip title="AI Search" placement="top">
-                                            <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
-                                                {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
-                                            </IconButton>
-                                        </Tooltip>
+                                        <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
+                                            {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
+                                        </IconButton>
                                     </Box>
                                 </Zoom>
                             )}
@@ -738,7 +735,13 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                             sx={sendIconButtonSx}
                                             disabled={isCatalogLoading || isLoading}
                                         >
-                                            {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
+                                            {(isLoading && !isDesignMode) ? (
+                                                <CircularProgress size={20} color="inherit" thickness={5} />
+                                            ) : isDesignMode ? (
+                                                <ArrowRight size={20} />
+                                            ) : (
+                                                <Box component="img" src="/icons/sendBtn.png" sx={{ width: 22, height: 22, objectFit: 'contain' }} />
+                                            )}
                                         </IconButton>
                                     </Tooltip>
                                 </Box>
@@ -750,8 +753,8 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                     <Box
                         className="expanded-content"
                         sx={{
-                            display: isExpanded ? 'flex' : 'none',
-                            opacity: isExpanded ? 1 : 0,
+                            display: (isExpanded && !isDesignMode) ? 'none' : isExpanded ? 'flex' : 'none',
+                            opacity: (isExpanded && !isDesignMode) ? 0 : isExpanded ? 1 : 0,
                             flexDirection: 'column',
                             gap: 1.5,
                             mt: isExpanded ? 1.5 : 0,

@@ -16,7 +16,9 @@ export const saveAiSearchFeedbackApi = async ({
     SearchText = "",
     ImageUrl = "",
     IsLiked = "0",
-    Comment = ""
+    FeedbackID = "",
+    Comment = "",
+    RemoveFeedback = false
 }) => {
     return masterApi('SaveAiSearchResponse', {
         p: JSON.stringify({
@@ -24,7 +26,9 @@ export const saveAiSearchFeedbackApi = async ({
             SearchText,
             ImageUrl,
             IsLiked,
-            Comment
+            FeedbackID,
+            Comment,
+            RemoveFeedback
         }),
         f: "m-test2.orail.co.in (ConversionDetail)"
     });

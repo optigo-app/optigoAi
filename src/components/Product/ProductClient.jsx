@@ -191,9 +191,9 @@ function ProductClientContent() {
     const [itemsPerPage, setItemsPerPage] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = sessionStorage.getItem('productsPerPage');
-            return saved ? parseInt(saved, 10) : 100;
+            return saved ? parseInt(saved, 10) : 200;
         }
-        return 100;
+        return 200;
     });
 
     // Save itemsPerPage to sessionStorage
@@ -781,11 +781,10 @@ function ProductClientContent() {
             <Box className="modernSearchInputBox" sx={{
                 position: "fixed",
                 bottom: isFrontendFeRoute() ? 120 : 50,
-                left: { xs: 0, md: isFilterOpen ? '320px' : 0 },
+                left: 0,
                 right: 0,
                 p: 2,
                 zIndex: 1000,
-                transition: 'left 0.4s cubic-bezier(0.86, 0, 0.07, 1)'
             }}>
                 <Box sx={{ maxWidth: 650, width: "100%", mx: "auto" }}>
                     <Fade in={isSearchBarExpanded} unmountOnExit>

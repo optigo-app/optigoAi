@@ -206,17 +206,16 @@ export default function ProductPageHeader({
                                 sx={{
                                     textTransform: "none",
                                     fontSize: 12.5,
-                                    borderRadius: 2,
-                                    bgcolor: 'rgba(0, 0, 0, 0.04)',
                                     color: 'text.primary',
-                                    border: '1px solid rgba(0, 0, 0, 0.10)',
                                     whiteSpace: "nowrap",
                                     minWidth: "auto",
                                     flexShrink: 0,
-                                    padding: '0px 10px',
+                                    textDecoration: 'underline',
+                                    padding: '5px 10px',
+                                    transition: 'all 0.3s ease-in-out',
                                     '&:hover': {
-                                        bgcolor: 'rgba(0, 0, 0, 0.06)',
-                                        borderColor: 'rgba(0, 0, 0, 0.12)'
+                                        bgcolor: 'rgba(229, 77, 77, 0.96)',
+                                        color: '#fff'
                                     }
                                 }}
                             >

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "npx fix-react2shell-next && next dev -p 5051",
     "build": "npx fix-react2shell-next && next build",
-    "start": "next start -p 5002",
+    "start": "next start -p 5003",
     "lint": "eslint"
   },
   "dependencies": {
@@ -28,7 +28,8 @@
     "react-virtualized-auto-sizer": "^1.0.26",
     "react-window": "^2.2.3",
     "sass": "^1.94.2",
-    "swiper": "^12.0.3"
+    "swiper": "^12.0.3",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "baseline-browser-mapping": "^2.9.7",
