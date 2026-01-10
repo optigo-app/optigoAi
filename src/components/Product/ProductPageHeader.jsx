@@ -9,6 +9,7 @@ import {
     Chip,
     IconButton,
     Badge,
+    useTheme,
 } from "@mui/material";
 import { ShoppingCart, ChevronLeft, ChevronRight, CheckSquare, Square, X as XIcon, Filter } from "lucide-react";
 import Image from "next/image";
@@ -45,6 +46,7 @@ export default function ProductPageHeader({
     searchMode,
     onFilterClick
 }) {
+    const theme = useTheme();
     // Filter Chips Scroll State
     const filterScrollRef = useRef(null);
     const [showLeftScroll, setShowLeftScroll] = useState(false);
@@ -214,7 +216,7 @@ export default function ProductPageHeader({
                                     padding: '5px 10px',
                                     transition: 'all 0.3s ease-in-out',
                                     '&:hover': {
-                                        bgcolor: 'rgba(229, 77, 77, 0.96)',
+                                        bgcolor: theme.palette.primary.danger,
                                         color: '#fff'
                                     }
                                 }}

@@ -49,7 +49,7 @@ const FullPageLoader = ({ open, message = "Loading...", subtitle, showLogo = tru
                         {showLogo && (
                             <Box
                                 component="img"
-                                src="/icons/base-icon.svg"
+                                src="/icons/base-icon2.svg"
                                 alt="Loading"
                                 sx={{
                                     width: 40,
