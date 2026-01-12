@@ -32,6 +32,32 @@ async function apiCall(endpoint, options = {}) {
   }
 }
 
+export async function apiCallBinary(endpoint, options = {}) {
+  try {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const token = getCurrentDatabaseToken();
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...authHeader,
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.log("Error Data:", errorData);
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.blob();
+  } catch (error) {
+    throw error;
+  }
+}
+
 export const searchService = {
   async searchByImage(file, params = {}) {
     if (!file) {

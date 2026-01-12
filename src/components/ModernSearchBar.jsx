@@ -14,7 +14,6 @@ import {
     CircularProgress,
     Skeleton,
 } from "@mui/material";
-import { motion, AnimatePresence } from "framer-motion";
 import {
     X,
     ArrowRight,
@@ -33,6 +32,8 @@ import { formatMasterData, getAuthData } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 import DragDropOverlay from "./Common/DragDropOverlay";
+import ImageEditorModal from "./Common/ImageEditorModal";
+import { Pencil } from "lucide-react";
 
 export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, isFilterOpen, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, isLoading = false, searchMode = 'ai', onImageUpload, onExpandChange }) {
     const { showSuccess, showError } = useCustomToast();
@@ -79,6 +80,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
     const [isDraggingLocal, setIsDraggingLocal] = useState(false);
     const [isDragging, setIsDragging] = useState(false); // Legacy or for general use if needed
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
 
     const [isMultiline, setIsMultiline] = useState(false);
 
@@ -318,6 +320,20 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
         if (onImageUpload) onImageUpload(file);
     };
 
+    const handleSaveEditedImage = (editedFile) => {
+        if (!editedFile) return;
+        const newUrl = URL.createObjectURL(editedFile);
+
+        // Revoke old url to prevent memory leaks if it was created by us
+        if (imagePreview && imagePreview.startsWith('blob:')) {
+            URL.revokeObjectURL(imagePreview);
+        }
+
+        setImageFile(editedFile);
+        setImagePreview(newUrl);
+        if (onImageUpload) onImageUpload(editedFile);
+    };
+
     const handlePaste = (e) => {
         for (const item of e.clipboardData.items) {
             if (item.type.startsWith("image/")) {
@@ -526,70 +542,73 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     };
 
     return (
-        <ClickAwayListener onClickAway={handleClickAway}>
-            <Box sx={{ position: 'relative', width: '100%' }}>
-                <DragDropOverlay
-                    isDraggingGlobal={isDraggingGlobal}
-                    isDraggingLocal={isDraggingLocal}
-                    onClose={resetDragStates}
-                    onDrop={(e) => {
-                        handleDrop(e);
-                    }}
-                    onDragOver={(e) => {
-                        if (!isDesignMode) {
-                            setIsDraggingGlobal(true);
-                        }
-                    }}
-                    onDragEnter={(e) => {
-                        if (!isDesignMode) {
-                            setIsDraggingLocal(true);
-                        }
-                    }}
-                    onDragLeave={(e) => {
-                        setIsDraggingLocal(false);
-                    }}
-                />
-                <Paper
-                    ref={containerRef}
-                    elevation={isExpanded ? 12 : 2}
-                    className={`chat-input-container ${isExpanded ? 'expanded' : 'minimized'}`}
-                    onPaste={handlePaste}
-                    onDrop={(e) => {
-                        handleDrop(e);
-                    }}
-                    onDragOver={(e) => {
-                        e.preventDefault();
-                        if (!isDesignMode) {
-                            setIsDraggingLocal(true);
-                            setIsDraggingGlobal(true);
-                        }
-                    }}
-                    onDragEnter={(e) => {
-                        e.preventDefault();
-                        if (!isDesignMode) {
-                            setIsDraggingLocal(true);
-                        }
-                    }}
-                    onDragLeave={(e) => {
-                        e.preventDefault();
-                        // Only hide if we're moving outside the container
-                        if (!e.currentTarget.contains(e.relatedTarget)) {
+        <>
+            <ClickAwayListener onClickAway={handleClickAway}>
+                <Box sx={{ position: 'relative', width: '100%' }}>
+                    <DragDropOverlay
+                        isDraggingGlobal={isDraggingGlobal}
+                        isDraggingLocal={isDraggingLocal}
+                        onClose={resetDragStates}
+                        onDrop={(e) => {
+                            handleDrop(e);
+                        }}
+                        onDragOver={(e) => {
+                            if (!isDesignMode) {
+                                setIsDraggingGlobal(true);
+                            }
+                        }}
+                        onDragEnter={(e) => {
+                            if (!isDesignMode) {
+                                setIsDraggingLocal(true);
+                            }
+                        }}
+                        onDragLeave={(e) => {
                             setIsDraggingLocal(false);
-                        }
-                    }}
-                    sx={{
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        zIndex: isExpanded ? 1100 : 1,
-                    }}
-                >
-                    {/* Top Section: Inputs & Controls */}
-                    <Box className="input-area-wrapper">
-                        {imagePreview && (
-                            <Zoom in={Boolean(imagePreview)}>
-                                <Box className="image-preview-wrapper" sx={{ mb: 1 }}>
-                                    <Box className="image-preview">
-                                        <img src={imagePreview} alt="preview" />
-                                        <Tooltip title="Remove image">
+                        }}
+                    />
+                    <Paper
+                        ref={containerRef}
+                        elevation={isExpanded ? 12 : 2}
+                        className={`chat-input-container ${isExpanded ? 'expanded' : 'minimized'}`}
+                        onPaste={handlePaste}
+                        onDrop={(e) => {
+                            handleDrop(e);
+                        }}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            if (!isDesignMode) {
+                                setIsDraggingLocal(true);
+                                setIsDraggingGlobal(true);
+                            }
+                        }}
+                        onDragEnter={(e) => {
+                            e.preventDefault();
+                            if (!isDesignMode) {
+                                setIsDraggingLocal(true);
+                            }
+                        }}
+                        onDragLeave={(e) => {
+                            e.preventDefault();
+                            // Only hide if we're moving outside the container
+                            if (!e.currentTarget.contains(e.relatedTarget)) {
+                                setIsDraggingLocal(false);
+                            }
+                        }}
+                        sx={{
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            zIndex: isExpanded ? 1100 : 1,
+                        }}
+                    >
+                        {/* Top Section: Inputs & Controls */}
+                        <Box className="input-area-wrapper">
+                            {imagePreview && (
+                                <Zoom in={Boolean(imagePreview)}>
+                                    <Box className="image-preview-wrapper" sx={{ mb: 1 }}>
+                                        <Box className="image-preview" onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsEditorOpen(true);
+                                        }}>
+                                            <img src={imagePreview} alt="preview" />
                                             <IconButton
                                                 size="small"
                                                 className="remove-image"
@@ -599,307 +618,324 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                                     setImageFile(null);
                                                 }}
                                             >
-                                                <X size={14} />
+                                                <X size={16} />
                                             </IconButton>
-                                        </Tooltip>
+                                            <IconButton
+                                                size="small"
+                                                className="edit-image"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsEditorOpen(true);
+                                                }}
+                                            >
+                                                <Pencil size={16} />
+                                            </IconButton>
+                                        </Box>
                                     </Box>
-                                </Box>
-                            </Zoom>
-                        )}
+                                </Zoom>
+                            )}
 
-                        <Box className="input-flex-row">
-                            {/* Upload Icon */}
-                            {!isMultiline && (
-                                <Tooltip title={isDesignMode ? "" : "Upload image"}>
-                                    <span>
+                            <Box className="input-flex-row">
+                                {/* Upload Icon */}
+                                {!isMultiline && (
+                                    <Tooltip title={isDesignMode ? "" : "Upload image"}>
+                                        <span>
+                                            <IconButton
+                                                className="iconbuttonsearch"
+                                                disabled={isDesignMode}
+                                                onClick={() => {
+                                                    if (!isDesignMode) {
+                                                        fileRef.current.click();
+                                                    }
+                                                }}
+                                                sx={{
+                                                    ...actionIconButtonSx,
+                                                    cursor: isDesignMode ? "not-allowed" : "pointer",
+                                                    "&:hover": {
+                                                        backgroundColor: isDesignMode ? "transparent" : undefined
+                                                    }
+                                                }}
+                                            >
+                                                {isDesignMode ? <Search size={20} /> : <ImagePlus size={22} />}
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+
+                                )}
+
+                                <input
+                                    ref={fileRef}
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: "none" }}
+                                    onChange={handleUpload}
+                                />
+
+                                <TextField
+                                    placeholder={isDesignMode ? "Search your jewelry designs..." : "Describe your idea, and I'll bring it to life"}
+                                    variant="standard"
+                                    fullWidth
+                                    multiline
+                                    maxRows={8}
+                                    value={text}
+                                    onClick={handleFocus}
+                                    onFocus={handleFocus}
+                                    onChange={(e) => {
+                                        setText(e.target.value);
+                                        if (e.target.value.includes('\n') || e.target.value.length > 50) {
+                                            setIsMultiline(true);
+                                        } else {
+                                            setIsMultiline(false);
+                                        }
+                                    }}
+                                    onKeyDown={handleKeyDown}
+                                    className="chat-textarea"
+                                    inputRef={textFieldRef}
+                                    InputProps={{
+                                        disableUnderline: true,
+                                        sx: { fontSize: '1.05rem' }
+                                    }}
+                                />
+
+                                {!isExpanded && (
+                                    <Tooltip title="Maximize">
+                                        <IconButton className="iconbuttonsearch" onClick={() => setIsExpanded(true)} sx={{ ...actionIconButtonSx, ml: 1 }}>
+                                            <Settings2 size={20} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+
+                                {/* Actions Group - Inline */}
+                                {(isExpanded && !isMultiline) && (
+                                    <Zoom in={isExpanded || text.length > 0 || Boolean(imagePreview)}>
+                                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                            <Tooltip title={isExpanded ? "Minimize" : "Maximize"}>
+                                                <IconButton
+                                                    size="small"
+                                                    className="iconbuttonsearch"
+                                                    onClick={() => setIsExpanded(!isExpanded)}
+                                                    sx={{
+                                                        ...actionIconButtonSx,
+                                                        mr: 0.5
+                                                    }}
+                                                >
+                                                    <Settings2 size={20} />
+                                                </IconButton>
+                                            </Tooltip>
+
+                                            <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
+                                                {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
+                                            </IconButton>
+                                        </Box>
+                                    </Zoom>
+                                )}
+                            </Box>
+
+                            {/* Multiline Bottom Actions Row */}
+                            {isMultiline && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5 }}>
+                                    <Tooltip title="Upload image">
                                         <IconButton
                                             className="iconbuttonsearch"
-                                            disabled={isDesignMode}
-                                            onClick={() => {
-                                                if (!isDesignMode) {
-                                                    fileRef.current.click();
-                                                }
-                                            }}
-                                            sx={{
-                                                ...actionIconButtonSx,
-                                                cursor: isDesignMode ? "not-allowed" : "pointer",
-                                                "&:hover": {
-                                                    backgroundColor: isDesignMode ? "transparent" : undefined
-                                                }
-                                            }}
+                                            onClick={() => fileRef.current.click()}
+                                            sx={actionIconButtonSx}
                                         >
-                                            {isDesignMode ? <Search size={20} /> : <ImagePlus size={22} />}
+                                            <ImagePlus size={20} />
                                         </IconButton>
-                                    </span>
-                                </Tooltip>
+                                    </Tooltip>
 
-                            )}
-
-                            <input
-                                ref={fileRef}
-                                type="file"
-                                accept="image/*"
-                                style={{ display: "none" }}
-                                onChange={handleUpload}
-                            />
-
-                            <TextField
-                                placeholder={isDesignMode ? "Search your jewelry designs..." : "Describe your idea, and I'll bring it to life"}
-                                variant="standard"
-                                fullWidth
-                                multiline
-                                maxRows={8}
-                                value={text}
-                                onClick={handleFocus}
-                                onFocus={handleFocus}
-                                onChange={(e) => {
-                                    setText(e.target.value);
-                                    if (e.target.value.includes('\n') || e.target.value.length > 50) {
-                                        setIsMultiline(true);
-                                    } else {
-                                        setIsMultiline(false);
-                                    }
-                                }}
-                                onKeyDown={handleKeyDown}
-                                className="chat-textarea"
-                                inputRef={textFieldRef}
-                                InputProps={{
-                                    disableUnderline: true,
-                                    sx: { fontSize: '1.05rem' }
-                                }}
-                            />
-
-                            {!isExpanded && (
-                                <Tooltip title="Maximize">
-                                    <IconButton className="iconbuttonsearch" onClick={() => setIsExpanded(true)} sx={{ ...actionIconButtonSx, ml: 1 }}>
-                                        <Settings2 size={20} />
-                                    </IconButton>
-                                </Tooltip>
-                            )}
-
-                            {/* Actions Group - Inline */}
-                            {(isExpanded && !isMultiline) && (
-                                <Zoom in={isExpanded || text.length > 0 || Boolean(imagePreview)}>
-                                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                        <Tooltip title={isExpanded ? "Minimize" : "Maximize"}>
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                        <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
                                             <IconButton
                                                 size="small"
                                                 className="iconbuttonsearch"
                                                 onClick={() => setIsExpanded(!isExpanded)}
-                                                sx={{
-                                                    ...actionIconButtonSx,
-                                                    mr: 0.5
-                                                }}
+                                                sx={actionIconButtonSx}
                                             >
                                                 <Settings2 size={20} />
                                             </IconButton>
                                         </Tooltip>
 
-                                        <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
-                                            {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
-                                        </IconButton>
+                                        <Tooltip title="AI Search" placement="top">
+                                            <IconButton
+                                                className="iconbuttonsearch"
+                                                onClick={() => handleSend(false)}
+                                                sx={sendIconButtonSx}
+                                                disabled={isCatalogLoading || isLoading}
+                                            >
+                                                {(isLoading && !isDesignMode) ? (
+                                                    <CircularProgress size={20} color="inherit" thickness={5} />
+                                                ) : isDesignMode ? (
+                                                    <ArrowRight size={20} />
+                                                ) : (
+                                                    <Box component="img" src="/icons/sendBtn.png" sx={{ width: 22, height: 22, objectFit: 'contain' }} />
+                                                )}
+                                            </IconButton>
+                                        </Tooltip>
                                     </Box>
-                                </Zoom>
+                                </Box>
                             )}
                         </Box>
 
-                        {/* Multiline Bottom Actions Row */}
-                        {isMultiline && (
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5 }}>
-                                <Tooltip title="Upload image">
-                                    <IconButton
-                                        className="iconbuttonsearch"
-                                        onClick={() => fileRef.current.click()}
-                                        sx={actionIconButtonSx}
-                                    >
-                                        <ImagePlus size={20} />
-                                    </IconButton>
-                                </Tooltip>
-
-                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                    <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
+                        {/* Bottom Section: expanded filters */}
+                        <Box
+                            className="expanded-content"
+                            sx={{
+                                display: (isExpanded && !isDesignMode) ? 'none' : isExpanded ? 'flex' : 'none',
+                                opacity: (isExpanded && !isDesignMode) ? 0 : isExpanded ? 1 : 0,
+                                flexDirection: 'column',
+                                gap: 1.5,
+                                mt: isExpanded ? 1.5 : 0,
+                                pt: isExpanded ? 1.5 : 0,
+                                borderTop: isExpanded ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                                transition: 'all 0.2s',
+                            }}
+                        >
+                            {/* Quick Filter Buttons */}
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.4, alignItems: 'center' }}>
+                                {(appliedFilters.length > 0 && isDesignMode) && (
+                                    <Tooltip title="Clear all filters">
                                         <IconButton
                                             size="small"
-                                            className="iconbuttonsearch"
-                                            onClick={() => setIsExpanded(!isExpanded)}
-                                            sx={actionIconButtonSx}
-                                        >
-                                            <Settings2 size={20} />
-                                        </IconButton>
-                                    </Tooltip>
-
-                                    <Tooltip title="AI Search" placement="top">
-                                        <IconButton
-                                            className="iconbuttonsearch"
-                                            onClick={() => handleSend(false)}
-                                            sx={sendIconButtonSx}
-                                            disabled={isCatalogLoading || isLoading}
-                                        >
-                                            {(isLoading && !isDesignMode) ? (
-                                                <CircularProgress size={20} color="inherit" thickness={5} />
-                                            ) : isDesignMode ? (
-                                                <ArrowRight size={20} />
-                                            ) : (
-                                                <Box component="img" src="/icons/sendBtn.png" sx={{ width: 22, height: 22, objectFit: 'contain' }} />
-                                            )}
-                                        </IconButton>
-                                    </Tooltip>
-                                </Box>
-                            </Box>
-                        )}
-                    </Box>
-
-                    {/* Bottom Section: expanded filters */}
-                    <Box
-                        className="expanded-content"
-                        sx={{
-                            display: (isExpanded && !isDesignMode) ? 'none' : isExpanded ? 'flex' : 'none',
-                            opacity: (isExpanded && !isDesignMode) ? 0 : isExpanded ? 1 : 0,
-                            flexDirection: 'column',
-                            gap: 1.5,
-                            mt: isExpanded ? 1.5 : 0,
-                            pt: isExpanded ? 1.5 : 0,
-                            borderTop: isExpanded ? '1px solid rgba(0,0,0,0.06)' : 'none',
-                            transition: 'all 0.2s',
-                        }}
-                    >
-                        {/* Quick Filter Buttons */}
-                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', pt: 0.4, alignItems: 'center' }}>
-                            {(appliedFilters.length > 0 && isDesignMode) && (
-                                <Tooltip title="Clear all filters">
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => onApply([])}
-                                        sx={{
-                                            borderRadius: 2,
-                                            bgcolor: 'rgba(0, 0, 0, 0.04)',
-                                            color: 'text.primary',
-                                            border: '1px solid rgba(0, 0, 0, 0.10)',
-                                            mr: 0.5,
-                                            '&:hover': {
-                                                bgcolor: 'rgba(0, 0, 0, 0.06)',
-                                                borderColor: 'rgba(0, 0, 0, 0.12)'
-                                            }
-                                        }}
-                                    >
-                                        <X size={16} />
-                                    </IconButton>
-                                </Tooltip>
-                            )}
-                            {!hasLoadedFilters && (
-                                <>
-                                    <Skeleton variant="rounded" width={120} height={32} />
-                                    <Skeleton variant="rounded" width={110} height={32} />
-                                </>
-                            )}
-                            {(isDesignMode && getItemsForCategory('Category').length > 0) && (
-                                <Chip
-                                    icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
-                                    label={getActiveFilterName('Category')}
-                                    clickable
-                                    onClick={(e) => openDropdown('Category', e)}
-                                    variant={hasSelection('Category') ? "filled" : "outlined"}
-                                    color={hasSelection('Category') ? "primary" : "default"}
-                                    sx={{
-                                        borderRadius: '8px',
-                                        border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
-                                        transition: 'all 0.2s'
-                                    }}
-                                />
-                            )}
-                            {(isDesignMode && getItemsForCategory('Gender').length > 0) && (
-                                <Chip
-                                    icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
-                                    label={getActiveFilterName('Gender')}
-                                    clickable
-                                    onClick={(e) => openDropdown('Gender', e)}
-                                    variant={hasSelection('Gender') ? "filled" : "outlined"}
-                                    color={hasSelection('Gender') ? "primary" : "default"}
-                                    sx={{
-                                        borderRadius: '8px',
-                                        border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
-                                        transition: 'all 0.2s'
-                                    }}
-                                />
-                            )}
-                            {(showMoreFiltersButton && isDesignMode) && (
-                                <Button
-                                    variant="contained"
-                                    startIcon={<Filter size={14} />}
-                                    size="small"
-                                    className={`more-filter-btn`}
-                                    onClick={onFilterClick}
-                                    sx={{
-                                        transition: 'all 0.2s ease',
-                                    }}
-                                >
-                                    {isFilterOpen ? "Close Filters" : "More Filters"}
-                                </Button>
-                            )}
-
-                            <Box sx={{ flexGrow: 1 }} />
-
-                            {(!showMoreFiltersButton && isDesignMode) && (
-                                <Button
-                                    variant="contained"
-                                    size="small"
-                                    onClick={() => handleSend(true)}
-                                    className="quick-filter-btn"
-                                    disabled={isCatalogLoading}
-                                    sx={{
-                                        '.MuiButton-startIcon': {
-                                            marginRight: isCatalogLoading ? 1 : 0,
-                                            transition: 'margin-right 200ms ease',
-                                        },
-                                    }}
-                                    startIcon={
-                                        <Box
-                                            component="span"
+                                            onClick={() => onApply([])}
                                             sx={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                width: isCatalogLoading ? 16 : 0,
-                                                opacity: isCatalogLoading ? 1 : 0,
-                                                overflow: 'hidden',
-                                                transition: 'width 200ms ease, opacity 200ms ease',
+                                                borderRadius: 2,
+                                                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                                color: 'text.primary',
+                                                border: '1px solid rgba(0, 0, 0, 0.10)',
+                                                mr: 0.5,
+                                                '&:hover': {
+                                                    bgcolor: 'rgba(0, 0, 0, 0.06)',
+                                                    borderColor: 'rgba(0, 0, 0, 0.12)'
+                                                }
                                             }}
                                         >
-                                            <CircularProgress size={16} color="inherit" />
-                                        </Box>
-                                    }
-                                >
-                                    View Catalog
-                                </Button>
+                                            <X size={16} />
+                                        </IconButton>
+                                    </Tooltip>
+                                )}
+                                {!hasLoadedFilters && (
+                                    <>
+                                        <Skeleton variant="rounded" width={120} height={32} />
+                                        <Skeleton variant="rounded" width={110} height={32} />
+                                    </>
+                                )}
+                                {(isDesignMode && getItemsForCategory('Category').length > 0) && (
+                                    <Chip
+                                        icon={hasSelection('Category') ? <Check size={14} /> : <Layers size={15} />}
+                                        label={getActiveFilterName('Category')}
+                                        clickable
+                                        onClick={(e) => openDropdown('Category', e)}
+                                        variant={hasSelection('Category') ? "filled" : "outlined"}
+                                        color={hasSelection('Category') ? "primary" : "default"}
+                                        sx={{
+                                            borderRadius: '8px',
+                                            border: hasSelection('Category') ? 'none' : '1px solid #e0e0e0',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    />
+                                )}
+                                {(isDesignMode && getItemsForCategory('Gender').length > 0) && (
+                                    <Chip
+                                        icon={hasSelection('Gender') ? <Check size={14} /> : <Users size={15} />}
+                                        label={getActiveFilterName('Gender')}
+                                        clickable
+                                        onClick={(e) => openDropdown('Gender', e)}
+                                        variant={hasSelection('Gender') ? "filled" : "outlined"}
+                                        color={hasSelection('Gender') ? "primary" : "default"}
+                                        sx={{
+                                            borderRadius: '8px',
+                                            border: hasSelection('Gender') ? 'none' : '1px solid #e0e0e0',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    />
+                                )}
+                                {(showMoreFiltersButton && isDesignMode) && (
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<Filter size={14} />}
+                                        size="small"
+                                        className={`more-filter-btn`}
+                                        onClick={onFilterClick}
+                                        sx={{
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        {isFilterOpen ? "Close Filters" : "More Filters"}
+                                    </Button>
+                                )}
+
+                                <Box sx={{ flexGrow: 1 }} />
+
+                                {(!showMoreFiltersButton && isDesignMode) && (
+                                    <Button
+                                        variant="contained"
+                                        size="small"
+                                        onClick={() => handleSend(true)}
+                                        className="quick-filter-btn"
+                                        disabled={isCatalogLoading}
+                                        sx={{
+                                            '.MuiButton-startIcon': {
+                                                marginRight: isCatalogLoading ? 1 : 0,
+                                                transition: 'margin-right 200ms ease',
+                                            },
+                                        }}
+                                        startIcon={
+                                            <Box
+                                                component="span"
+                                                sx={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    width: isCatalogLoading ? 16 : 0,
+                                                    opacity: isCatalogLoading ? 1 : 0,
+                                                    overflow: 'hidden',
+                                                    transition: 'width 200ms ease, opacity 200ms ease',
+                                                }}
+                                            >
+                                                <CircularProgress size={16} color="inherit" />
+                                            </Box>
+                                        }
+                                    >
+                                        View Catalog
+                                    </Button>
+                                )}
+                            </Box>
+
+                            {/* Dropdown Popover */}
+                            <FilterDropdown
+                                title={activeDropdown || ""}
+                                items={getItemsForCategory(activeDropdown || "")}
+                                anchorEl={anchorEl}
+                                onClose={closeDropdown}
+                                onSelect={handleFilterSelect}
+                                selectedItems={appliedFilters}
+                                isLoading={isLoadingFilters}
+                                direction={suggestionPosition === 'top' ? 'top' : 'bottom'}
+                            />
+
+                            {/* Search Suggestions */}
+                            {showSuggestions && (
+                                <SearchSuggestions
+                                    suggestions={suggestions}
+                                    onSuggestionClick={handleSuggestionClick}
+                                    isVisible={showSuggestionsDropdown && isExpanded}
+                                    searchTerm={text}
+                                    suggestionPosition={suggestionPosition}
+                                    onHighlightChange={setHighlightedSuggestionIndex}
+                                />
                             )}
                         </Box>
+                    </Paper>
+                </Box>
 
-                        {/* Dropdown Popover */}
-                        <FilterDropdown
-                            title={activeDropdown || ""}
-                            items={getItemsForCategory(activeDropdown || "")}
-                            anchorEl={anchorEl}
-                            onClose={closeDropdown}
-                            onSelect={handleFilterSelect}
-                            selectedItems={appliedFilters}
-                            isLoading={isLoadingFilters}
-                            direction={suggestionPosition === 'top' ? 'top' : 'bottom'}
-                        />
-
-                        {/* Search Suggestions */}
-                        {showSuggestions && (
-                            <SearchSuggestions
-                                suggestions={suggestions}
-                                onSuggestionClick={handleSuggestionClick}
-                                isVisible={showSuggestionsDropdown && isExpanded}
-                                searchTerm={text}
-                                suggestionPosition={suggestionPosition}
-                                onHighlightChange={setHighlightedSuggestionIndex}
-                            />
-                        )}
-                    </Box>
-                </Paper>
-            </Box>
-        </ClickAwayListener>
+            </ClickAwayListener>
+            <ImageEditorModal
+                open={isEditorOpen}
+                onClose={() => setIsEditorOpen(false)}
+                imageFile={imageFile}
+                onSave={handleSaveEditedImage}
+            />
+        </>
     );
 }

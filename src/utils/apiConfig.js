@@ -22,6 +22,14 @@ export const API_ENDPOINTS = {
     hybrid: '/api/search/hybrid',
     keyword: '/api/search/keyword',
   },
+  imageDynamicPrompts: {
+    // Placeholder for v2 AI processors if any
+  }
+};
+
+export const PROCESSOR_ENDPOINTS = {
+  'bg-remover': '/api/process/bgremover',
+  'sketch': '/api/process/sketch',
 };
 
 export const DEFAULT_SEARCH_PARAMS = {
