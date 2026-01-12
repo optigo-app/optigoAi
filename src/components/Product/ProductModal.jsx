@@ -164,8 +164,8 @@ export default function ProductModal({ open, onClose, product, products = [], st
     if (!product) return null;
 
     const sliderProducts = products.length > 0
-        ? products.slice(0, 100)
-        : Array(100).fill().map((_, i) => ({
+        ? products.slice(0, 200)
+        : Array(200).fill().map((_, i) => ({
             ...product,
             id: `${product.id || 'product'}-${i}`,
             thumbUrl: product.thumbUrl,

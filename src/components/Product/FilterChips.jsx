@@ -126,10 +126,17 @@ export default function FilterChips({
             // 1. If image search and NOT a removal, upload image
             if (!isRemoval && (item.id === "image-search" || item.id === "hybrid-search") && item.imageUrl) {
                 const storedUKey = typeof window !== 'undefined' ? sessionStorage.getItem('ukey') : null;
-                // Use proxy to avoid CORS errors
-                const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(item.imageUrl)}`;
-                const response = await fetch(proxyUrl);
-                const blob = await response.blob();
+                let blob;
+                // Check if URL is remote (http/https) to decide on proxy usage
+                if (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('https')) {
+                    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(item.imageUrl)}`;
+                    const response = await fetch(proxyUrl);
+                    blob = await response.blob();
+                } else {
+                    // Local URL or blob URL - fetch directly
+                    const response = await fetch(item.imageUrl);
+                    blob = await response.blob();
+                }
                 const file = new File([blob], "search-image.webp", { type: "image/webp" });
 
                 const compressed = await compressImagesToWebP(file);
