@@ -4,7 +4,17 @@ import { Box } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImagePlus } from 'lucide-react';
 
-const DragDropOverlay = ({ isDraggingGlobal, isDraggingLocal, onDrop, onDragOver, onDragEnter, onDragLeave, onClose }) => {
+const DragDropOverlay = ({
+    isDraggingGlobal,
+    isDraggingLocal,
+    onDrop,
+    onDragOver,
+    onDragEnter,
+    onDragLeave,
+    onClose,
+    title,
+    subtitle
+}) => {
     return (
         <AnimatePresence>
             {isDraggingGlobal && (
@@ -113,7 +123,7 @@ const DragDropOverlay = ({ isDraggingGlobal, isDraggingLocal, onDrop, onDragOver
                                 transition: "all 0.15s ease",
                             }}
                         >
-                            {isDraggingLocal ? "Release to search jewelry" : "Drag over search bar"}
+                            {title ? title : (isDraggingLocal ? "Release to search jewelry" : "Drag over search bar")}
                         </Box>
 
                         <Box
@@ -126,7 +136,7 @@ const DragDropOverlay = ({ isDraggingGlobal, isDraggingLocal, onDrop, onDragOver
                                 transition: "all 0.15s ease",
                             }}
                         >
-                            {isDraggingLocal ? "Using AI Vision" : "Drop it right inside the box"}
+                            {subtitle ? subtitle : (isDraggingLocal ? "Using AI Vision" : "Drop it right inside the box")}
                         </Box>
                     </Box>
                 </Box>

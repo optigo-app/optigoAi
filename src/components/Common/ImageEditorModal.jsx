@@ -4,19 +4,18 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions,
     Button,
     Box,
     Typography,
     Slider,
-    Paper,
     IconButton,
     Divider,
     Tooltip,
     useTheme,
     useMediaQuery,
     Slide,
-    alpha
+    alpha,
+    Paper,
 } from '@mui/material';
 import {
     X,
@@ -31,9 +30,11 @@ import {
     Eraser,
     Pencil,
     // Loader2 // Removed
+    Maximize,
+    Minimize
 } from 'lucide-react';
 import { processingService } from '@/services/processingService';
-import { useCustomToast } from '@/hook/useCustomToast';
+import { toast } from 'react-hot-toast';
 import CircularProgress from '@mui/material/CircularProgress';
 
 const DEFAULTS = {
@@ -43,7 +44,8 @@ const DEFAULTS = {
     sharpness: 0,
     rotation: 0,
     flipH: false,
-    flipV: false
+    flipV: false,
+    canvasBgColor: 'transparent'
 };
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -58,7 +60,9 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
     title = "Edit Image",
 }) {
     const theme = useTheme();
-    const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [manualFullScreen, setManualFullScreen] = useState(false);
+    const fullScreen = isMobile || manualFullScreen;
 
     const canvasRef = useRef(null);
     const [originalImage, setOriginalImage] = useState(null);
@@ -94,6 +98,37 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
     const [isResizing, setIsResizing] = useState(false);
     const [resizeHandle, setResizeHandle] = useState(null);
     const cropContainerRef = useRef(null);
+
+    // Rotation State
+    const [isRotating, setIsRotating] = useState(false);
+    const [rotationStartAngle, setRotationStartAngle] = useState(0);
+    const [baseRotation, setBaseRotation] = useState(0);
+
+    const BACKGROUND_COLORS = [
+        { name: 'Transparent', value: 'transparent' },
+        { name: 'White', value: '#ffffff' },
+        { name: 'Black', value: '#000000' },
+        { name: 'Light Grey', value: '#f5f5f7' },
+        { name: 'Soft Blue', value: '#e3f2fd' },
+        { name: 'Soft Pink', value: '#fce4ec' },
+        { name: 'Soft Green', value: '#e8f5e9' }
+    ];
+
+    // Effect to center 1:1 crop when enabled
+    useEffect(() => {
+        if (cropMode && cropContainerRef.current) {
+            const rect = cropContainerRef.current.getBoundingClientRect();
+            // Use 80% of the smaller dimension for initial crop square
+            const minDim = Math.min(rect.width, rect.height) * 0.8;
+
+            setCropArea({
+                width: minDim,
+                height: minDim,
+                x: (rect.width - minDim) / 2,
+                y: (rect.height - minDim) / 2
+            });
+        }
+    }, [cropMode]);
 
     // Load image when file changes or modal opens
     useEffect(() => {
@@ -210,6 +245,12 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         // Clear canvas
         ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
 
+        // Fill background color if set
+        if (currentAdjustments.canvasBgColor && currentAdjustments.canvasBgColor !== 'transparent') {
+            ctx.fillStyle = currentAdjustments.canvasBgColor;
+            ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+        }
+
         ctx.save();
         ctx.translate(targetCanvas.width / 2, targetCanvas.height / 2);
 
@@ -309,17 +350,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         renderImage(canvasRef.current, originalImage, adjustments);
     }, [originalImage, adjustments, imageLoaded, renderImage]);
 
-    // Handlers
-    const handleSliderChange = (type, value) => {
-        // We update state for responsiveness, but don't push to history here
-        // Currently, adjustments is derived from history. 
-        // To support smooth sliding, we arguably need a local "transient" state.
-        // However, simplest react-way without lag: 
-        // We can just keep replacing the CURRENT history item if needed, 
-        // BUT we want Undo to work per "commitment".
-        // For now, let's just update directly and rely on 'onChangeCommitted' for history.
-    };
-
     const handleSliderChangeCommitted = (type, value) => {
         const newAdjustments = { ...adjustments, [type]: value };
         pushToHistory(newAdjustments);
@@ -358,8 +388,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
 
         setActiveProcessor(processorId);
         try {
-            // Need to send the current state of the image (with edits applied)
-            // Convert canvas to blob
             const blob = await new Promise(resolve => canvasRef.current.toBlob(resolve, 'image/png'));
             const currentFile = new File([blob], "current_edit.png", { type: 'image/png' });
 
@@ -377,7 +405,19 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         } catch (error) {
             console.error("Processing failed:", error);
             setActiveProcessor(null);
-            // In a real app, show a toast here
+
+            toast.error(error.message || "Something went wrong during processing", {
+                style: {
+                    borderRadius: '10px',
+                    background: '#333',
+                    color: '#fff',
+                    fontSize: '0.875rem'
+                },
+                iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                },
+            });
         }
     }, [originalImage, pushToHistory]);
 
@@ -391,8 +431,65 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
             setHistoryIndex(0);
             setTempAdjustments(DEFAULTS);
             setCropMode(false);
+            setIsRotating(false);
         }
     }, [history]);
+
+    // Rotation Handlers
+    const calculateAngle = useCallback((clientX, clientY) => {
+        const rect = canvasRef.current?.getBoundingClientRect();
+        if (!rect) return 0;
+
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+
+        const radians = Math.atan2(dy, dx);
+        const degrees = (radians * 180) / Math.PI;
+
+        // Offset to match Canva style (angle 0 is at the handle position)
+        return (degrees + 90 + 360) % 360;
+    }, []);
+
+    const handleRotationMouseDown = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setIsRotating(true);
+        const startAngle = calculateAngle(e.clientX, e.clientY);
+        setRotationStartAngle(startAngle);
+        setBaseRotation(adjustments.rotation);
+    }, [adjustments.rotation, calculateAngle]);
+
+    const handleRotationMouseMove = useCallback((e) => {
+        if (!isRotating) return;
+
+        const currentAngle = calculateAngle(e.clientX, e.clientY);
+        let angleDiff = currentAngle - rotationStartAngle;
+
+        let newRotation = (baseRotation + angleDiff + 360) % 360;
+
+        // Snap to grid (e.g., 5 degrees) if Shift is held
+        if (e.shiftKey) {
+            newRotation = Math.round(newRotation / 5) * 5;
+        }
+
+        setTempAdjustments(prev => ({ ...prev, rotation: newRotation }));
+        if (canvasRef.current && originalImage) {
+            renderImage(canvasRef.current, originalImage, { ...adjustments, rotation: newRotation });
+        }
+    }, [isRotating, rotationStartAngle, baseRotation, calculateAngle, adjustments, originalImage, renderImage]);
+
+    const handleRotationMouseUp = useCallback(() => {
+        if (isRotating) {
+            setIsRotating(false);
+            if (tempAdjustments.rotation !== adjustments.rotation) {
+                pushToHistory({ ...adjustments, rotation: tempAdjustments.rotation });
+            }
+        }
+    }, [isRotating, tempAdjustments, adjustments, pushToHistory]);
 
     // Crop Handlers
     const handleCropMouseDown = useCallback((e, handle = null) => {
@@ -509,15 +606,24 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
     }, []);
 
     useEffect(() => {
-        if (isDragging || isResizing) {
-            document.addEventListener('mousemove', handleCropMouseMove);
-            document.addEventListener('mouseup', handleCropMouseUp);
+        const handleGlobalMouseMove = (e) => {
+            handleCropMouseMove(e);
+            handleRotationMouseMove(e);
+        };
+        const handleGlobalMouseUp = () => {
+            handleCropMouseUp();
+            handleRotationMouseUp();
+        };
+
+        if (isDragging || isResizing || isRotating) {
+            document.addEventListener('mousemove', handleGlobalMouseMove);
+            document.addEventListener('mouseup', handleGlobalMouseUp);
             return () => {
-                document.removeEventListener('mousemove', handleCropMouseMove);
-                document.removeEventListener('mouseup', handleCropMouseUp);
+                document.removeEventListener('mousemove', handleGlobalMouseMove);
+                document.removeEventListener('mouseup', handleGlobalMouseUp);
             };
         }
-    }, [isDragging, isResizing, handleCropMouseMove, handleCropMouseUp]);
+    }, [isDragging, isResizing, isRotating, handleCropMouseMove, handleCropMouseUp, handleRotationMouseMove, handleRotationMouseUp]);
 
 
     const applyCrop = useCallback(() => {
@@ -599,7 +705,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         }
     }, [imageFile, onSave, onClose, cropMode, cropArea, originalImage, adjustments, renderImage]);
 
-
     const sliders = [
         { label: 'Brightness', key: 'brightness', min: -100, max: 100 },
         { label: 'Contrast', key: 'contrast', min: -100, max: 100 },
@@ -611,20 +716,28 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="lg"
+            maxWidth={fullScreen ? false : "lg"}
             fullWidth
             TransitionComponent={Transition}
             fullScreen={fullScreen}
             PaperProps={{
                 sx: {
+                    height: fullScreen ? '100%' : 'calc(90vh)',
+                    maxHeight: fullScreen ? '100%' : 'calc(90vh)',
                     borderRadius: fullScreen ? 0 : 3,
-                    maxHeight: fullScreen ? '100%' : '90vh',
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(20px)',
+                    pb: fullScreen ? '50px' : 0,
+                    m: fullScreen ? 0 : 2
+                }
+            }}
+            sx={{
+                '& .MuiDialog-container': {
+                    height: fullScreen ? '100%' : '94%',
+                    maxHeight: fullScreen ? '100%' : '94%'
                 }
             }}
         >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, m: 0, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h6" fontWeight={600}>{title}</Typography>
                     {/* Process Buttons */}
@@ -713,24 +826,82 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                         </span>
                     </Tooltip>
                     <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                    <IconButton
+                        onClick={() => setManualFullScreen(!manualFullScreen)}
+                        size="small"
+                        sx={{ color: theme.palette.grey[500], padding: 0.5 }}
+                    >
+                        {fullScreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                    </IconButton>
                     <IconButton onClick={onClose}>
                         <X size={20} />
                     </IconButton>
                 </Box>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 0, display: 'flex', flexDirection: fullScreen ? 'column' : 'row', height: '100%', overflow: 'hidden' }}>
+            <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'row', height: '100%', overflow: 'hidden' }}>
                 {/* Canvas Area */}
                 <Box sx={{
                     flex: 1,
-                    bgcolor: '#f5f5f7',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     p: 3,
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    transition: 'background-color 0.3s ease'
                 }}>
+                    {/* Background Options Sidebar */}
+                    <Box sx={{
+                        position: 'absolute',
+                        left: 16,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                        zIndex: 10,
+                        bgcolor: 'rgba(255, 255, 255, 0.8)',
+                        backdropFilter: 'blur(10px)',
+                        p: 1.5,
+                        borderRadius: 3,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                    }}>
+                        {BACKGROUND_COLORS.map((color) => (
+                            <Tooltip key={color.name} title={color.name} placement="right">
+                                <IconButton
+                                    onClick={() => handleSliderChangeCommitted('canvasBgColor', color.value)}
+                                    sx={{
+                                        p: 0,
+                                        width: 28,
+                                        height: 28,
+                                        bgcolor: color.value === 'transparent' ? 'transparent' : color.value,
+                                        border: '1px solid',
+                                        borderColor: (tempAdjustments?.canvasBgColor || adjustments.canvasBgColor) === color.value ? theme.palette.primary.main : 'divider',
+                                        '&:hover': {
+                                            bgcolor: color.value === 'transparent' ? 'rgba(0,0,0,0.05)' : color.value,
+                                            transform: 'scale(1.1)',
+                                        },
+                                        transition: 'all 0.2s',
+                                        background: color.value === 'transparent' ?
+                                            'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)' : '',
+                                        backgroundSize: color.value === 'transparent' ? '8px 8px' : '',
+                                        backgroundPosition: color.value === 'transparent' ? '0 0, 4px 4px' : ''
+                                    }}
+                                >
+                                    {(tempAdjustments?.canvasBgColor || adjustments.canvasBgColor) === color.value && (
+                                        <Box sx={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: '50%',
+                                            bgcolor: color.value === '#000000' ? 'white' : 'black',
+                                            border: '1px solid rgba(255,255,255,0.2)'
+                                        }} />
+                                    )}
+                                </IconButton>
+                            </Tooltip>
+                        ))}
+                    </Box>
                     {imageUrl && imageLoaded ? (
                         <Box
                             ref={cropContainerRef}
@@ -738,6 +909,7 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                                 position: 'relative',
                                 maxWidth: '100%',
                                 maxHeight: '100%',
+                                minHeight: fullScreen ? '80vh' : '60vh',
                                 boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
                                 borderRadius: 2,
                                 lineHeight: 0
@@ -747,7 +919,7 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                                 ref={canvasRef}
                                 style={{
                                     maxWidth: '100%',
-                                    maxHeight: fullScreen ? '50vh' : '60vh',
+                                    maxHeight: fullScreen ? '80vh' : '60vh',
                                     display: 'block',
                                     borderRadius: '8px',
                                 }}
@@ -828,6 +1000,68 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                                     </Box>
                                 </>
                             )}
+
+                            {/* Canva-like Rotation Handle */}
+                            {!cropMode && (
+                                <Box
+                                    onMouseDown={handleRotationMouseDown}
+                                    sx={{
+                                        position: 'absolute',
+                                        bottom: -40,
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        cursor: isRotating ? 'grabbing' : 'grab',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        zIndex: 100,
+                                        '&:hover .rotate-icon': {
+                                            bgcolor: 'primary.main',
+                                            color: 'white',
+                                            transform: 'scale(1.1)'
+                                        }
+                                    }}
+                                >
+                                    <Paper
+                                        className="rotate-icon"
+                                        elevation={3}
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: isRotating ? 'primary.main' : 'white',
+                                            color: isRotating ? 'white' : 'text.primary',
+                                            transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        <RotateCw size={18} />
+                                    </Paper>
+
+                                    {isRotating && (
+                                        <Paper
+                                            elevation={2}
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 40,
+                                                bgcolor: 'rgba(0,0,0,0.75)',
+                                                color: 'white',
+                                                p: 1,
+                                                borderRadius: 1,
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                whiteSpace: 'nowrap',
+                                                pointerEvents: 'none'
+                                            }}
+                                        >
+                                            {Math.round(tempAdjustments?.rotation || 0)}°
+                                        </Paper>
+                                    )}
+                                </Box>
+                            )}
                         </Box>
                     ) : (
                         <Typography>Loading...</Typography>
@@ -836,13 +1070,14 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
 
                 {/* Controls */}
                 <Box sx={{
-                    width: fullScreen ? '100%' : 320,
+                    width: 320,
                     bgcolor: '#fff',
-                    borderLeft: fullScreen ? 'none' : '1px solid #eee',
-                    borderTop: fullScreen ? '1px solid #eee' : 'none',
+                    borderLeft: '1px solid #eee',
+                    borderTop: 'none',
                     display: 'flex',
                     flexDirection: 'column',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    flexShrink: 0
                 }}>
                     <Box sx={{ p: 3 }}>
                         {/* Tools */}

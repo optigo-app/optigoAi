@@ -35,7 +35,28 @@ import DragDropOverlay from "./Common/DragDropOverlay";
 import ImageEditorModal from "./Common/ImageEditorModal";
 import { Pencil } from "lucide-react";
 
-export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilters = [], onApply, isFilterOpen, initialExpanded = false, alwaysExpanded = false, showMoreFiltersButton = true, showSuggestions = false, productData = [], onSuggestionClick, autoFocus = false, suggestionPosition = 'bottom', externalLoading = false, isLoading = false, searchMode = 'ai', onImageUpload, onExpandChange }) {
+export default function ModernSearchBar({
+    onSubmit,
+    onFilterClick,
+    appliedFilters = [],
+    onApply,
+    isFilterOpen,
+    initialExpanded = false,
+    alwaysExpanded = false,
+    showMoreFiltersButton = true,
+    showSuggestions = false,
+    productData = [],
+    onSuggestionClick,
+    autoFocus = false,
+    suggestionPosition = 'bottom',
+    externalLoading = false,
+    isLoading = false,
+    searchMode = 'ai',
+    onImageUpload,
+    onExpandChange,
+    onMaintenanceClick
+}) {
+    const isMaintenanceMode = process.env.NEXT_PUBLIC_AI_MAINTENANCE_MODE === 'true';
     const { showSuccess, showError } = useCustomToast();
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
@@ -311,6 +332,11 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     };
 
     const handleUpload = (e) => {
+        if (isMaintenanceMode) {
+            if (onMaintenanceClick) onMaintenanceClick();
+            if (fileRef.current) fileRef.current.value = "";
+            return;
+        }
         isInternalChangeRef.current = true;
         const file = e.target.files?.[0];
         if (!file) return;
@@ -337,6 +363,10 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     const handlePaste = (e) => {
         for (const item of e.clipboardData.items) {
             if (item.type.startsWith("image/")) {
+                if (isMaintenanceMode) {
+                    if (onMaintenanceClick) onMaintenanceClick();
+                    return;
+                }
                 isInternalChangeRef.current = true;
                 const file = item.getAsFile();
                 setImageFile(file);
@@ -348,7 +378,6 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
     };
 
     const processDroppedFiles = (files) => {
-        isInternalChangeRef.current = true;
         const fileList = Array.from(files || []);
         const image = fileList.find((file) => file.type.startsWith("image/"));
 
@@ -359,6 +388,13 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
             return;
         }
 
+        if (isMaintenanceMode) {
+            if (onMaintenanceClick) onMaintenanceClick();
+            resetDragStates();
+            return;
+        }
+
+        isInternalChangeRef.current = true;
         setImageFile(image);
         setImagePreview(URL.createObjectURL(image));
         if (fileRef.current) {
@@ -392,9 +428,8 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
             if (e.dataTransfer) {
                 e.dataTransfer.dropEffect = "copy";
             }
-            if (!isDesignMode) {
-                setIsDraggingGlobal(true);
-            }
+            // Always allow dragging global to catch drops, especially to show maintenance modal
+            setIsDraggingGlobal(true);
         };
 
         const handleWindowDragLeave = (e) => {
@@ -549,18 +584,16 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                         isDraggingGlobal={isDraggingGlobal}
                         isDraggingLocal={isDraggingLocal}
                         onClose={resetDragStates}
+                        title={isMaintenanceMode ? "AI Search Under Maintenance" : undefined}
+                        subtitle={isMaintenanceMode ? "Image search is currently unavailable" : undefined}
                         onDrop={(e) => {
                             handleDrop(e);
                         }}
                         onDragOver={(e) => {
-                            if (!isDesignMode) {
-                                setIsDraggingGlobal(true);
-                            }
+                            setIsDraggingGlobal(true);
                         }}
                         onDragEnter={(e) => {
-                            if (!isDesignMode) {
-                                setIsDraggingLocal(true);
-                            }
+                            setIsDraggingLocal(true);
                         }}
                         onDragLeave={(e) => {
                             setIsDraggingLocal(false);
@@ -576,16 +609,12 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                         }}
                         onDragOver={(e) => {
                             e.preventDefault();
-                            if (!isDesignMode) {
-                                setIsDraggingLocal(true);
-                                setIsDraggingGlobal(true);
-                            }
+                            setIsDraggingLocal(true);
+                            setIsDraggingGlobal(true);
                         }}
                         onDragEnter={(e) => {
                             e.preventDefault();
-                            if (!isDesignMode) {
-                                setIsDraggingLocal(true);
-                            }
+                            setIsDraggingLocal(true);
                         }}
                         onDragLeave={(e) => {
                             e.preventDefault();
@@ -638,22 +667,25 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             <Box className="input-flex-row">
                                 {/* Upload Icon */}
                                 {!isMultiline && (
-                                    <Tooltip title={isDesignMode ? "" : "Upload image"}>
+                                    <Tooltip title={isMaintenanceMode ? "AI Search Under Maintenance" : (isDesignMode ? "" : "Upload image")}>
                                         <span>
                                             <IconButton
                                                 className="iconbuttonsearch"
-                                                disabled={isDesignMode}
+                                                disabled={isDesignMode || isMaintenanceMode}
                                                 onClick={() => {
-                                                    if (!isDesignMode) {
+                                                    if (!isDesignMode && !isMaintenanceMode) {
                                                         fileRef.current.click();
+                                                    } else if (isMaintenanceMode) {
+                                                        if (onMaintenanceClick) onMaintenanceClick();
                                                     }
                                                 }}
                                                 sx={{
                                                     ...actionIconButtonSx,
-                                                    cursor: isDesignMode ? "not-allowed" : "pointer",
+                                                    cursor: (isDesignMode || isMaintenanceMode) ? "not-allowed" : "pointer",
                                                     "&:hover": {
-                                                        backgroundColor: isDesignMode ? "transparent" : undefined
-                                                    }
+                                                        backgroundColor: (isDesignMode || isMaintenanceMode) ? "transparent" : undefined
+                                                    },
+                                                    opacity: isMaintenanceMode ? 0.6 : 1
                                                 }}
                                             >
                                                 {isDesignMode ? <Search size={20} /> : <ImagePlus size={22} />}
@@ -672,7 +704,7 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                                 />
 
                                 <TextField
-                                    placeholder={isDesignMode ? "Search your jewelry designs..." : "Describe your idea, and I'll bring it to life"}
+                                    placeholder={isMaintenanceMode ? "Search your jewelry designs" : (isDesignMode ? "Search your jewelry designs..." : "Describe your idea, and I'll bring it to life")}
                                     variant="standard"
                                     fullWidth
                                     multiline
@@ -734,14 +766,27 @@ export default function ModernSearchBar({ onSubmit, onFilterClick, appliedFilter
                             {/* Multiline Bottom Actions Row */}
                             {isMultiline && (
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.5 }}>
-                                    <Tooltip title="Upload image">
-                                        <IconButton
-                                            className="iconbuttonsearch"
-                                            onClick={() => fileRef.current.click()}
-                                            sx={actionIconButtonSx}
-                                        >
-                                            <ImagePlus size={20} />
-                                        </IconButton>
+                                    <Tooltip title={isMaintenanceMode ? "AI Search Under Maintenance" : "Upload image"}>
+                                        <span>
+                                            <IconButton
+                                                className="iconbuttonsearch"
+                                                onClick={() => {
+                                                    if (!isMaintenanceMode) {
+                                                        fileRef.current.click();
+                                                    } else {
+                                                        if (onMaintenanceClick) onMaintenanceClick();
+                                                    }
+                                                }}
+                                                disabled={isMaintenanceMode}
+                                                sx={{
+                                                    ...actionIconButtonSx,
+                                                    cursor: isMaintenanceMode ? "not-allowed" : "pointer",
+                                                    opacity: isMaintenanceMode ? 0.6 : 1
+                                                }}
+                                            >
+                                                <ImagePlus size={20} />
+                                            </IconButton>
+                                        </span>
                                     </Tooltip>
 
                                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>

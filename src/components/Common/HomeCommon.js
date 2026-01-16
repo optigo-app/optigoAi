@@ -49,7 +49,10 @@ export const ModeSwitch = ({ selectedMode, onSelect }) => {
     );
 };
 
-export const SearchModeToggle = ({ activeMode, onModeChange, sx = {} }) => {
+export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick, sx = {} }) => {
+    // Check if AI maintenance mode is active
+    const isMaintenanceMode = process.env.NEXT_PUBLIC_AI_MAINTENANCE_MODE === 'true';
+
     return (
         <Box
             sx={{
@@ -66,15 +69,53 @@ export const SearchModeToggle = ({ activeMode, onModeChange, sx = {} }) => {
                 { id: "ai", label: "AI Search", icon: <Sparkles size={16} />, color: "#7367f0" },
             ].map((mode) => {
                 const isActive = activeMode === mode.id;
+                const isAiMode = mode.id === "ai";
+                const isDisabled = isAiMode && isMaintenanceMode;
 
                 return (
                     <motion.div
                         key={mode.id}
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.97 }}
+                        style={{ position: 'relative' }}
                     >
+                        {/* Maintenance Badge */}
+                        {isAiMode && isMaintenanceMode && (
+                            <Box
+                                component={motion.div}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                sx={{
+                                    position: 'absolute',
+                                    top: -8,
+                                    right: -8,
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%)',
+                                    border: '2px solid white',
+                                    boxShadow: '0 2px 8px rgba(255, 107, 107, 0.4)',
+                                    zIndex: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    color: 'white',
+                                }}
+                            >
+                                !
+                            </Box>
+                        )}
+
                         <Button
-                            onClick={() => onModeChange(mode.id)}
+                            onClick={() => {
+                                if (isDisabled && onMaintenanceClick) {
+                                    onMaintenanceClick();
+                                } else {
+                                    onModeChange(mode.id);
+                                }
+                            }}
                             startIcon={mode.icon}
                             disableRipple
                             size="small"
@@ -86,22 +127,30 @@ export const SearchModeToggle = ({ activeMode, onModeChange, sx = {} }) => {
                                 fontSize: "0.8rem",
                                 fontWeight: 600,
                                 minHeight: "36px",
+                                position: 'relative',
 
-                                border: `1px solid ${isActive ? mode.color : "rgba(0,0,0,0.12)"}`,
+                                border: `1px solid ${isActive ? mode.color : isDisabled ? "rgba(255,107,107,0.3)" : "rgba(0,0,0,0.12)"}`,
 
                                 backgroundColor: isActive
                                     ? `${mode.color}1A`
-                                    : "transparent",
+                                    : isDisabled
+                                        ? "rgba(255,107,107,0.05)"
+                                        : "transparent",
 
-                                color: isActive ? mode.color : "text.secondary",
+                                color: isActive ? mode.color : isDisabled ? "rgba(255,107,107,0.7)" : "text.secondary",
+
+                                opacity: isDisabled ? 0.8 : 1,
+                                cursor: isDisabled ? 'pointer' : 'pointer',
 
                                 transition: "all 0.25s ease",
 
                                 '&:hover': {
                                     backgroundColor: isActive
                                         ? `${mode.color}26`
-                                        : "rgba(0,0,0,0.05)",
-                                    borderColor: mode.color,
+                                        : isDisabled
+                                            ? "rgba(255,107,107,0.1)"
+                                            : "rgba(0,0,0,0.05)",
+                                    borderColor: isDisabled ? "rgba(255,107,107,0.5)" : mode.color,
                                 },
 
                                 '& .MuiButton-startIcon': {
@@ -118,4 +167,3 @@ export const SearchModeToggle = ({ activeMode, onModeChange, sx = {} }) => {
         </Box>
     );
 };
-

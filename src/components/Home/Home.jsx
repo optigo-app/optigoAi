@@ -9,6 +9,7 @@ import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { fileToBase64 } from "@/utils/globalFunc";
 import { SearchModeToggle } from "../Common/HomeCommon";
+import AiMaintenanceModal from "../Common/AiMaintenanceModal";
 import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
@@ -105,6 +106,7 @@ const Home = () => {
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [featureIndex, setFeatureIndex] = useState(0);
     const [appliedFilters, setAppliedFilters] = useState([]);
+    const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
 
     // Use product data context
     const { productData, isLoading: isLoadingProducts, fetchProductData, setPendingSearch } = useProductData();
@@ -374,7 +376,11 @@ const Home = () => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ delay: 0.7, duration: 0.5 }}
                 >
-                    <SearchModeToggle activeMode={selectedMode} onModeChange={setSelectedMode} />
+                    <SearchModeToggle
+                        activeMode={selectedMode}
+                        onModeChange={setSelectedMode}
+                        onMaintenanceClick={() => setShowMaintenanceModal(true)}
+                    />
                 </Box>
 
                 {/* Search Bar */}
@@ -387,6 +393,7 @@ const Home = () => {
                 >
                     <ModernSearchBar
                         onSubmit={handleSearch}
+                        onMaintenanceClick={() => setShowMaintenanceModal(true)}
                         appliedFilters={appliedFilters}
                         onApply={setAppliedFilters}
                         initialExpanded={true}
@@ -404,6 +411,13 @@ const Home = () => {
                 </Box>
 
             </Container>
+
+            {/* AI Maintenance Modal */}
+            <AiMaintenanceModal
+                open={showMaintenanceModal}
+                onClose={() => setShowMaintenanceModal(false)}
+                onSwitchToDesign={() => setSelectedMode('design')}
+            />
         </GridBackground>
     );
 }

@@ -30,6 +30,7 @@ import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 import ProductPageHeader from "@/components/Product/ProductPageHeader";
 import ReusableConfirmModal from '@/components/Common/ReusableConfirmModal';
+import AiMaintenanceModal from '@/components/Common/AiMaintenanceModal';
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 
 
@@ -77,6 +78,7 @@ function ProductClientContent() {
         }
         return 'design';
     });
+    const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
 
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
@@ -792,6 +794,7 @@ function ProductClientContent() {
                             <SearchModeToggle
                                 activeMode={searchMode}
                                 onModeChange={setSearchMode}
+                                onMaintenanceClick={() => setShowMaintenanceModal(true)}
                                 sx={{
                                     bgcolor: 'white',
                                     borderRadius: 2,
@@ -805,6 +808,7 @@ function ProductClientContent() {
                     </Fade>
                     <ModernSearchBar
                         onSubmit={handleSubmit}
+                        onMaintenanceClick={() => setShowMaintenanceModal(true)}
                         onFilterClick={() => setIsFilterOpen(prev => !prev)}
                         appliedFilters={appliedFilters}
                         onApply={handleApplyFilters}
@@ -949,6 +953,13 @@ function ProductClientContent() {
                 onClose={() => setIsRemoveConfirmOpen(false)}
                 onConfirm={executeBulkRemove}
                 type="bulkRemove"
+            />
+
+            {/* AI Maintenance Modal */}
+            <AiMaintenanceModal
+                open={showMaintenanceModal}
+                onClose={() => setShowMaintenanceModal(false)}
+                onSwitchToDesign={() => setSearchMode('design')}
             />
         </GridBackground >
     );
