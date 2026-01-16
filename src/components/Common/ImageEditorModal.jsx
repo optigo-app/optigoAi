@@ -104,16 +104,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
     const [rotationStartAngle, setRotationStartAngle] = useState(0);
     const [baseRotation, setBaseRotation] = useState(0);
 
-    const BACKGROUND_COLORS = [
-        { name: 'Transparent', value: 'transparent' },
-        { name: 'White', value: '#ffffff' },
-        { name: 'Black', value: '#000000' },
-        { name: 'Light Grey', value: '#f5f5f7' },
-        { name: 'Soft Blue', value: '#e3f2fd' },
-        { name: 'Soft Pink', value: '#fce4ec' },
-        { name: 'Soft Green', value: '#e8f5e9' }
-    ];
-
     // Effect to center 1:1 crop when enabled
     useEffect(() => {
         if (cropMode && cropContainerRef.current) {
@@ -384,14 +374,15 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
     const [activeProcessor, setActiveProcessor] = useState(null);
 
     const handleProcess = useCallback(async (processorId) => {
+        debugger
         if (!originalImage || !canvasRef.current) return;
 
         setActiveProcessor(processorId);
         try {
             const blob = await new Promise(resolve => canvasRef.current.toBlob(resolve, 'image/png'));
             const currentFile = new File([blob], "current_edit.png", { type: 'image/png' });
-
             const resultBlob = await processingService.processImage(processorId, currentFile);
+            console.log(resultBlob)
 
             // Create new image from result
             const url = URL.createObjectURL(resultBlob);
@@ -851,57 +842,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                     overflow: 'hidden',
                     transition: 'background-color 0.3s ease'
                 }}>
-                    {/* Background Options Sidebar */}
-                    <Box sx={{
-                        position: 'absolute',
-                        left: 16,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1.5,
-                        zIndex: 10,
-                        bgcolor: 'rgba(255, 255, 255, 0.8)',
-                        backdropFilter: 'blur(10px)',
-                        p: 1.5,
-                        borderRadius: 3,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                    }}>
-                        {BACKGROUND_COLORS.map((color) => (
-                            <Tooltip key={color.name} title={color.name} placement="right">
-                                <IconButton
-                                    onClick={() => handleSliderChangeCommitted('canvasBgColor', color.value)}
-                                    sx={{
-                                        p: 0,
-                                        width: 28,
-                                        height: 28,
-                                        bgcolor: color.value === 'transparent' ? 'transparent' : color.value,
-                                        border: '1px solid',
-                                        borderColor: (tempAdjustments?.canvasBgColor || adjustments.canvasBgColor) === color.value ? theme.palette.primary.main : 'divider',
-                                        '&:hover': {
-                                            bgcolor: color.value === 'transparent' ? 'rgba(0,0,0,0.05)' : color.value,
-                                            transform: 'scale(1.1)',
-                                        },
-                                        transition: 'all 0.2s',
-                                        background: color.value === 'transparent' ?
-                                            'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)' : '',
-                                        backgroundSize: color.value === 'transparent' ? '8px 8px' : '',
-                                        backgroundPosition: color.value === 'transparent' ? '0 0, 4px 4px' : ''
-                                    }}
-                                >
-                                    {(tempAdjustments?.canvasBgColor || adjustments.canvasBgColor) === color.value && (
-                                        <Box sx={{
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: '50%',
-                                            bgcolor: color.value === '#000000' ? 'white' : 'black',
-                                            border: '1px solid rgba(255,255,255,0.2)'
-                                        }} />
-                                    )}
-                                </IconButton>
-                            </Tooltip>
-                        ))}
-                    </Box>
                     {imageUrl && imageLoaded ? (
                         <Box
                             ref={cropContainerRef}
@@ -922,8 +862,56 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                                     maxHeight: fullScreen ? '80vh' : '60vh',
                                     display: 'block',
                                     borderRadius: '8px',
+                                    filter: activeProcessor ? 'blur(1px) brightness(0.8)' : 'none',
+                                    transition: 'filter 0.3s ease'
                                 }}
                             />
+
+                            {/* Processing Overlay & Animation */}
+                            {activeProcessor && (
+                                <Box sx={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    zIndex: 200,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden',
+                                    borderRadius: '8px',
+                                    pointerEvents: 'none'
+                                }}>
+                                    {/* Scanning Line Animation */}
+                                    <Box sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '5px',
+                                        background: 'linear-gradient(90deg, transparent, #7367f0, transparent)',
+                                        boxShadow: '0 0 15px #7367f0, 0 0 5px rgba(115, 103, 240, 0.5)',
+                                        animation: 'scan 2s linear infinite',
+                                        zIndex: 201,
+                                        '@keyframes scan': {
+                                            '0%': { top: '0%' },
+                                            '100%': { top: '100%' }
+                                        }
+                                    }} />
+
+                                    {/* Pulse Effect */}
+                                    <Box sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                        animation: 'pulse-bg 1.5s ease-in-out infinite',
+                                        '@keyframes pulse-bg': {
+                                            '0%': { opacity: 0.3 },
+                                            '50%': { opacity: 0.7 },
+                                            '100%': { opacity: 0.3 }
+                                        }
+                                    }} />
+                                </Box>
+                            )}
 
                             {/* Crop Overlay */}
                             {cropMode && (
@@ -1001,67 +989,64 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                                 </>
                             )}
 
-                            {/* Canva-like Rotation Handle */}
-                            {!cropMode && (
-                                <Box
-                                    onMouseDown={handleRotationMouseDown}
+                            <Box
+                                onMouseDown={handleRotationMouseDown}
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: -40,
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    cursor: isRotating ? 'grabbing' : 'grab',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    zIndex: 100,
+                                    '&:hover .rotate-icon': {
+                                        bgcolor: 'primary.main',
+                                        color: 'white',
+                                        transform: 'scale(1.1)'
+                                    }
+                                }}
+                            >
+                                <Paper
+                                    className="rotate-icon"
+                                    elevation={3}
                                     sx={{
-                                        position: 'absolute',
-                                        bottom: -40,
-                                        left: '50%',
-                                        transform: 'translateX(-50%)',
-                                        cursor: isRotating ? 'grabbing' : 'grab',
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: '50%',
                                         display: 'flex',
-                                        flexDirection: 'column',
                                         alignItems: 'center',
-                                        gap: 0.5,
-                                        zIndex: 100,
-                                        '&:hover .rotate-icon': {
-                                            bgcolor: 'primary.main',
-                                            color: 'white',
-                                            transform: 'scale(1.1)'
-                                        }
+                                        justifyContent: 'center',
+                                        bgcolor: isRotating ? 'primary.main' : 'white',
+                                        color: isRotating ? 'white' : 'text.primary',
+                                        transition: 'all 0.2s ease',
                                     }}
                                 >
+                                    <RotateCw size={18} />
+                                </Paper>
+
+                                {isRotating && (
                                     <Paper
-                                        className="rotate-icon"
-                                        elevation={3}
+                                        elevation={2}
                                         sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: isRotating ? 'primary.main' : 'white',
-                                            color: isRotating ? 'white' : 'text.primary',
-                                            transition: 'all 0.2s ease',
+                                            position: 'absolute',
+                                            top: 40,
+                                            bgcolor: 'rgba(0,0,0,0.75)',
+                                            color: 'white',
+                                            p: 1,
+                                            borderRadius: 1,
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            whiteSpace: 'nowrap',
+                                            pointerEvents: 'none'
                                         }}
                                     >
-                                        <RotateCw size={18} />
+                                        {Math.round(tempAdjustments?.rotation || 0)}°
                                     </Paper>
-
-                                    {isRotating && (
-                                        <Paper
-                                            elevation={2}
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 40,
-                                                bgcolor: 'rgba(0,0,0,0.75)',
-                                                color: 'white',
-                                                p: 1,
-                                                borderRadius: 1,
-                                                fontSize: '12px',
-                                                fontWeight: 600,
-                                                whiteSpace: 'nowrap',
-                                                pointerEvents: 'none'
-                                            }}
-                                        >
-                                            {Math.round(tempAdjustments?.rotation || 0)}°
-                                        </Paper>
-                                    )}
-                                </Box>
-                            )}
+                                )}
+                            </Box>
                         </Box>
                     ) : (
                         <Typography>Loading...</Typography>

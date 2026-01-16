@@ -1,4 +1,5 @@
 import {
+    API_BASE_URL,
     API_ENDPOINTS,
     API_ERROR_MESSAGES,
     PROCESSOR_ENDPOINTS
@@ -40,13 +41,23 @@ export const processingService = {
             console.log(`🔄 Processing image with ${processorId} at ${endpoint}`);
         }
 
-        // apiCallBinary expects endpoint, not full URL if it appends base URL itself.
-        // However, our apiCallBinary implementation PREPENDS API_BASE_URL.
-        // So we just pass the endpoint path.
         const result = await apiCallBinary(endpoint, {
             method: 'POST',
             body: formData,
         });
+
+        if (result && !(result instanceof Blob) && result.image_url) {
+            console.log(`🔗 Received image URL from ${processorId}, fetching actual image...`);
+            const imageUrl = result.image_url.startsWith('http')
+                ? result.image_url
+                : `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${result.image_url.replace(/\\/g, '/')}`;
+
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+                throw new Error(`Failed to fetch processed image from ${imageUrl}`);
+            }
+            return await imageResponse.blob();
+        }
 
         console.log(`✅ ${processorId} processing result:`, result);
         return result;

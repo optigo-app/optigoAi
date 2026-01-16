@@ -52,6 +52,12 @@ export async function apiCallBinary(endpoint, options = {}) {
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
+    // Check if response is JSON (e.g. for background remover which returns image_url)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    }
+
     return await response.blob();
   } catch (error) {
     throw error;
