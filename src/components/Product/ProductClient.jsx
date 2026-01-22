@@ -9,6 +9,7 @@ import {
     Fade,
     Popover,
     Tooltip,
+    Chip,
 } from "@mui/material";
 
 import ModernSearchBar from "@/components/ModernSearchBar";
@@ -32,6 +33,7 @@ import ProductPageHeader from "@/components/Product/ProductPageHeader";
 import ReusableConfirmModal from '@/components/Common/ReusableConfirmModal';
 import AiMaintenanceModal from '@/components/Common/AiMaintenanceModal';
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
+import { saveAiSearchRequestApi } from '@/app/api/saveAiSearchRequestApi';
 
 
 function ProductClientContent() {
@@ -572,13 +574,13 @@ function ProductClientContent() {
         setLastSearchData(searchData);
         setError(null);
         setIsSearchLoading(true);
+        let finalImage = searchData.image;
         try {
             const options = {
                 top_k: searchData?.numResults || "10",
                 min_percent: searchData?.accuracy || "50.0",
             };
 
-            let finalImage = searchData.image;
             // Skip compression if already handled (e.g., from Home page)
             if (finalImage && !searchData.isPreProcessed && (searchData.isSearchFlag === 2 || searchData.isSearchFlag === 3)) {
                 try {
@@ -612,6 +614,15 @@ function ProductClientContent() {
             })();
 
             if (!res || !Array.isArray(res)) {
+                // Background logging for Failure (Unexpected Response)
+                const eventNames = { 1: "TextSearch", 2: "ImageSearch", 3: "HybridSearch" };
+                saveAiSearchRequestApi({
+                    EventName: eventNames[effectiveSearchFlag] || "AiSearch",
+                    SearchText: searchData.text || "",
+                    ImageFile: finalImage,
+                    IsSuccess: "0"
+                }).catch(logErr => console.error("Logging failed:", logErr));
+
                 setSearchResults([]);
                 setAppliedFilters((prev) =>
                     prev.filter(
@@ -636,6 +647,16 @@ function ProductClientContent() {
                     ),
                 ]);
             }
+
+            // Background logging for Success
+            const eventNames = { 1: "TextSearch", 2: "ImageSearch", 3: "HybridSearch" };
+            saveAiSearchRequestApi({
+                EventName: eventNames[effectiveSearchFlag] || "AiSearch",
+                SearchText: searchData.text || "",
+                ImageFile: finalImage,
+                IsSuccess: "1"
+            }).catch(logErr => console.error("Logging failed:", logErr));
+
         } catch (err) {
             console.error("Search Error:", err);
             logErrorToServer({
@@ -660,6 +681,16 @@ function ProductClientContent() {
                     ),
                 ]);
             }
+
+            // Background logging for Failure
+            const eventNames = { 1: "TextSearch", 2: "ImageSearch", 3: "HybridSearch" };
+            saveAiSearchRequestApi({
+                EventName: eventNames[effectiveSearchFlag] || "AiSearch",
+                SearchText: searchData.text || "",
+                ImageFile: finalImage,
+                IsSuccess: "0"
+            }).catch(logErr => console.error("Logging failed:", logErr));
+
         } finally {
             setIsSearchLoading(false);
         }

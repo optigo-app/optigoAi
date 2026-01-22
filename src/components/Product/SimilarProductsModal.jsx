@@ -16,15 +16,14 @@ import {
     TextField,
     Tooltip
 } from '@mui/material';
-import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
+import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize, ThumbsUp, ThumbsDown, Check, MessageSquare } from 'lucide-react';
 import ProductCard from './ProductCard';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 import { searchService } from '@/services/apiService';
-import { uploadService } from '@/services/uploadService';
-import { getMatchedDesignCollections, compressImagesToWebP } from '@/utils/globalFunc';
+import { getMatchedDesignCollections } from '@/utils/globalFunc';
 import { saveAiSearchFeedbackApi } from '@/app/api/saveAiSearchFeedbackApi';
+import { saveAiSearchRequestApi } from '@/app/api/saveAiSearchRequestApi';
 import useCustomToast from '@/hook/useCustomToast';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SimilarProductsModal({ open, onClose, baseProduct, allProducts, onSearchSimilar, onBack, onForward, canGoBack, canGoForward }) {
     const [loading, setLoading] = useState(false);
@@ -127,10 +126,27 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             searchCacheRef.current[cacheKey] = filteredMatched;
             setSimilarProducts(filteredMatched);
 
+            // Background logging for Success
+            saveAiSearchRequestApi({
+                EventName: "ImageSearch",
+                SearchText: `Visual match for: ${baseProduct.designno || baseProduct.name}`,
+                ImageUrl: baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl || "",
+                IsSuccess: "1"
+            }).catch(logErr => console.error("Logging failed:", logErr));
+
         } catch (err) {
             console.error('Similar search failed:', err);
             setError(err.message || 'Failed to load similar products.');
             setSimilarProducts([]);
+
+            // Background logging for Failure
+            saveAiSearchRequestApi({
+                EventName: "ImageSearch",
+                SearchText: `Visual match for: ${baseProduct.designno || baseProduct.name}`,
+                ImageUrl: baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl || "",
+                IsSuccess: "0"
+            }).catch(logErr => console.error("Logging failed:", logErr));
+
         } finally {
             setLoading(false);
             setIsNavigating(false);
@@ -175,37 +191,10 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
         }
 
         try {
-            let imageUrl = "";
-            let imageFileName = "";
-
-            if (!isRemoval && item.imageUrl) {
-                const storedUKey = typeof window !== 'undefined' ? sessionStorage.getItem('ukey') : null;
-                // Use proxy to avoid CORS errors
-                const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(item.imageUrl)}`;
-                const response = await fetch(proxyUrl);
-                const blob = await response.blob();
-                const file = new File([blob], "similar-search.webp", { type: "image/webp" });
-
-                const compressed = await compressImagesToWebP(file);
-                if (compressed && compressed.length > 0) {
-                    const uploadResult = await uploadService.uploadFile(
-                        compressed[0].blob,
-                        'AiSearch',
-                        storedUKey || undefined
-                    );
-
-                    if (uploadResult && uploadResult.url) {
-                        imageUrl = uploadResult.fileName;
-                        imageFileName = uploadResult.name || uploadResult.fileName || "";
-                    }
-                }
-            }
-
             const response = await saveAiSearchFeedbackApi({
                 EventName: "SimilarSearch",
                 SearchText: `Visual match for: ${item.name}`,
-                ImageUrl: imageUrl,
-                FileName: imageFileName,
+                ImageUrl: !isRemoval ? item.imageUrl : "",
                 IsLiked: isRemoval ? (currentlyLiked ? "1" : "0") : isLiked,
                 FeedbackID: feedbackIds[item.id] || "",
                 Comment: comment,

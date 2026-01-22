@@ -159,6 +159,7 @@ export function createSearchChip(searchData, isError = false) {
                 name: "Image Search",
                 icon: true,
                 imageUrl: imageUrl,
+                imageFile: (typeof searchData.image !== 'string') ? searchData.image : null,
                 error: isError
             },
         };
@@ -170,6 +171,7 @@ export function createSearchChip(searchData, isError = false) {
                 id: "hybrid-search",
                 name: searchData.text?.trim() || "Hybrid Search",
                 imageUrl: imageUrl,
+                imageFile: (typeof searchData.image !== 'string') ? searchData.image : null,
                 text: searchData.text?.trim(),
                 error: isError
             },

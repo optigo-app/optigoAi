@@ -2,27 +2,27 @@
   "dG9rZW5fY2xpZW50MV9zZWNyZXRfa2V5XzEyMzQ1": [
     {
       "userId": "admin@orail.co.in",
-      "timestamp": "2026-01-16T07:49:03.236Z",
+      "timestamp": "2026-01-22T06:37:55.497Z",
       "shortReason": "Search execution failed on Product page",
-      "detailedReason": "{\n  \"message\": \"Failed to search text\",\n  \"stack\": \"Error: Failed to search text\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_ff9d84b6._.js:1141:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_faa8e15f._.js:13682:29)\",\n  \"searchData\": {\n    \"text\": \"ring\",\n    \"image\": null,\n    \"isSearchFlag\": 1,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
+      "detailedReason": "{\n  \"message\": \"Failed to perform hybrid search\",\n  \"stack\": \"Error: Failed to perform hybrid search\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js?id=%255Bproject%255D%252Fsrc%252Fservices%252FapiService.js+%255Bapp-client%255D+%2528ecmascript%2529:33:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252FProduct%252FProductClient.jsx+%255Bapp-client%255D+%2528ecmascript%2529:745:29)\",\n  \"searchData\": {\n    \"text\": \"ring\",\n    \"image\": {},\n    \"isSearchFlag\": 3,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
     },
     {
       "userId": "admin@orail.co.in",
-      "timestamp": "2026-01-16T07:49:56.036Z",
+      "timestamp": "2026-01-22T06:37:58.297Z",
       "shortReason": "Search execution failed on Product page",
-      "detailedReason": "{\n  \"message\": \"Internal server error\",\n  \"stack\": \"Error: Internal server error\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_ff9d84b6._.js:1141:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_faa8e15f._.js:13682:29)\",\n  \"searchData\": {\n    \"text\": \"ring\",\n    \"image\": null,\n    \"isSearchFlag\": 1,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
+      "detailedReason": "{\n  \"message\": \"Failed to perform hybrid search\",\n  \"stack\": \"Error: Failed to perform hybrid search\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js?id=%255Bproject%255D%252Fsrc%252Fservices%252FapiService.js+%255Bapp-client%255D+%2528ecmascript%2529:33:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252FProduct%252FProductClient.jsx+%255Bapp-client%255D+%2528ecmascript%2529:745:29)\",\n  \"searchData\": {\n    \"text\": \"ring\",\n    \"image\": {},\n    \"isSearchFlag\": 3,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
     },
     {
       "userId": "admin@orail.co.in",
-      "timestamp": "2026-01-16T07:51:10.825Z",
+      "timestamp": "2026-01-22T06:38:18.193Z",
       "shortReason": "Search execution failed on Product page",
-      "detailedReason": "{\n  \"message\": \"Failed to search text\",\n  \"stack\": \"Error: Failed to search text\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_ff9d84b6._.js:1141:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_faa8e15f._.js:13682:29)\",\n  \"searchData\": {\n    \"text\": \"ring\",\n    \"image\": null,\n    \"isSearchFlag\": 1,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
+      "detailedReason": "{\n  \"message\": \"Failed to search images\",\n  \"stack\": \"Error: Failed to search images\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js:1141:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js:13818:29)\",\n  \"searchData\": {\n    \"text\": \"\",\n    \"image\": {},\n    \"isSearchFlag\": 2,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
     },
     {
       "userId": "admin@orail.co.in",
-      "timestamp": "2026-01-16T08:07:23.555Z",
+      "timestamp": "2026-01-22T06:52:46.649Z",
       "shortReason": "Search execution failed on Product page",
-      "detailedReason": "{\n  \"message\": \"Failed to search text\",\n  \"stack\": \"Error: Failed to search text\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_ff9d84b6._.js:1141:19)\\n    at async ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_faa8e15f._.js:13682:29)\",\n  \"searchData\": {\n    \"text\": \"ring\",\n    \"image\": null,\n    \"isSearchFlag\": 1,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
+      "detailedReason": "{\n  \"message\": \"Failed to fetch\",\n  \"stack\": \"TypeError: Failed to fetch\\n    at apiCall (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js:1131:32)\\n    at Object.searchByImage (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js:1186:16)\\n    at ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js:13786:182)\\n    at ProductClientContent.useCallback[handleSubmit] (http://localhost:5051/_next/static/chunks/src_23bc7acc._.js:13795:69)\",\n  \"searchData\": {\n    \"text\": \"\",\n    \"image\": {},\n    \"isSearchFlag\": 2,\n    \"numResults\": 200,\n    \"accuracy\": 40\n  }\n}"
     }
   ]
 }

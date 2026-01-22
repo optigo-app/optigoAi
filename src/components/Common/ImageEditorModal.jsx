@@ -45,7 +45,7 @@ const DEFAULTS = {
     rotation: 0,
     flipH: false,
     flipV: false,
-    canvasBgColor: 'transparent'
+    canvasBgColor: '#ffffff'
 };
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -225,21 +225,20 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         const ctx = targetCanvas.getContext('2d');
         const { crop = null } = options;
 
-        // Use original dimensions
-        let renderWidth = sourceImage.width;
-        let renderHeight = sourceImage.height;
+        // Use square dimensions
+        const side = Math.max(sourceImage.width, sourceImage.height);
 
-        targetCanvas.width = renderWidth;
-        targetCanvas.height = renderHeight;
+        targetCanvas.width = side;
+        targetCanvas.height = side;
 
         // Clear canvas
         ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
 
-        // Fill background color if set
-        if (currentAdjustments.canvasBgColor && currentAdjustments.canvasBgColor !== 'transparent') {
-            ctx.fillStyle = currentAdjustments.canvasBgColor;
-            ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
-        }
+        // Fill background color
+        ctx.fillStyle = (currentAdjustments.canvasBgColor && currentAdjustments.canvasBgColor !== 'transparent')
+            ? currentAdjustments.canvasBgColor
+            : '#ffffff';
+        ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
 
         ctx.save();
         ctx.translate(targetCanvas.width / 2, targetCanvas.height / 2);
@@ -374,7 +373,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
     const [activeProcessor, setActiveProcessor] = useState(null);
 
     const handleProcess = useCallback(async (processorId) => {
-        debugger
         if (!originalImage || !canvasRef.current) return;
 
         setActiveProcessor(processorId);
@@ -525,65 +523,60 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
 
             switch (resizeHandle) {
                 case 'nw':
-                    // Update Left, Top
-                    const newX_nw = Math.min(Math.max(0, x), currentR - minSize);
-                    newCrop.x = newX_nw;
-                    newCrop.width = currentR - newX_nw;
-
-                    const newY_nw = Math.min(Math.max(0, y), currentB - minSize);
-                    newCrop.y = newY_nw;
-                    newCrop.height = currentB - newY_nw;
+                    // Update Left, Top - Maintain 1:1
+                    const d_nw = Math.max(x - cropArea.x, y - cropArea.y);
+                    const size_nw = Math.max(minSize, Math.min(cropArea.width - d_nw, currentR, currentB));
+                    newCrop.x = currentR - size_nw;
+                    newCrop.y = currentB - size_nw;
+                    newCrop.width = size_nw;
+                    newCrop.height = size_nw;
                     break;
 
                 case 'ne':
-                    // Update Top, Right
-                    const newY_ne = Math.min(Math.max(0, y), currentB - minSize);
-                    newCrop.y = newY_ne;
-                    newCrop.height = currentB - newY_ne;
-
-                    const newW_ne = Math.min(Math.max(minSize, x - cropArea.x), rect.width - cropArea.x);
-                    newCrop.width = newW_ne;
+                    // Update Top, Right - Maintain 1:1
+                    const d_ne = Math.max(currentR - x, y - cropArea.y);
+                    const size_ne = Math.max(minSize, Math.min(cropArea.width - d_ne, rect.width - cropArea.x, currentB));
+                    newCrop.y = currentB - size_ne;
+                    newCrop.width = size_ne;
+                    newCrop.height = size_ne;
                     break;
 
                 case 'sw':
-                    // Update Left, Bottom
-                    const newX_sw = Math.min(Math.max(0, x), currentR - minSize);
-                    newCrop.x = newX_sw;
-                    newCrop.width = currentR - newX_sw;
-
-                    const newH_sw = Math.min(Math.max(minSize, y - cropArea.y), rect.height - cropArea.y);
-                    newCrop.height = newH_sw;
+                    // Update Left, Bottom - Maintain 1:1
+                    const d_sw = Math.max(x - cropArea.x, currentB - y);
+                    const size_sw = Math.max(minSize, Math.min(cropArea.width - d_sw, currentR, rect.height - cropArea.y));
+                    newCrop.x = currentR - size_sw;
+                    newCrop.width = size_sw;
+                    newCrop.height = size_sw;
                     break;
 
                 case 'se':
-                    // Update Right, Bottom
-                    const newW_se = Math.min(Math.max(minSize, x - cropArea.x), rect.width - cropArea.x);
-                    newCrop.width = newW_se;
-                    const newH_se = Math.min(Math.max(minSize, y - cropArea.y), rect.height - cropArea.y);
-                    newCrop.height = newH_se;
+                    // Update Right, Bottom - Maintain 1:1
+                    const size_se = Math.max(minSize, Math.min(x - cropArea.x, y - cropArea.y, rect.width - cropArea.x, rect.height - cropArea.y));
+                    newCrop.width = size_se;
+                    newCrop.height = size_se;
                     break;
 
                 case 'n':
-                    // Update Top
-                    const newY_n = Math.min(Math.max(0, y), currentB - minSize);
-                    newCrop.y = newY_n;
-                    newCrop.height = currentB - newY_n;
-                    break;
                 case 's':
-                    // Update Bottom
-                    const newH_s = Math.min(Math.max(minSize, y - cropArea.y), rect.height - cropArea.y);
-                    newCrop.height = newH_s;
-                    break;
                 case 'w':
-                    // Update Left
-                    const newX_w = Math.min(Math.max(0, x), currentR - minSize);
-                    newCrop.x = newX_w;
-                    newCrop.width = currentR - newX_w;
-                    break;
                 case 'e':
-                    // Update Right
-                    const newW_e = Math.min(Math.max(minSize, x - cropArea.x), rect.width - cropArea.x);
-                    newCrop.width = newW_e;
+                    // For single handles, we can still force square by expanding equally
+                    // But usually, square format is best handled by diagonal handles.
+                    // For simplicity and user request, we'll treat them carefully or just disable expansion that breaks square.
+                    if (resizeHandle === 'n' || resizeHandle === 's') {
+                        const newH = resizeHandle === 'n' ? currentB - y : y - cropArea.y;
+                        const size = Math.max(minSize, Math.min(newH, rect.width - cropArea.x, rect.height - cropArea.y));
+                        if (resizeHandle === 'n') newCrop.y = currentB - size;
+                        newCrop.width = size;
+                        newCrop.height = size;
+                    } else {
+                        const newW = resizeHandle === 'w' ? currentR - x : x - cropArea.x;
+                        const size = Math.max(minSize, Math.min(newW, rect.width - cropArea.x, rect.height - cropArea.y));
+                        if (resizeHandle === 'w') newCrop.x = currentR - size;
+                        newCrop.width = size;
+                        newCrop.height = size;
+                    }
                     break;
             }
             setCropArea(newCrop);
@@ -623,9 +616,12 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
         const displayRect = cropContainerRef.current?.getBoundingClientRect();
         if (!displayRect) return;
 
-        // Calculate crop coordinates relative to the actual image size
-        const scaleX = originalImage.width / displayRect.width;
-        const scaleY = originalImage.height / displayRect.height;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        // Calculate crop coordinates relative to the actual canvas size (which is square)
+        const scaleX = canvas.width / displayRect.width;
+        const scaleY = canvas.height / displayRect.height;
 
         const actualCrop = {
             x: cropArea.x * scaleX,
@@ -679,9 +675,10 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
 
         if (cropMode) {
             const displayRect = cropContainerRef.current?.getBoundingClientRect();
-            if (displayRect && originalImage) {
-                const scaleX = originalImage.width / displayRect.width;
-                const scaleY = originalImage.height / displayRect.height;
+            if (displayRect && canvasRef.current) {
+                const canvas = canvasRef.current;
+                const scaleX = canvas.width / displayRect.width;
+                const scaleY = canvas.height / displayRect.height;
                 const actualCrop = {
                     x: cropArea.x * scaleX,
                     y: cropArea.y * scaleY,
@@ -881,34 +878,83 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
                                     borderRadius: '8px',
                                     pointerEvents: 'none'
                                 }}>
-                                    {/* Scanning Line Animation */}
-                                    <Box sx={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '5px',
-                                        background: 'linear-gradient(90deg, transparent, #7367f0, transparent)',
-                                        boxShadow: '0 0 15px #7367f0, 0 0 5px rgba(115, 103, 240, 0.5)',
-                                        animation: 'scan 2s linear infinite',
-                                        zIndex: 201,
-                                        '@keyframes scan': {
-                                            '0%': { top: '0%' },
-                                            '100%': { top: '100%' }
-                                        }
-                                    }} />
-
-                                    {/* Pulse Effect */}
                                     <Box sx={{
                                         position: 'absolute',
                                         inset: 0,
-                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                        animation: 'pulse-bg 1.5s ease-in-out infinite',
-                                        '@keyframes pulse-bg': {
-                                            '0%': { opacity: 0.3 },
-                                            '50%': { opacity: 0.7 },
-                                            '100%': { opacity: 0.3 }
-                                        }
+                                        zIndex: 201,
+                                        pointerEvents: 'none',
+                                        overflow: 'hidden',
+                                        borderRadius: '8px',
+                                        animation: 'scan-container 3s ease-in-out infinite',
+                                    }}>
+                                        {/* Main Glowing Scan Line */}
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '4px',
+                                            background: `linear-gradient(90deg, 
+                                                transparent 0%, 
+                                                ${alpha('#7367f0', 0.2)} 15%, 
+                                                #7367f0 50%, 
+                                                ${alpha('#7367f0', 0.2)} 85%, 
+                                                transparent 100%)`,
+                                            boxShadow: `
+                                                0 0 20px #7367f0,
+                                                0 0 40px ${alpha('#7367f0', 0.4)},
+                                                0 0 10px rgba(255, 255, 255, 0.8)
+                                            `,
+                                            animation: 'scan-line 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                                            zIndex: 203,
+                                        }} />
+
+                                        {/* Trailing Glow Effect */}
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            width: '100%',
+                                            height: '100px',
+                                            background: `linear-gradient(to top, 
+                                                ${alpha('#7367f0', 0.3)} 0%, 
+                                                ${alpha('#7367f0', 0.1)} 50%, 
+                                                transparent 100%)`,
+                                            animation: 'scan-trail 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                                            zIndex: 202,
+                                        }} />
+
+                                        {/* Keyframes for the enhanced animation */}
+                                        <style dangerouslySetInnerHTML={{
+                                            __html: `
+                                            @keyframes scan-line {
+                                                0% { top: -5%; opacity: 0; }
+                                                10% { opacity: 1; }
+                                                90% { opacity: 1; }
+                                                100% { top: 105%; opacity: 0; }
+                                            }
+                                            @keyframes scan-trail {
+                                                0% { transform: translateY(-105px); opacity: 0; }
+                                                10% { opacity: 1; }
+                                                90% { opacity: 1; }
+                                                100% { transform: translateY(calc(100vh + 5%)); opacity: 0; }
+                                            }
+                                            @keyframes pulse-intense {
+                                                0% { background-color: ${alpha('#7367f0', 0.05)}; }
+                                                50% { background-color: ${alpha('#7367f0', 0.15)}; }
+                                                100% { background-color: ${alpha('#7367f0', 0.05)}; }
+                                            }
+                                        `}} />
+                                    </Box>
+
+                                    {/* Pulse Effect Layer */}
+                                    <Box sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        zIndex: 200,
+                                        bgcolor: alpha('#7367f0', 0.05),
+                                        animation: 'pulse-intense 2s ease-in-out infinite',
+                                        pointerEvents: 'none'
                                     }} />
                                 </Box>
                             )}

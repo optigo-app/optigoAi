@@ -2,12 +2,9 @@
 
 import React from 'react';
 import { Chip, Avatar, Box, IconButton, Tooltip, Popover, TextField, Button, Stack, Typography, CircularProgress } from '@mui/material';
-import { Image as ImageIcon, ThumbsDown, ThumbsUp, MessageSquare, Send, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Image as ImageIcon, ThumbsDown, ThumbsUp } from 'lucide-react';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 import { saveAiSearchFeedbackApi } from '@/app/api/saveAiSearchFeedbackApi';
-import { uploadService } from '@/services/uploadService';
-import { compressImagesToWebP } from '@/utils/globalFunc';
 import useCustomToast from '@/hook/useCustomToast';
 
 const softPrimaryChipSx = {
@@ -116,47 +113,9 @@ export default function FilterChips({
         }
 
         try {
-            let imageUrl = "";
-            let imageFileName = "";
             let eventName = "TextSearch";
-
             if (item.id === "image-search") eventName = "ImageSearch";
             if (item.id === "hybrid-search") eventName = "HybridSearch";
-
-            // 1. If image search and NOT a removal, upload image
-            if (!isRemoval && (item.id === "image-search" || item.id === "hybrid-search") && item.imageUrl) {
-                const storedUKey = typeof window !== 'undefined' ? sessionStorage.getItem('ukey') : null;
-                let blob;
-                // Check if URL is remote (http/https) to decide on proxy usage
-                if (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('https')) {
-                    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(item.imageUrl)}`;
-                    const response = await fetch(proxyUrl);
-                    blob = await response.blob();
-                } else {
-                    // Local URL or blob URL - fetch directly
-                    const response = await fetch(item.imageUrl);
-                    blob = await response.blob();
-                }
-                const file = new File([blob], "search-image.webp", { type: "image/webp" });
-
-                const compressed = await compressImagesToWebP(file);
-                if (compressed && compressed.length > 0) {
-                    const uploadResult = await uploadService.uploadFile(
-                        compressed[0].blob,
-                        'AiSearch',
-                        storedUKey || undefined
-                    );
-
-                    if (uploadResult && uploadResult.url) {
-                        imageUrl = uploadResult.fileName;
-                        imageFileName = uploadResult.name || uploadResult.fileName || "";
-                    } else {
-                        showError("Failed to upload image. Feedback not sent.");
-                        setIsReporting(false);
-                        return;
-                    }
-                }
-            }
 
             // 2. Call the feedback API
             let searchText = item.name || "";
@@ -169,8 +128,8 @@ export default function FilterChips({
             const response = await saveAiSearchFeedbackApi({
                 EventName: eventName,
                 SearchText: searchText,
-                ImageUrl: imageUrl,
-                FileName: imageFileName,
+                ImageUrl: !isRemoval ? item.imageUrl : "", // Pass URL, API will handle upload if remote
+                ImageFile: !isRemoval ? item.imageFile : null,
                 IsLiked: isRemoval ? (currentlyLiked ? "1" : "0") : actualStatus,
                 FeedbackID: feedbackIds[item.id] || "",
                 Comment: comment,
