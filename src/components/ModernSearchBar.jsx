@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
     Box,
     IconButton,
@@ -61,7 +61,10 @@ export default function ModernSearchBar({
     const fileRef = useRef(null);
     const textFieldRef = useRef(null);
     const containerRef = useRef(null);
-    const isInternalChangeRef = useRef(false);
+    const isInternalChangeRef = useRef(null);
+    const dragCounter = useRef(0);
+    const resetTimeoutRef = useRef(null);
+    const isProcessingRef = useRef(false);
     const [isExpanded, setIsExpanded] = useState(initialExpanded || alwaysExpanded);
     const isDesignMode = searchMode === 'design';
 
@@ -332,18 +335,27 @@ export default function ModernSearchBar({
     };
 
     const handleUpload = (e) => {
+        if (isProcessingRef.current) return;
+
         if (isMaintenanceMode) {
             if (onMaintenanceClick) onMaintenanceClick();
             if (fileRef.current) fileRef.current.value = "";
             return;
         }
-        isInternalChangeRef.current = true;
+
         const file = e.target.files?.[0];
         if (!file) return;
+
+        isProcessingRef.current = true;
+        isInternalChangeRef.current = true;
         setImageFile(file);
         setImagePreview(URL.createObjectURL(file));
         setIsExpanded(true);
         if (onImageUpload) onImageUpload(file);
+
+        setTimeout(() => {
+            isProcessingRef.current = false;
+        }, 500);
     };
 
     const handleSaveEditedImage = (editedFile) => {
@@ -361,23 +373,34 @@ export default function ModernSearchBar({
     };
 
     const handlePaste = (e) => {
+        if (isProcessingRef.current) return;
+
         for (const item of e.clipboardData.items) {
             if (item.type.startsWith("image/")) {
                 if (isMaintenanceMode) {
                     if (onMaintenanceClick) onMaintenanceClick();
                     return;
                 }
+
+                isProcessingRef.current = true;
                 isInternalChangeRef.current = true;
                 const file = item.getAsFile();
                 setImageFile(file);
                 setImagePreview(URL.createObjectURL(file));
                 setIsExpanded(true);
                 if (onImageUpload) onImageUpload(file);
+
+                setTimeout(() => {
+                    isProcessingRef.current = false;
+                }, 500);
+                break; // Process only first image
             }
         }
     };
 
     const processDroppedFiles = (files) => {
+        if (isProcessingRef.current) return;
+
         const fileList = Array.from(files || []);
         const image = fileList.find((file) => file.type.startsWith("image/"));
 
@@ -394,7 +417,9 @@ export default function ModernSearchBar({
             return;
         }
 
+        isProcessingRef.current = true;
         isInternalChangeRef.current = true;
+
         setImageFile(image);
         setImagePreview(URL.createObjectURL(image));
         if (fileRef.current) {
@@ -404,6 +429,11 @@ export default function ModernSearchBar({
         setIsDragging(false);
         setIsExpanded(true);
         if (onImageUpload) onImageUpload(image);
+
+        // Reset lock after a short delay to allow UI to settle
+        setTimeout(() => {
+            isProcessingRef.current = false;
+        }, 500);
     };
 
     const handleDrop = (e) => {
@@ -416,32 +446,85 @@ export default function ModernSearchBar({
         e.preventDefault();
     };
 
-    const resetDragStates = () => {
+    // Helper: Check if drag event contains files (Safari-compatible)
+    const isFileDragEvent = useCallback((e) => {
+        const types = e.dataTransfer?.types;
+        if (!types) return false;
+        return (Array.isArray(types) && types.includes('Files')) ||
+            (typeof types.includes === 'function' && types.includes('Files')) ||
+            (types.contains && types.contains('Files'));
+    }, []);
+
+    // Helper: Clear pending reset timeout
+    const clearResetTimeout = useCallback(() => {
+        if (resetTimeoutRef.current) {
+            clearTimeout(resetTimeoutRef.current);
+            resetTimeoutRef.current = null;
+        }
+    }, []);
+
+    // Helper: Schedule drag state reset with timeout
+    const scheduleReset = useCallback((delay = 50) => {
+        clearResetTimeout();
+        resetTimeoutRef.current = setTimeout(() => {
+            dragCounter.current = 0;
+            setIsDraggingGlobal(false);
+            setIsDraggingLocal(false);
+            setIsDragging(false);
+            resetTimeoutRef.current = null;
+        }, delay);
+    }, [clearResetTimeout]);
+
+    const resetDragStates = useCallback(() => {
         setIsDraggingGlobal(false);
         setIsDraggingLocal(false);
         setIsDragging(false);
-    };
+    }, []);
 
     useEffect(() => {
         const handleWindowDragOver = (e) => {
             e.preventDefault();
+            e.stopPropagation();
             if (e.dataTransfer) {
                 e.dataTransfer.dropEffect = "copy";
             }
-            // Always allow dragging global to catch drops, especially to show maintenance modal
+
+            // Clear any pending reset and maintain active state
+            clearResetTimeout();
+
+            if (isFileDragEvent(e)) {
+                setIsDraggingGlobal(true);
+            }
+        };
+
+        const handleWindowDragEnter = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!isFileDragEvent(e)) return;
+
+            clearResetTimeout();
+            dragCounter.current++;
             setIsDraggingGlobal(true);
         };
 
         const handleWindowDragLeave = (e) => {
             e.preventDefault();
-            // relatedTarget is null when leaving the window
+            e.stopPropagation();
+
+            // Only reset when actually leaving the window (no relatedTarget)
+            // Ignore leave events between child elements
             if (!e.relatedTarget) {
-                resetDragStates();
+                dragCounter.current = 0;
+                scheduleReset();
             }
         };
 
         const handleWindowDrop = (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            clearResetTimeout();
+            dragCounter.current = 0;
             resetDragStates();
         };
 
@@ -452,12 +535,14 @@ export default function ModernSearchBar({
         };
 
         window.addEventListener("dragover", handleWindowDragOver);
+        window.addEventListener("dragenter", handleWindowDragEnter);
         window.addEventListener("dragleave", handleWindowDragLeave);
         window.addEventListener("drop", handleWindowDrop);
         window.addEventListener("keydown", handleKeyDown);
 
         return () => {
             window.removeEventListener("dragover", handleWindowDragOver);
+            window.removeEventListener("dragenter", handleWindowDragEnter);
             window.removeEventListener("dragleave", handleWindowDragLeave);
             window.removeEventListener("drop", handleWindowDrop);
             window.removeEventListener("keydown", handleKeyDown);
@@ -754,10 +839,32 @@ export default function ModernSearchBar({
                                                     <Settings2 size={20} />
                                                 </IconButton>
                                             </Tooltip>
-
-                                            <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
-                                                {(isLoading && !isDesignMode) ? <CircularProgress size={20} color="inherit" thickness={5} /> : <ArrowRight size={20} />}
-                                            </IconButton>
+                                            {isDesignMode ? (
+                                                <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
+                                                    {(isLoading && !isDesignMode) ?
+                                                        <CircularProgress size={20} color="inherit" thickness={5} /> :
+                                                        <ArrowRight size={20} />}
+                                                </IconButton>
+                                            ) :
+                                                <Box
+                                                    className="ai_searchbtn"
+                                                    component="img"
+                                                    src="/images/send.png"
+                                                    onClick={() => {
+                                                        if (!isCatalogLoading && !isLoading) {
+                                                            handleSend(false);
+                                                        }
+                                                    }}
+                                                    sx={{
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '50%',
+                                                        opacity: (isCatalogLoading || isLoading) ? 0.6 : 1,
+                                                        cursor: (isCatalogLoading || isLoading) ? 'not-allowed' : 'pointer'
+                                                    }}
+                                                />
+                                            }
                                         </Box>
                                     </Zoom>
                                 )}
@@ -813,7 +920,7 @@ export default function ModernSearchBar({
                                                 ) : isDesignMode ? (
                                                     <ArrowRight size={20} />
                                                 ) : (
-                                                    <Box component="img" src="/icons/sendBtn.png" sx={{ width: 22, height: 22, objectFit: 'contain' }} />
+                                                    <Box component="img" src="/images/send.png" sx={{ width: 22, height: 22, objectFit: 'contain' }} />
                                                 )}
                                             </IconButton>
                                         </Tooltip>

@@ -26,12 +26,18 @@ const DragDropOverlay = ({
                     transition={{ duration: 0.1, ease: "easeOut" }}
                     onDragOver={(e) => {
                         e.preventDefault();
+                        e.stopPropagation();
                         onDragOver?.(e);
-                        if (e.target === e.currentTarget) {
-                            onDragLeave?.(e);
-                        }
                     }}
-                    onDragLeave={onDragLeave}
+                    onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onDragLeave?.(e);
+                    }}
                     onDrop={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -56,10 +62,19 @@ const DragDropOverlay = ({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.98, opacity: 0 }}
                         transition={{ duration: 0.15, ease: "easeOut" }}
-                        onDragOver={(e) => {
+                        onDragEnter={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             onDragEnter?.(e);
+                        }}
+                        onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onDragOver?.(e);
                         }}
                         onDrop={(e) => {
                             e.preventDefault();
