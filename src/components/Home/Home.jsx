@@ -16,6 +16,8 @@ import { useProductData } from "@/context/ProductDataContext";
 import { useAuth } from "@/context/AuthContext";
 import GridBackground from "../Common/GridBackground";
 import FullPageLoader from "../FullPageLoader";
+import HowItWorks from "./HowItWorks";
+import Footer from "../Common/Footer";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -193,224 +195,308 @@ const Home = () => {
         }
     };
 
+    const handleScrollToHowItWorks = () => {
+        const section = document.getElementById('how-it-works-section');
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
         <GridBackground>
-            <GradientWaves />
-            {isRedirecting && <FullPageLoader open={true} showLogo={selectedMode === 'ai'} message="Start Searching..." subtitle="Please wait while we find your results." />}
-            {/* --- ANIMATED BLOBS (Side Accents) --- */}
-            <motion.div
-                {...floatAnimation}
-                style={{
-                    position: "absolute",
-                    top: "5%",
-                    left: "10%",
-                    width: "350px",
-                    height: "350px",
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, rgba(115,103,240,0.25) 0%, rgba(162,155,254,0.15) 100%)",
-                    filter: "blur(80px)",
-                    zIndex: 0
-                }}
-            />
-            <motion.div
-                animate={{ y: [0, 40, 0], x: [0, -40, 0] }}
-                transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                style={{
-                    position: "absolute",
-                    bottom: "10%",
-                    right: "10%",
-                    width: "400px",
-                    height: "400px",
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, rgba(255,100,100,0.15) 0%, rgba(255,159,67,0.1) 100%)",
-                    filter: "blur(90px)",
-                    zIndex: 0
-                }}
-            />
-
-            <Container
-                maxWidth="md"
-                sx={{
-                    position: "relative",
-                    zIndex: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    mt: 6
-                }}
-            >
-
-                {/* --- BRANDING (In-Flow, Tight Spacing) --- */}
+            <Box sx={{ position: "relative", width: "100%", overflow: "hidden", pb: 54.5 }}>
+                <GradientWaves />
+                {isRedirecting && <FullPageLoader open={true} showLogo={selectedMode === 'ai'} message="Start Searching..." subtitle="Please wait while we find your results." />}
                 <Box
-                    component={motion.div}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
                     sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        mb: 4,
-                        backdropFilter: "blur(10px)",
-                        borderRadius: "24px",
+                        position: 'absolute',
+                        top: { xs: 16, md: 16 },
+                        right: { xs: 16, md: 16 },
+                        zIndex: 100
                     }}
                 >
-                    <Box>
-                        <Image
-                            src="/favicon.svg"
-                            alt="Hero Image"
-                            width={70}
-                            height={70}
-                            priority
-                            draggable={false}
-                            style={{
-                                maxWidth: '100%',
-                                height: 'auto',
-                                marginBottom: 2,
+                    <Box
+                        onClick={handleScrollToHowItWorks}
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            bgcolor: 'white',
+                            color: 'text.primary',
+                            px: 2,
+                            py: 1,
+                            borderRadius: '30px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            transition: 'all 0.3s ease',
+                            border: '1px solid rgba(0,0,0,0.05)',
+
+                            animation: 'pulseHighlight 2.5s infinite',
+
+                            '@keyframes pulseHighlight': {
+                                '0%': {
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                    transform: 'scale(1)'
+                                },
+                                '50%': {
+                                    boxShadow: '0 6px 18px rgba(115,103,240,0.25)',
+                                    transform: 'scale(1.02)'
+                                },
+                                '100%': {
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                    transform: 'scale(1)'
+                                }
+                            },
+
+                            '&:hover': {
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                                bgcolor: '#f8f9fa',
+                                animation: 'none'
+                            }
+                        }}
+                    >
+                        <Typography variant="button" sx={{ fontWeight: 600, textTransform: 'none', fontSize: '0.95rem' }}>
+                            How it works?
+                        </Typography>
+                        <Box
+                            sx={{
+                                width: 24,
+                                height: 24,
                                 borderRadius: '50%',
-                                cursor: 'none',
-                                userSelect: 'none',
-                                WebkitUserDrag: 'none',
-                                pointerEvents: 'auto',
+                                bgcolor: '#7367f0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white'
                             }}
-                            onDragStart={(e) => e.preventDefault()}
-                        />
-
-
+                        >
+                            <ArrowRight size={14} />
+                        </Box>
                     </Box>
                 </Box>
 
-                {/*new feature*/}
-                <Box
-                    component={motion.div}
-                    initial={{ opacity: 0, scale: 0.98, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.6, duration: 0.4 }}
+                {/* --- ANIMATED BLOBS (Side Accents) --- */}
+                <motion.div
+                    {...floatAnimation}
+                    style={{
+                        position: "absolute",
+                        top: "5%",
+                        left: "10%",
+                        width: "350px",
+                        height: "350px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, rgba(115,103,240,0.25) 0%, rgba(162,155,254,0.15) 100%)",
+                        filter: "blur(80px)",
+                        zIndex: 0
+                    }}
+                />
+                <motion.div
+                    animate={{ y: [0, 40, 0], x: [0, -40, 0] }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                        position: "absolute",
+                        bottom: "10%",
+                        right: "10%",
+                        width: "400px",
+                        height: "400px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, rgba(255,100,100,0.15) 0%, rgba(255,159,67,0.1) 100%)",
+                        filter: "blur(90px)",
+                        zIndex: 0
+                    }}
+                />
+
+                <Container
+                    maxWidth={false}
                     sx={{
-                        mb: 4,
-                        px: 2,
-                        py: 1.1,
-                        borderRadius: 1,
+                        position: "relative",
+                        zIndex: 2,
                         display: 'flex',
-                        justifyContent: 'center',
-                        background: "rgba(255,255,255,0.45)",
-                        backdropFilter: "blur(15px)",
-                        maxWidth: 720,
-                        mx: 'auto',
-                        overflow: 'hidden',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        mt: 6
                     }}
                 >
-                    <motion.div
-                        key={featureIndex}
-                        initial={{ opacity: 0, x: 12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -12 }}
-                        transition={{ duration: 0.35, ease: 'easeOut' }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                            <Box
-                                sx={{
-                                    px: 0.8,
-                                    py: 0.25,
-                                    borderRadius: 999,
-                                    fontSize: 11,
-                                    fontWeight: 500,
-                                    letterSpacing: 0.4,
-                                    textTransform: 'uppercase',
-                                    background: 'rgba(129,140,248,0.10)',
-                                    color: '#4f46e5',
-                                    border: '1px solid rgba(129,140,248,0.40)'
-                                }}
-                            >
-                                New
-                            </Box>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    fontSize: 13,
-                                    fontWeight: 500,
-                                    color: '#475569',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                {upcomingFeatures[featureIndex]}
-                            </Typography>
-                            <ArrowRight size={16} color="#94a3b8" style={{ marginLeft: 4 }} />
-                        </Box>
-                    </motion.div>
-                </Box>
 
-                {/* Hero Text */}
-                <Box sx={{ mb: 4, textAlign: "center" }}>
-                    <Typography
-                        variant="h1"
-                        fontWeight="600"
+                    {/* --- BRANDING (In-Flow, Tight Spacing) --- */}
+                    <Box
+                        component={motion.div}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
                         sx={{
-                            fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
-                            whiteSpace: "nowrap",
-                            mb: 1.5,
-                            letterSpacing: "-1px",
-                            lineHeight: 1.1,
-                            color: "#475569",
-                            opacity: 0.9,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            mb: 4,
+                            backdropFilter: "blur(10px)",
+                            borderRadius: "24px",
                         }}
                     >
-                        <TypewriterText text="Cloud AI — Built Deep Into Your Business." />
-                    </Typography>
+                        <Box>
+                            <Image
+                                src="/favicon.svg"
+                                alt="Hero Image"
+                                width={70}
+                                height={70}
+                                priority
+                                draggable={false}
+                                style={{
+                                    maxWidth: '100%',
+                                    height: 'auto',
+                                    marginBottom: 2,
+                                    borderRadius: '50%',
+                                    cursor: 'none',
+                                    userSelect: 'none',
+                                    WebkitUserDrag: 'none',
+                                    pointerEvents: 'auto',
+                                }}
+                                onDragStart={(e) => e.preventDefault()}
+                            />
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 0.6 }}
+
+                        </Box>
+                    </Box>
+
+                    {/*new feature*/}
+                    <Box
+                        component={motion.div}
+                        initial={{ opacity: 0, scale: 0.98, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ delay: 0.6, duration: 0.4 }}
+                        sx={{
+                            mb: 4,
+                            px: 2,
+                            py: 1.1,
+                            borderRadius: 1,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            background: "rgba(255,255,255,0.45)",
+                            backdropFilter: "blur(15px)",
+                            maxWidth: 720,
+                            mx: 'auto',
+                            overflow: 'hidden',
+                        }}
                     >
-                        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, maxWidth: 600, mx: "auto", fontSize: "1.1rem", opacity: 0.8, height: "1.5rem" }}>
-                            <ContinuousTypewriter texts={typeWriterText} />
+                        <motion.div
+                            key={featureIndex}
+                            initial={{ opacity: 0, x: 12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -12 }}
+                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                <Box
+                                    sx={{
+                                        px: 0.8,
+                                        py: 0.25,
+                                        borderRadius: 999,
+                                        fontSize: 11,
+                                        fontWeight: 500,
+                                        letterSpacing: 0.4,
+                                        textTransform: 'uppercase',
+                                        background: 'rgba(129,140,248,0.10)',
+                                        color: '#4f46e5',
+                                        border: '1px solid rgba(129,140,248,0.40)'
+                                    }}
+                                >
+                                    New
+                                </Box>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontSize: 13,
+                                        fontWeight: 500,
+                                        color: '#475569',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    {upcomingFeatures[featureIndex]}
+                                </Typography>
+                                <ArrowRight size={16} color="#94a3b8" style={{ marginLeft: 4 }} />
+                            </Box>
+                        </motion.div>
+                    </Box>
+
+                    {/* Hero Text */}
+                    <Box sx={{ mb: 4, textAlign: "center" }}>
+                        <Typography
+                            variant="h1"
+                            fontWeight="600"
+                            sx={{
+                                fontSize: { xs: "1.5rem", sm: "2rem", md: "3rem" },
+                                whiteSpace: "nowrap",
+                                mb: 1.5,
+                                letterSpacing: "-1px",
+                                lineHeight: 1.1,
+                                color: "#475569",
+                                opacity: 0.9,
+                            }}
+                        >
+                            <TypewriterText text="Cloud AI — Built Deep Into Your Business." />
                         </Typography>
-                    </motion.div>
-                </Box>
 
-                {/* Mode Selection Toggle */}
-                <Box
-                    component={motion.div}
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.7, duration: 0.5 }}
-                >
-                    <SearchModeToggle
-                        activeMode={selectedMode}
-                        onModeChange={setSelectedMode}
-                        onMaintenanceClick={() => setShowMaintenanceModal(true)}
-                    />
-                </Box>
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5, duration: 0.6 }}
+                        >
+                            <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, maxWidth: 600, mx: "auto", fontSize: "1.1rem", opacity: 0.8, height: "1.5rem" }}>
+                                <ContinuousTypewriter texts={typeWriterText} />
+                            </Typography>
+                        </motion.div>
+                    </Box>
 
-                {/* Search Bar */}
-                <Box
-                    component={motion.div}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8, duration: 0.6, type: "spring", stiffness: 100 }}
-                    sx={{ width: "100%", maxWidth: 800 }}
-                >
-                    <ModernSearchBar
-                        onSubmit={handleSearch}
-                        onMaintenanceClick={() => setShowMaintenanceModal(true)}
-                        appliedFilters={appliedFilters}
-                        onApply={setAppliedFilters}
-                        initialExpanded={true}
-                        alwaysExpanded={true}
-                        showMoreFiltersButton={false}
-                        showSuggestions={true}
-                        productData={productData}
-                        onSuggestionClick={handleSuggestionClick}
-                        autoFocus={true}
-                        externalLoading={isLoadingProducts}
-                        isLoading={isRedirecting}
-                        searchMode={selectedMode}
-                        onImageUpload={() => setSelectedMode('ai')}
-                    />
-                </Box>
+                    {/* Mode Selection Toggle */}
+                    <Box
+                        component={motion.div}
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ delay: 0.7, duration: 0.5 }}
+                    >
+                        <SearchModeToggle
+                            activeMode={selectedMode}
+                            onModeChange={setSelectedMode}
+                            onMaintenanceClick={() => setShowMaintenanceModal(true)}
+                        />
+                    </Box>
 
-            </Container>
+                    {/* Search Bar */}
+                    <Box
+                        component={motion.div}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8, duration: 0.6, type: "spring", stiffness: 100 }}
+                        sx={{ width: "100%", maxWidth: 800 }}
+                    >
+                        <ModernSearchBar
+                            onSubmit={handleSearch}
+                            onMaintenanceClick={() => setShowMaintenanceModal(true)}
+                            appliedFilters={appliedFilters}
+                            onApply={setAppliedFilters}
+                            initialExpanded={true}
+                            alwaysExpanded={true}
+                            showMoreFiltersButton={false}
+                            showSuggestions={true}
+                            productData={productData}
+                            onSuggestionClick={handleSuggestionClick}
+                            autoFocus={true}
+                            externalLoading={isLoadingProducts}
+                            isLoading={isRedirecting}
+                            searchMode={selectedMode}
+                            onImageUpload={() => setSelectedMode('ai')}
+                        />
+                    </Box>
+
+                </Container>
+            </Box>
+
+            {/* --- NEW SECTIONS --- */}
+            <HowItWorks />
+
+            {/* Footer */}
+            {/* <Footer /> */}
 
             {/* AI Maintenance Modal */}
             <AiMaintenanceModal

@@ -28,7 +28,7 @@ import {
 import "../Style/chatInput.scss";
 import useCustomToast from "@/hook/useCustomToast";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
-import { formatMasterData, getAuthData } from "@/utils/globalFunc";
+import { formatMasterData, getAuthData, isSafariBrowser } from "@/utils/globalFunc";
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 import DragDropOverlay from "./Common/DragDropOverlay";
@@ -734,16 +734,19 @@ export default function ModernSearchBar({
                                             >
                                                 <X size={16} />
                                             </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                className="edit-image"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setIsEditorOpen(true);
-                                                }}
-                                            >
-                                                <Pencil size={16} />
-                                            </IconButton>
+
+                                            {!isSafariBrowser() && (
+                                                <IconButton
+                                                    size="small"
+                                                    className="edit-image"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsEditorOpen(true);
+                                                    }}
+                                                >
+                                                    <Pencil size={16} />
+                                                </IconButton>
+                                            )}
                                         </Box>
                                     </Box>
                                 </Zoom>
@@ -1079,9 +1082,9 @@ export default function ModernSearchBar({
                             )}
                         </Box>
                     </Paper>
-                </Box>
+                </Box >
 
-            </ClickAwayListener>
+            </ClickAwayListener >
             <ImageEditorModal
                 open={isEditorOpen}
                 onClose={() => setIsEditorOpen(false)}

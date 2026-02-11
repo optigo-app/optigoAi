@@ -36,7 +36,6 @@ export const formatMasterData = (data) => {
     return formatted;
 };
 
-
 export function buildQuoteRedirectUrl(designsId, curVersion) {
     const urlParams = new URLSearchParams(window.location.search);
     const parentBase = urlParams.get('parentBase');
@@ -67,27 +66,6 @@ export function buildQuoteRedirectUrl(designsId, curVersion) {
         `&ifid=Quotation` +
         `&pid=undefined`;
 }
-
-// export function buildQuoteRedirectUrl(designsId, curVersion) {
-//     const urlParams = new URLSearchParams(window.location.search);
-//     const parentBase = urlParams.get('parentBase');
-
-//     let baseUrl;
-//     if (parentBase) {
-//         baseUrl = parentBase;
-//     } else if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
-//         baseUrl = `${window.location.ancestorOrigins[0]}/${curVersion}`;
-//     } else {
-//         const { origin, pathname } = window.location;
-//         const pathSegments = pathname.split('/').filter(Boolean);
-//         const basePath = pathSegments.length > 0 ? `/${pathSegments[0]}` : "";
-//         baseUrl = `${origin}${basePath}`;
-//     }
-
-//     return `${baseUrl}/myapp/app/RedirectFromNextJs.aspx`
-// }
-
-
 
 export const fileToBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -211,7 +189,6 @@ export const autoScrollToRestoredTarget = ({
     };
 };
 
-
 export async function compressImagesToWebP(files, customOptions = {}) {
     const inputFiles = Array.isArray(files) ? files : [files];
 
@@ -245,3 +222,9 @@ export async function compressImagesToWebP(files, customOptions = {}) {
 
     return results;
 }
+
+export const isSafariBrowser = () => {
+    if (typeof window === 'undefined') return false;
+    const ua = navigator.userAgent.toLowerCase();
+    return ua.indexOf('safari') > -1 && ua.indexOf('chrome') === -1;
+};
