@@ -5,9 +5,9 @@ import { Box, Typography, Container } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import ModernSearchBar from "../ModernSearchBar";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Play, Video, Layers, BadgeDollarSign } from "lucide-react";
 import Image from "next/image";
-import { fileToBase64 } from "@/utils/globalFunc";
+import { fileToBase64, scrollToSectionWithHighlight } from "@/utils/globalFunc";
 import { SearchModeToggle } from "../Common/HomeCommon";
 import AiMaintenanceModal from "../Common/AiMaintenanceModal";
 import dynamic from "next/dynamic";
@@ -109,6 +109,7 @@ const Home = () => {
     const [featureIndex, setFeatureIndex] = useState(0);
     const [appliedFilters, setAppliedFilters] = useState([]);
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+    const [helpStep, setHelpStep] = useState(0);
 
     // Use product data context
     const { productData, isLoading: isLoadingProducts, fetchProductData, setPendingSearch } = useProductData();
@@ -196,15 +197,12 @@ const Home = () => {
     };
 
     const handleScrollToHowItWorks = () => {
-        const section = document.getElementById('how-it-works-section');
-        if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-        }
+        scrollToSectionWithHighlight('how-it-works-section', 40);
     };
 
     return (
         <GridBackground>
-            <Box sx={{ position: "relative", width: "100%", overflow: "hidden", pb: 54.5 }}>
+            <Box sx={{ position: "relative", width: "100%", overflow: "hidden", pb: 36.9 }}>
                 <GradientWaves />
                 {isRedirecting && <FullPageLoader open={true} showLogo={selectedMode === 'ai'} message="Start Searching..." subtitle="Please wait while we find your results." />}
                 <Box
@@ -231,47 +229,62 @@ const Home = () => {
                             transition: 'all 0.3s ease',
                             border: '1px solid rgba(0,0,0,0.05)',
 
-                            animation: 'pulseHighlight 2.5s infinite',
+                            animation: 'pulseHighlight 2s infinite',
 
                             '@keyframes pulseHighlight': {
                                 '0%': {
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                    transform: 'scale(1)'
+                                    transform: 'scale(1)',
+                                    borderColor: 'rgba(0,0,0,0.05)'
                                 },
                                 '50%': {
-                                    boxShadow: '0 6px 18px rgba(115,103,240,0.25)',
-                                    transform: 'scale(1.02)'
+                                    boxShadow: '0 0 20px rgba(115,103,240,0.4)',
+                                    transform: 'scale(1.05)',
+                                    borderColor: 'rgba(115,103,240,0.3)'
                                 },
                                 '100%': {
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                    transform: 'scale(1)'
+                                    transform: 'scale(1)',
+                                    borderColor: 'rgba(0,0,0,0.05)'
                                 }
                             },
 
                             '&:hover': {
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
-                                bgcolor: '#f8f9fa',
+                                transform: 'translateY(-2px) scale(1.05)',
+                                boxShadow: '0 8px 25px rgba(115,103,240,0.2)',
+                                bgcolor: '#fdfdff',
                                 animation: 'none'
                             }
                         }}
                     >
-                        <Typography variant="button" sx={{ fontWeight: 600, textTransform: 'none', fontSize: '0.95rem' }}>
-                            How it works?
-                        </Typography>
                         <Box
                             sx={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: '50%',
-                                bgcolor: '#7367f0',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white'
+                                gap: 0.8,
+                                color: '#7367f0'
                             }}
                         >
-                            <ArrowRight size={14} />
+                            <Play size={16} fill="#7367f0" />
+                            <Typography variant="button" sx={{ fontWeight: 700, textTransform: 'none', fontSize: '0.9rem' }}>
+                                How it works?
+                            </Typography>
+                        </Box>
+
+                        <Box
+                            sx={{
+                                height: 18,
+                                px: 1,
+                                borderRadius: '10px',
+                                bgcolor: 'rgba(115,103,240,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                border: '1px solid rgba(115,103,240,0.2)'
+                            }}
+                        >
+                            <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#7367f0', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                Video Guides
+                            </Typography>
                         </Box>
                     </Box>
                 </Box>
@@ -489,11 +502,79 @@ const Home = () => {
                         />
                     </Box>
 
+                    {/* Help Video Cards (Pills) */}
+                    <Box
+                        component={motion.div}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 1, duration: 0.5 }}
+                        sx={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center',
+                            gap: 1.5,
+                            mt: 5,
+                            px: 2
+                        }}
+                    >
+                        {[
+                            { id: 0, label: "Search by Photo", icon: <Play size={14} /> },
+                            { id: 1, label: "Manage Catalog", icon: <Layers size={14} /> },
+                            { id: 2, label: "Generate Quotes", icon: <BadgeDollarSign size={14} /> },
+                            { id: 3, label: "Watch All Guides", icon: <Video size={14} /> }
+                        ].map((card) => (
+                            <Box
+                                key={card.id}
+                                onClick={() => {
+                                    setHelpStep(card.id);
+                                    scrollToSectionWithHighlight('how-it-works-section', 40);
+                                }}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    px: 2,
+                                    py: 1,
+                                    borderRadius: '20px',
+                                    bgcolor: 'rgba(255, 255, 255, 0.4)',
+                                    backdropFilter: 'blur(10px)',
+                                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(115, 103, 240, 0.08)',
+                                        borderColor: 'rgba(115, 103, 240, 0.3)',
+                                        transform: 'translateY(-2px)',
+                                        boxShadow: '0 8px 15px rgba(115, 103, 240, 0.1)',
+                                        '& .card-text': { color: '#7367f0' },
+                                        '& .card-icon': { color: '#7367f0', transform: 'scale(1.1)' }
+                                    }
+                                }}
+                            >
+                                <Box className="card-icon" sx={{ display: 'flex', color: 'text.secondary', transition: 'all 0.3s ease' }}>
+                                    {card.icon}
+                                </Box>
+                                <Typography
+                                    className="card-text"
+                                    sx={{
+                                        fontSize: '0.85rem',
+                                        fontWeight: 500,
+                                        color: 'text.secondary',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    {card.label}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+
                 </Container>
             </Box>
 
             {/* --- NEW SECTIONS --- */}
-            <HowItWorks />
+            <HowItWorks activeStep={helpStep} />
 
             {/* Footer */}
             {/* <Footer /> */}

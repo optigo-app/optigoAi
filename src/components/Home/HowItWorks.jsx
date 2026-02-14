@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Box, Typography, Container, Card, CardContent, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Slide, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Box, Typography, Container, Card, CardContent, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Slide, Accordion, AccordionSummary, AccordionDetails, GlobalStyles } from '@mui/material';
 import { ChevronDown, Layers, Play, BadgeDollarSign, PackageSearch, Maximize, Minimize, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
@@ -17,8 +17,8 @@ const SectionHeader = ({ title, subtitle, align = "left" }) => (
             <Typography
                 variant="h2"
                 sx={{
-                    mb: 2,
-                    fontSize: { xs: "1.75rem", md: "2.5rem" },
+                    mb: 1,
+                    fontSize: { xs: "1.25rem", md: "2rem" },
                     fontWeight: 700,
                     color: "text.primary"
                 }}
@@ -30,7 +30,7 @@ const SectionHeader = ({ title, subtitle, align = "left" }) => (
             <Typography
                 variant="body1"
                 sx={{
-                    fontSize: "1.1rem",
+                    fontSize: "0.9rem",
                     color: "text.secondary",
                     maxWidth: '39%',
                     mx: align === "center" ? "auto" : 0,
@@ -175,7 +175,7 @@ const FAQAccordion = ({ question, answer }) => (
     </Accordion>
 );
 
-const HowItWorks = () => {
+const HowItWorks = ({ activeStep, onStepChange }) => {
     const [activeVideo, setActiveVideo] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
@@ -183,6 +183,13 @@ const HowItWorks = () => {
     const [isChanging, setIsChanging] = useState(false);
     const videoRef = React.useRef(null);
     const [swiperRef, setSwiperRef] = useState(null);
+
+    // Sync external activeStep with internal activeVideo
+    React.useEffect(() => {
+        if (activeStep !== undefined && activeStep !== activeVideo) {
+            handleStepClick(activeStep);
+        }
+    }, [activeStep]);
 
     // Sync Swiper with activeVideo state when modal is open
     React.useEffect(() => {
@@ -212,13 +219,14 @@ const HowItWorks = () => {
     };
 
     const handleStepClick = (index) => {
-        if (activeVideo === index) return;
+        if (activeVideo === index && !isChanging) return;
 
         setIsChanging(true);
         setTimeout(() => {
             setActiveVideo(index);
             setIsPlaying(false);
             setIsChanging(false);
+            if (onStepChange) onStepChange(index);
         }, 300);
     };
 
@@ -261,7 +269,30 @@ const HowItWorks = () => {
 
 
     return (
-        <Box sx={{ width: '100%', py: 8 }}>
+        <Box sx={{ width: '100%', py: 3 }}>
+            <GlobalStyles
+                styles={{
+                    '@keyframes sectionPulse': {
+                        '0%': {
+                            boxShadow: '0 0 0 0 rgba(115, 103, 240, 0)',
+                        },
+                        '20%': {
+                            boxShadow: '0 0 0 15px rgba(115, 103, 240, 0.15)',
+                        },
+                        '100%': {
+                            boxShadow: '0 0 0 0 rgba(115, 103, 240, 0)',
+                        },
+                    },
+                    '.section-highlight-active #video-player-container': {
+                        animation: 'sectionPulse 1.5s ease-out 2',
+                        border: '2px solid rgba(115, 103, 240, 0.5)',
+                        zIndex: 10,
+                    },
+                    '.section-highlight-active': {
+                        position: 'relative',
+                    }
+                }}
+            />
 
             {/* --- 1. How It Works --- */}
             <Container maxWidth={false} sx={{ mb: 16 }} id="how-it-works-section">
@@ -273,16 +304,20 @@ const HowItWorks = () => {
                 <Grid container spacing={4}>
                     {/* Left Column (Video Player) */}
                     <Grid size={{ xs: 12, md: 8, lg: 8 }}>
-                        <Box sx={{
-                            width: '100%',
-                            aspectRatio: '16/9',
-                            borderRadius: '24px',
-                            overflow: 'hidden',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                            bgcolor: '#000',
-                            position: 'relative',
-                            '&:hover .fullscreen-btn': { opacity: 1 }
-                        }}>
+                        <Box
+                            id="video-player-container"
+                            sx={{
+                                width: '100%',
+                                aspectRatio: '16/9',
+                                borderRadius: '24px',
+                                overflow: 'hidden',
+                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                bgcolor: '#000',
+                                position: 'relative',
+                                transition: 'all 0.5s ease',
+                                '&:hover .fullscreen-btn': { opacity: 1 }
+                            }}
+                        >
                             <video
                                 ref={videoRef}
                                 key={activeVideo}

@@ -852,7 +852,7 @@ export default function ModernSearchBar({
                                                 <Box
                                                     className="ai_searchbtn"
                                                     component="img"
-                                                    src="/images/send.png"
+                                                    src="/images/magicbtn.svg"
                                                     onClick={() => {
                                                         if (!isCatalogLoading && !isLoading) {
                                                             handleSend(false);

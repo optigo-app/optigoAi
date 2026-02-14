@@ -228,3 +228,35 @@ export const isSafariBrowser = () => {
     const ua = navigator.userAgent.toLowerCase();
     return ua.indexOf('safari') > -1 && ua.indexOf('chrome') === -1;
 };
+
+/**
+ * Smoothly scrolls to a section and highlights it temporarily
+ * @param {string} sectionId - The ID of the section to scroll to
+ * @param {number} offset - Optional offset from the top (default: 80px for header)
+ */
+export const scrollToSectionWithHighlight = (sectionId, offset = 80) => {
+    if (typeof window === 'undefined') return;
+
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    // Calculate position with offset
+    const elementPosition = section.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+    // Smooth scroll to section
+    window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+    });
+
+    // Add highlight class after scroll completes
+    setTimeout(() => {
+        section.classList.add('section-highlight-active');
+
+        // Remove highlight after animation completes
+        setTimeout(() => {
+            section.classList.remove('section-highlight-active');
+        }, 3000); // 3 seconds total highlight duration
+    }, 500); // Wait for scroll to complete
+};
