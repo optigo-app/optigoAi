@@ -30,10 +30,11 @@ import GridBackground from "@/components/Common/GridBackground";
 import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 import ProductPageHeader from "@/components/Product/ProductPageHeader";
-import ReusableConfirmModal from '@/components/Common/ReusableConfirmModal';
-import AiMaintenanceModal from '@/components/Common/AiMaintenanceModal';
+import ReusableConfirmModal from '@/components/Common/modals/ReusableConfirmModal';
+import { AiMaintenanceModal, AiSubscriptionModal, AiTrainingModal } from '@/components/Common/modals';
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 import { saveAiSearchRequestApi } from '@/app/api/saveAiSearchRequestApi';
+import { useAuth } from '@/context/AuthContext';
 
 
 function ProductClientContent() {
@@ -81,6 +82,11 @@ function ProductClientContent() {
         return 'design';
     });
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    const [showTrainingModal, setShowTrainingModal] = useState(false);
+
+    // Get auth context for config flags
+    const { isConfigEnabled } = useAuth();
 
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
@@ -526,6 +532,25 @@ function ProductClientContent() {
     const handleSubmit = useCallback(async (searchData) => {
         const modeToUse = searchData?.mode || searchMode;
 
+        // Check config flags if AI mode is selected
+        if (modeToUse === 'ai') {
+            // Check IsAiMaintenance first
+            if (isConfigEnabled('IsAiMaintenance')) {
+                setShowMaintenanceModal(true);
+                return;
+            }
+            // Check IsAiEnable (when enabled, show subscription modal)
+            if (isConfigEnabled('IsAiEnable')) {
+                setShowSubscriptionModal(true);
+                return;
+            }
+            // Check IsAiReady (when enabled, show training modal)
+            if (isConfigEnabled('IsAiReady')) {
+                setShowTrainingModal(true);
+                return;
+            }
+        }
+
         // Resiliency check: if isSearchFlag is 0 or missing but we have content, infer it
         let effectiveSearchFlag = searchData?.isSearchFlag ?? 0;
         if (effectiveSearchFlag === 0 && modeToUse === 'ai') {
@@ -694,7 +719,7 @@ function ProductClientContent() {
         } finally {
             setIsSearchLoading(false);
         }
-    }, [allDesignCollections, searchMode]);
+    }, [allDesignCollections, searchMode, isConfigEnabled]);
 
     useEffect(() => {
         let mounted = true;
@@ -826,6 +851,9 @@ function ProductClientContent() {
                                 activeMode={searchMode}
                                 onModeChange={setSearchMode}
                                 onMaintenanceClick={() => setShowMaintenanceModal(true)}
+                                onSubscriptionClick={() => setShowSubscriptionModal(true)}
+                                onTrainingClick={() => setShowTrainingModal(true)}
+                                isConfigEnabled={isConfigEnabled}
                                 sx={{
                                     bgcolor: 'white',
                                     borderRadius: 2,
@@ -991,6 +1019,18 @@ function ProductClientContent() {
                 open={showMaintenanceModal}
                 onClose={() => setShowMaintenanceModal(false)}
                 onSwitchToDesign={() => setSearchMode('design')}
+            />
+
+            {/* AI Subscription Modal */}
+            <AiSubscriptionModal
+                open={showSubscriptionModal}
+                onClose={() => setShowSubscriptionModal(false)}
+            />
+
+            {/* AI Training Modal */}
+            <AiTrainingModal
+                open={showTrainingModal}
+                onClose={() => setShowTrainingModal(false)}
             />
         </GridBackground >
     );

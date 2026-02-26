@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Box, Popover } from '@mui/material';
 import { Maximize2 } from 'lucide-react';
-import ImageViewerModal from './ImageViewerModal';
+import ImageViewerModal from './modals/ImageViewerModal';
 
 export default function ImageHoverPreview({
     imageSrc,

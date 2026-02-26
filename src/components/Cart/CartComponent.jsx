@@ -18,7 +18,7 @@ import {
 
 import { useCart } from '@/context/CartContext';
 import GridBackground from '../Common/GridBackground';
-import ReusableConfirmModal from '../Common/ReusableConfirmModal';
+import ReusableConfirmModal from '../Common/modals/ReusableConfirmModal';
 import ProductModal from '../Product/ProductModal';
 import FullPageLoader from '../FullPageLoader';
 

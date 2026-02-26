@@ -4,6 +4,8 @@ import React, { createContext, useContext, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { getConfigFlagApi } from '@/app/api/getConfigApi';
+import { setEncryptedSession, getEncryptedSession } from '@/utils/encryption';
 
 const decodeBase64 = (str) => {
   try {
@@ -28,6 +30,7 @@ export const AuthProvider = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthReady, setIsAuthReady] = React.useState(false);
+  const [configFlags, setConfigFlags] = React.useState(null);
 
   const getQueryParams = () => {
     const token = Cookies.get('skey');
@@ -51,6 +54,21 @@ export const AuthProvider = ({ children }) => {
     }
 
     return decodedPayload;
+  };
+
+  // Helper function to check config flags
+  const getConfigFlag = (flagName) => {
+    if (!configFlags) {
+      // Try to get from sessionStorage if not in state
+      const cachedFlags = getEncryptedSession('configFlags');
+      return cachedFlags?.[flagName] || '0';
+    }
+    return configFlags[flagName] || '0';
+  };
+
+  // Helper function to check if flag is enabled (value is '1')
+  const isConfigEnabled = (flagName) => {
+    return getConfigFlag(flagName) === '1';
   };
 
   useEffect(() => {
@@ -115,10 +133,53 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [pathname]);
 
+  // Fetch config flags when auth is ready
+  useEffect(() => {
+    const fetchConfigFlags = async () => {
+      if (isAuthReady) {
+        try {
+          const cachedFlags = getEncryptedSession('configFlags');
+          if (cachedFlags) {
+            setConfigFlags(cachedFlags);
+            return;
+          }
+          const response = await getConfigFlagApi();
+          if (response?.rd) {
+            const flagsObject = response.rd.reduce((acc, item) => {
+              acc[item.key] = item.Value;
+              return acc;
+            }, {});
+
+            setConfigFlags(flagsObject);
+            setEncryptedSession('configFlags', flagsObject);
+          } else {
+            console.warn('⚠️ API response does not have expected structure');
+          }
+        } catch (error) {
+          console.error('❌ Error fetching config flags:', error);
+        }
+      }
+    };
+
+    fetchConfigFlags();
+  }, [isAuthReady]);
+
   // Prevent app rendering until auth check is finalized
   if (!isAuthReady && pathname !== '/error_404') {
     return null; // Or a loading spinner
   }
 
-  return <AuthContext.Provider value={{ getQueryParams, isAuthReady }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        getQueryParams,
+        isAuthReady,
+        configFlags,
+        getConfigFlag,
+        isConfigEnabled
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

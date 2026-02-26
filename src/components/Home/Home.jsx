@@ -5,19 +5,17 @@ import { Box, Typography, Container } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import ModernSearchBar from "../ModernSearchBar";
-import { ArrowRight, Play, Video, Layers, BadgeDollarSign } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { fileToBase64, scrollToSectionWithHighlight } from "@/utils/globalFunc";
+import { scrollToSectionWithHighlight } from "@/utils/globalFunc";
 import { SearchModeToggle } from "../Common/HomeCommon";
-import AiMaintenanceModal from "../Common/AiMaintenanceModal";
 import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
 import { useAuth } from "@/context/AuthContext";
 import GridBackground from "../Common/GridBackground";
 import FullPageLoader from "../FullPageLoader";
-import HowItWorks from "./HowItWorks";
-import Footer from "../Common/Footer";
+import { AiMaintenanceModal, AiSubscriptionModal, AiTrainingModal } from "../Common/modals";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -104,20 +102,16 @@ const Home = () => {
         }
         return 'design';
     });
-    const [isLoaded, setIsLoaded] = useState(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
     const [featureIndex, setFeatureIndex] = useState(0);
     const [appliedFilters, setAppliedFilters] = useState([]);
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
-    const [helpStep, setHelpStep] = useState(0);
+    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    const [showTrainingModal, setShowTrainingModal] = useState(false);
 
     // Use product data context
     const { productData, isLoading: isLoadingProducts, fetchProductData, setPendingSearch } = useProductData();
-    const { isAuthReady } = useAuth();
-
-    useEffect(() => {
-        setIsLoaded(true);
-    }, []);
+    const { isAuthReady, getConfigFlag, isConfigEnabled } = useAuth();
 
     useEffect(() => {
         if (selectedMode) {
@@ -143,6 +137,25 @@ const Home = () => {
 
     const handleSearch = (searchData) => {
         try {
+            // Check config flags if AI mode is selected
+            if (selectedMode === 'ai') {
+                // Check IsAiMaintenance first
+                if (isConfigEnabled('IsAiMaintenance')) {
+                    setShowMaintenanceModal(true);
+                    return;
+                }
+                // Check IsAiEnable (when enabled, show subscription modal)
+                if (isConfigEnabled('IsAiEnable')) {
+                    setShowSubscriptionModal(true);
+                    return;
+                }
+                // Check IsAiReady (when enabled, show training modal)
+                if (isConfigEnabled('IsAiReady')) {
+                    setShowTrainingModal(true);
+                    return;
+                }
+            }
+
             const searchPayload = {
                 ...searchData,
                 mode: selectedMode,
@@ -196,16 +209,12 @@ const Home = () => {
         }
     };
 
-    const handleScrollToHowItWorks = () => {
-        scrollToSectionWithHighlight('how-it-works-section', 40);
-    };
-
     return (
         <GridBackground>
-            <Box sx={{ position: "relative", width: "100%", overflow: "hidden", pb: 36.9 }}>
+            <Box sx={{ position: "relative", width: "100%", overflow: "hidden", pb: selectedMode == "design" ? 36.9 : 42 }}>
                 <GradientWaves />
                 {isRedirecting && <FullPageLoader open={true} showLogo={selectedMode === 'ai'} message="Start Searching..." subtitle="Please wait while we find your results." />}
-                <Box
+                {/* <Box
                     sx={{
                         position: 'absolute',
                         top: { xs: 16, md: 16 },
@@ -287,7 +296,7 @@ const Home = () => {
                             </Typography>
                         </Box>
                     </Box>
-                </Box>
+                </Box> */}
 
                 {/* --- ANIMATED BLOBS (Side Accents) --- */}
                 <motion.div
@@ -367,8 +376,6 @@ const Home = () => {
                                 }}
                                 onDragStart={(e) => e.preventDefault()}
                             />
-
-
                         </Box>
                     </Box>
 
@@ -472,6 +479,9 @@ const Home = () => {
                             activeMode={selectedMode}
                             onModeChange={setSelectedMode}
                             onMaintenanceClick={() => setShowMaintenanceModal(true)}
+                            onSubscriptionClick={() => setShowSubscriptionModal(true)}
+                            onTrainingClick={() => setShowTrainingModal(true)}
+                            isConfigEnabled={isConfigEnabled}
                         />
                     </Box>
 
@@ -503,7 +513,7 @@ const Home = () => {
                     </Box>
 
                     {/* Help Video Cards (Pills) */}
-                    <Box
+                    {/* <Box
                         component={motion.div}
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -568,13 +578,13 @@ const Home = () => {
                                 </Typography>
                             </Box>
                         ))}
-                    </Box>
+                    </Box> */}
 
                 </Container>
             </Box>
 
             {/* --- NEW SECTIONS --- */}
-            <HowItWorks activeStep={helpStep} />
+            {/* <HowItWorks activeStep={helpStep} /> */}
 
             {/* Footer */}
             {/* <Footer /> */}
@@ -584,6 +594,18 @@ const Home = () => {
                 open={showMaintenanceModal}
                 onClose={() => setShowMaintenanceModal(false)}
                 onSwitchToDesign={() => setSelectedMode('design')}
+            />
+
+            {/* AI Subscription Modal */}
+            <AiSubscriptionModal
+                open={showSubscriptionModal}
+                onClose={() => setShowSubscriptionModal(false)}
+            />
+
+            {/* AI Training Modal */}
+            <AiTrainingModal
+                open={showTrainingModal}
+                onClose={() => setShowTrainingModal(false)}
             />
         </GridBackground>
     );

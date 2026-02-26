@@ -49,9 +49,38 @@ export const ModeSwitch = ({ selectedMode, onSelect }) => {
     );
 };
 
-export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick, sx = {} }) => {
-    // Check if AI maintenance mode is active
-    const isMaintenanceMode = process.env.NEXT_PUBLIC_AI_MAINTENANCE_MODE === 'true';
+export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick, onSubscriptionClick, onTrainingClick, isConfigEnabled, sx = {} }) => {
+    const handleModeClick = (modeId) => {
+        // If switching to AI mode, check config flags
+        if (modeId === 'ai') {
+            // Check IsAiMaintenance first
+            if (isConfigEnabled && isConfigEnabled('IsAiMaintenance')) {
+                if (onMaintenanceClick) onMaintenanceClick();
+                return;
+            }
+            // Check IsAiReady (when enabled, show training modal)
+            if (isConfigEnabled && isConfigEnabled('IsAiReady')) {
+                if (onTrainingClick) onTrainingClick();
+                return;
+            }
+
+            // Check IsAiEnable (when enabled, show subscription modal)
+            if (isConfigEnabled && isConfigEnabled('IsAiEnable')) {
+                if (onSubscriptionClick) onSubscriptionClick();
+                return;
+            }
+        }
+
+        // If all checks pass or it's design mode, change mode
+        onModeChange(modeId);
+    };
+
+    // Check if any AI flag is active
+    const hasAiIssue = isConfigEnabled && (
+        isConfigEnabled('IsAiMaintenance') ||
+        isConfigEnabled('IsAiEnable') ||
+        isConfigEnabled('IsAiReady')
+    );
 
     return (
         <Box
@@ -70,7 +99,7 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
             ].map((mode) => {
                 const isActive = activeMode === mode.id;
                 const isAiMode = mode.id === "ai";
-                const isDisabled = isAiMode && isMaintenanceMode;
+                const showIssueBadge = isAiMode && hasAiIssue;
 
                 return (
                     <motion.div
@@ -79,8 +108,8 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
                         whileTap={{ scale: 0.97 }}
                         style={{ position: 'relative' }}
                     >
-                        {/* Maintenance Badge */}
-                        {isAiMode && isMaintenanceMode && (
+                        {/* Issue Badge for AI mode */}
+                        {showIssueBadge && (
                             <Box
                                 component={motion.div}
                                 initial={{ scale: 0 }}
@@ -109,13 +138,7 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
                         )}
 
                         <Button
-                            onClick={() => {
-                                if (isDisabled && onMaintenanceClick) {
-                                    onMaintenanceClick();
-                                } else {
-                                    onModeChange(mode.id);
-                                }
-                            }}
+                            onClick={() => handleModeClick(mode.id)}
                             startIcon={mode.icon}
                             disableRipple
                             size="small"
@@ -129,28 +152,38 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
                                 minHeight: "36px",
                                 position: 'relative',
 
-                                border: `1px solid ${isActive ? mode.color : isDisabled ? "rgba(255,107,107,0.3)" : "rgba(0,0,0,0.12)"}`,
+                                border: `1px solid ${isActive
+                                    ? mode.color
+                                    : showIssueBadge
+                                        ? "rgba(255,107,107,0.3)"
+                                        : "rgba(0,0,0,0.12)"
+                                    }`,
 
                                 backgroundColor: isActive
                                     ? `${mode.color}1A`
-                                    : isDisabled
+                                    : showIssueBadge
                                         ? "rgba(255,107,107,0.05)"
                                         : "transparent",
 
-                                color: isActive ? mode.color : isDisabled ? "rgba(255,107,107,0.7)" : "text.secondary",
+                                color: isActive
+                                    ? mode.color
+                                    : showIssueBadge
+                                        ? "rgba(255,107,107,0.7)"
+                                        : "text.secondary",
 
-                                opacity: isDisabled ? 0.8 : 1,
-                                cursor: isDisabled ? 'pointer' : 'pointer',
+                                opacity: showIssueBadge ? 0.85 : 1,
+                                cursor: 'pointer',
 
                                 transition: "all 0.25s ease",
 
                                 '&:hover': {
                                     backgroundColor: isActive
                                         ? `${mode.color}26`
-                                        : isDisabled
+                                        : showIssueBadge
                                             ? "rgba(255,107,107,0.1)"
                                             : "rgba(0,0,0,0.05)",
-                                    borderColor: isDisabled ? "rgba(255,107,107,0.5)" : mode.color,
+                                    borderColor: showIssueBadge ? "rgba(255,107,107,0.5)" : mode.color,
+                                    opacity: 1,
                                 },
 
                                 '& .MuiButton-startIcon': {

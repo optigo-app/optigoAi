@@ -44,7 +44,7 @@ import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
 import { motion, AnimatePresence } from 'framer-motion';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import ReusableConfirmModal from '../Common/ReusableConfirmModal';
+import ReusableConfirmModal from '../Common/modals/ReusableConfirmModal';
 import { toast } from 'react-hot-toast';
 
 const Transition = React.forwardRef(function Transition(props, ref) {

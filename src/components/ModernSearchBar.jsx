@@ -32,7 +32,7 @@ import { formatMasterData, getAuthData, isSafariBrowser } from "@/utils/globalFu
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 import DragDropOverlay from "./Common/DragDropOverlay";
-import ImageEditorModal from "./Common/ImageEditorModal";
+import ImageEditorModal from "./Common/modals/ImageEditorModal";
 import { Pencil } from "lucide-react";
 
 export default function ModernSearchBar({

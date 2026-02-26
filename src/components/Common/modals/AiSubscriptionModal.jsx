@@ -6,17 +6,22 @@ import {
     DialogContent,
     Box,
     Typography,
-    Button,
     IconButton,
     Fade,
-    Backdrop
+    Backdrop,
+    Chip
 } from '@mui/material';
-import { X, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Search, FileText, Zap, Phone, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import '../../Style/AiMaintenanceModal.scss';
 
-const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
+const AiSubscriptionModal = ({ open, onClose }) => {
+    const features = [
+        { icon: <Zap size={18} />, text: 'AI-Powered Order' },
+        { icon: <Search size={18} />, text: 'Smart Catalog Search' },
+        { icon: <FileText size={18} />, text: 'Automated Quoting' }
+    ];
+
     return (
         <Dialog
             open={open}
@@ -68,7 +73,7 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
                     sx={{
                         display: 'flex',
                         flexDirection: { xs: 'column', md: 'row' },
-                        minHeight: { xs: 'auto', md: '450px' },
+                        minHeight: { xs: 'auto', md: '500px' },
                     }}
                 >
                     {/* Left Side - Content */}
@@ -96,7 +101,7 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
                                 lineHeight: 1.2,
                             }}
                         >
-                            We are enhancing AI!
+                            Unlock AI Magic
                         </Typography>
 
                         {/* Subtitle */}
@@ -113,7 +118,7 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
                                 fontSize: { xs: '1rem', md: '1.1rem' },
                             }}
                         >
-                            Sorry for the inconvenience!
+                            Transform your workflow with Text, Image and Hybrid search with AI
                         </Typography>
 
                         {/* Message */}
@@ -125,33 +130,67 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
                             transition={{ delay: 0.3 }}
                             sx={{
                                 color: 'text.secondary',
-                                mb: 2,
+                                mb: 4,
                                 lineHeight: 1.7,
                                 fontSize: '0.95rem',
                             }}
                         >
-                            Currently working on enhancements to the AI module.
-                            <br />
-                            Thank you for your patience!
+                            This premium module is not currently active on your account.
                         </Typography>
 
-                        {/* Info Message */}
-                        <Typography
-                            variant="body2"
+                        {/* Features List */}
+                        <Box
                             component={motion.div}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            sx={{
-                                color: 'text.secondary',
-                                mb: 4,
-                                fontSize: '0.9rem',
-                            }}
+                            sx={{ mb: 4 }}
                         >
-                            We will keep you informed once the work is completed.
-                        </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                                {features.map((feature, index) => (
+                                    <Box
+                                        key={index}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            px: 2,
+                                            py: 1,
+                                            borderRadius: '20px',
+                                            background: 'rgba(115,103,240,0.08)',
+                                            border: '1px solid rgba(115,103,240,0.2)',
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                background: 'rgba(115,103,240,0.12)',
+                                                transform: 'translateY(-2px)',
+                                            }
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: '#7367f0',
+                                            }}
+                                        >
+                                            {feature.icon}
+                                        </Box>
+                                        <Typography
+                                            sx={{
+                                                fontWeight: 600,
+                                                color: '#1a1a2e',
+                                                fontSize: '0.85rem',
+                                            }}
+                                        >
+                                            {feature.text}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </Box>
 
-                        {/* Recommendation Box */}
+                        {/* Contact Box */}
                         <Box
                             component={motion.div}
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -162,7 +201,6 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
                                 borderRadius: '16px',
                                 background: 'linear-gradient(135deg, rgba(115,103,240,0.08) 0%, rgba(162,155,254,0.05) 100%)',
                                 border: '2px solid rgba(115,103,240,0.2)',
-                                mb: 4,
                             }}
                         >
                             <Typography
@@ -173,124 +211,97 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
                                     fontSize: '0.85rem',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
-                                    mb: 1,
+                                    mb: 2,
                                 }}
                             >
-                                💡 Recommended
+                                Contact Admin
                             </Typography>
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    color: '#1a1a2e',
-                                    fontWeight: 600,
-                                    fontSize: '1rem',
-                                }}
-                            >
-                                Use Design Mode for seamless searching
-                            </Typography>
-                        </Box>
-
-                        {/* Action Buttons */}
-                        <Box
-                            component={motion.div}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6 }}
-                            sx={{
-                                display: 'flex',
-                                gap: 2,
-                                flexDirection: { xs: 'column', sm: 'row' },
-                            }}
-                        >
-                            {onSwitchToDesign && (
-                                <Button
-                                    variant="contained"
-                                    onClick={() => {
-                                        onSwitchToDesign();
-                                        onClose();
-                                    }}
-                                    endIcon={<ArrowRight size={18} />}
-                                    fullWidth
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                                <Box
+                                    component="a"
+                                    href="tel:+919099887762"
                                     sx={{
-                                        py: 1.75,
-                                        borderRadius: '12px',
-                                        textTransform: 'none',
-                                        fontSize: '1rem',
-                                        fontWeight: 700,
-                                        background: 'linear-gradient(135deg, #7367f0 0%, #9e95f5 100%)',
-                                        boxShadow: '0 8px 24px rgba(115, 103, 240, 0.35)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        textDecoration: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
                                         '&:hover': {
-                                            background: 'linear-gradient(135deg, #6558e0 0%, #8d84e5 100%)',
-                                            boxShadow: '0 12px 32px rgba(115, 103, 240, 0.45)',
-                                            transform: 'translateY(-2px)',
-                                        },
-                                        transition: 'all 0.3s ease',
+                                            transform: 'translateX(2px)',
+                                        }
                                     }}
                                 >
-                                    Switch to Design Mode
-                                </Button>
-                            )}
+                                    <Phone size={16} color="#7367f0" />
+                                    <Typography
+                                        sx={{
+                                            color: '#1a1a2e',
+                                            fontWeight: 600,
+                                            fontSize: '0.95rem',
+                                        }}
+                                    >
+                                        +91 90998 87762
+                                    </Typography>
+                                </Box>
+                                <Box
+                                    component="a"
+                                    href="mailto:Support@orail.in"
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        textDecoration: 'none',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            transform: 'translateX(2px)',
+                                        }
+                                    }}
+                                >
+                                    <Mail size={16} color="#7367f0" />
+                                    <Typography
+                                        sx={{
+                                            color: '#1a1a2e',
+                                            fontWeight: 600,
+                                            fontSize: '0.95rem',
+                                        }}
+                                    >
+                                        Support@orail.in
+                                    </Typography>
+                                </Box>
+                            </Box>
                         </Box>
                     </Box>
 
                     {/* Right Side - Illustration */}
                     <Box
-                        component={motion.div}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3, duration: 0.6 }}
                         sx={{
                             flex: 1,
                             background: 'linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%)',
                             display: { xs: 'none', md: 'flex' },
                             alignItems: 'center',
                             justifyContent: 'center',
-                            p: 4,
                             position: 'relative',
                             overflow: 'hidden',
                         }}
                     >
-                        {/* Decorative Circles */}
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                top: '-50px',
-                                right: '-50px',
-                                width: '200px',
-                                height: '200px',
-                                borderRadius: '50%',
-                                background: 'rgba(115,103,240,0.1)',
-                                filter: 'blur(40px)',
-                            }}
-                        />
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                bottom: '-30px',
-                                left: '-30px',
-                                width: '150px',
-                                height: '150px',
-                                borderRadius: '50%',
-                                background: 'rgba(255,159,67,0.1)',
-                                filter: 'blur(35px)',
-                            }}
-                        />
-
-                        {/* Illustration */}
+                        {/* Unlock Image - Full Size */}
                         <Box
                             sx={{
                                 position: 'relative',
                                 width: '100%',
-                                maxWidth: '400px',
-                                height: '350px',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                             }}
                         >
                             <Image
-                                src="/ai_maintenance_illustration.png"
-                                alt="AI Maintenance Illustration"
+                                src="/images/ai_unlock.png"
+                                alt="AI Unlock"
                                 fill
                                 style={{
-                                    objectFit: 'contain',
+                                    objectFit: 'cover',
                                 }}
                                 priority
                             />
@@ -302,4 +313,4 @@ const AiMaintenanceModal = ({ open, onClose, onSwitchToDesign }) => {
     );
 };
 
-export default AiMaintenanceModal;
+export default AiSubscriptionModal;
