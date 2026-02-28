@@ -136,28 +136,27 @@ export const AuthProvider = ({ children }) => {
   // Fetch config flags when auth is ready
   useEffect(() => {
     const fetchConfigFlags = async () => {
-      if (isAuthReady) {
-        try {
-          const cachedFlags = getEncryptedSession('configFlags');
-          if (cachedFlags) {
-            setConfigFlags(cachedFlags);
-            return;
-          }
-          const response = await getConfigFlagApi();
-          if (response?.rd) {
-            const flagsObject = response.rd.reduce((acc, item) => {
-              acc[item.key] = item.Value;
-              return acc;
-            }, {});
+      if (!isAuthReady) return;
 
-            setConfigFlags(flagsObject);
-            setEncryptedSession('configFlags', flagsObject);
-          } else {
-            console.warn('⚠️ API response does not have expected structure');
-          }
-        } catch (error) {
-          console.error('❌ Error fetching config flags:', error);
+      try {
+        // Always call API on reload to get fresh config flags
+        console.log('📡 Fetching config flags from API...');
+        const response = await getConfigFlagApi();
+        
+        if (response?.rd) {
+          const flagsObject = response.rd.reduce((acc, item) => {
+            acc[item.key] = item.Value;
+            return acc;
+          }, {});
+
+          console.log('✅ Config flags fetched:', flagsObject);
+          setConfigFlags(flagsObject);
+          setEncryptedSession('configFlags', flagsObject);
+        } else {
+          console.warn('⚠️ API response does not have expected structure');
         }
+      } catch (error) {
+        console.error('❌ Error fetching config flags:', error);
       }
     };
 

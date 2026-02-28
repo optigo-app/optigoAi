@@ -528,7 +528,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                     position: 'fixed',
                     top: 0,
                     left: 0,
-                    height: isFrontendFeRoute() ? '94vh' : '100vh',
+                    height: '100vh',
                     width: isMobile ? '100%' : '320px',
                     bgcolor: 'background.paper',
                     boxShadow: isOpen ? '4px 0 20px rgba(0,0,0,0.1)' : 'none',

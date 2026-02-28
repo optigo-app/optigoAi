@@ -53,6 +53,12 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
     const handleModeClick = (modeId) => {
         // If switching to AI mode, check config flags
         if (modeId === 'ai') {
+            // Check IsAiEnable (when enabled, show subscription modal)
+            if (isConfigEnabled && isConfigEnabled('IsAiEnable')) {
+                if (onSubscriptionClick) onSubscriptionClick();
+                return;
+            }
+
             // Check IsAiMaintenance first
             if (isConfigEnabled && isConfigEnabled('IsAiMaintenance')) {
                 if (onMaintenanceClick) onMaintenanceClick();
@@ -64,11 +70,6 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
                 return;
             }
 
-            // Check IsAiEnable (when enabled, show subscription modal)
-            if (isConfigEnabled && isConfigEnabled('IsAiEnable')) {
-                if (onSubscriptionClick) onSubscriptionClick();
-                return;
-            }
         }
 
         // If all checks pass or it's design mode, change mode

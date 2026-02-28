@@ -5,7 +5,7 @@ import { Box, Typography, Container } from "@mui/material";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import ModernSearchBar from "../ModernSearchBar";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BadgeDollarSign, Layers, Play, Video } from "lucide-react";
 import Image from "next/image";
 import { scrollToSectionWithHighlight } from "@/utils/globalFunc";
 import { SearchModeToggle } from "../Common/HomeCommon";
@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import GridBackground from "../Common/GridBackground";
 import FullPageLoader from "../FullPageLoader";
 import { AiMaintenanceModal, AiSubscriptionModal, AiTrainingModal } from "../Common/modals";
+import HowItWorks from "./HowItWorks";
 
 const GradientWaves = dynamic(
     () => import("../animation/GradientWaves").then((mod) => mod.GradientWaves),
@@ -108,6 +109,7 @@ const Home = () => {
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     const [showTrainingModal, setShowTrainingModal] = useState(false);
+    const [helpStep, setHelpStep] = useState(0);
 
     // Use product data context
     const { productData, isLoading: isLoadingProducts, fetchProductData, setPendingSearch } = useProductData();
@@ -209,12 +211,26 @@ const Home = () => {
         }
     };
 
+    const handleScrollToHowItWorks = () => {
+        scrollToSectionWithHighlight('how-it-works-section', 40);
+    };
+
     return (
         <GridBackground>
-            <Box sx={{ position: "relative", width: "100%", overflow: "hidden", pb: selectedMode == "design" ? 36.9 : 42 }}>
+            <Box sx={{
+                position: "relative",
+                width: "100%",
+                overflow: "hidden",
+                minHeight: '100vh',
+                pb: {
+                    xs: selectedMode === "design" ? 20 : 25,  // Mobile
+                    sm: selectedMode === "design" ? 28 : 32,  // Tablet
+                    md: selectedMode === "design" ? 36.9 : 42 // Desktop
+                }
+            }}>
                 <GradientWaves />
                 {isRedirecting && <FullPageLoader open={true} showLogo={selectedMode === 'ai'} message="Start Searching..." subtitle="Please wait while we find your results." />}
-                {/* <Box
+                <Box
                     sx={{
                         position: 'absolute',
                         top: { xs: 16, md: 16 },
@@ -296,7 +312,7 @@ const Home = () => {
                             </Typography>
                         </Box>
                     </Box>
-                </Box> */}
+                </Box>
 
                 {/* --- ANIMATED BLOBS (Side Accents) --- */}
                 <motion.div
@@ -513,7 +529,7 @@ const Home = () => {
                     </Box>
 
                     {/* Help Video Cards (Pills) */}
-                    {/* <Box
+                    <Box
                         component={motion.div}
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -578,13 +594,13 @@ const Home = () => {
                                 </Typography>
                             </Box>
                         ))}
-                    </Box> */}
+                    </Box>
 
                 </Container>
             </Box>
 
             {/* --- NEW SECTIONS --- */}
-            {/* <HowItWorks activeStep={helpStep} /> */}
+            <HowItWorks activeStep={helpStep} />
 
             {/* Footer */}
             {/* <Footer /> */}
