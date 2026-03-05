@@ -15,12 +15,14 @@ export const useImageEditor = (initialImage, open) => {
     // State
     const [currentImage, setCurrentImage] = useState(initialImage || '');
     const [isImageReady, setIsImageReady] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [tab, setTab] = useState('ctrl');
     const [drawMode, setDrawMode] = useState(false);
     const [textMode, setTextMode] = useState(false);
     const [cropMode, setCropMode] = useState(false);
     const [adj, setAdj] = useState({ br: 0, co: 0, sa: 0, sh: 0 });
     const [activeFx, setActiveFx] = useState(null);
+    const [isCropped, setIsCropped] = useState(false); // Track if image was cropped
     const [brushColor, setBrushColor] = useState('#ffffff');
     const [brushSize, setBrushSize] = useState(12);
     const [brushOpacity, setBrushOpacity] = useState(1);
@@ -224,6 +226,23 @@ export const useImageEditor = (initialImage, open) => {
 
     const applyAdj = useCallback(() => {
         if (!ctx.current || !canvasRef.current) return;
+        
+        // Skip processing if image was cropped (adjustments already baked in) or all adjustments are at default values
+        const hasAdjustments = adj.br !== 0 || adj.co !== 0 || adj.sa !== 0 || adj.sh !== 0 || activeFx !== null;
+        if (isCropped || !hasAdjustments) {
+            // Just cache the current canvas without processing
+            if (!baseCanvasRef.current) {
+                baseCanvasRef.current = document.createElement('canvas');
+            }
+            baseCanvasRef.current.width = canvasRef.current.width;
+            baseCanvasRef.current.height = canvasRef.current.height;
+            const bctx = baseCanvasRef.current.getContext('2d');
+            if (bctx) {
+                bctx.drawImage(canvasRef.current, 0, 0);
+            }
+            return;
+        }
+        
         const id = ctx.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
         const d = id.data;
         const len = d.length;
@@ -264,12 +283,17 @@ export const useImageEditor = (initialImage, open) => {
         if (activeFx) applyFx(d);
         ctx.current.putImageData(id, 0, 0);
 
-        // Cache the result
-        if (!baseCanvasRef.current) baseCanvasRef.current = document.createElement('canvas');
+        // Cache the result - ensure baseCanvasRef is created fresh
+        if (!baseCanvasRef.current) {
+            baseCanvasRef.current = document.createElement('canvas');
+        }
         baseCanvasRef.current.width = canvasRef.current.width;
         baseCanvasRef.current.height = canvasRef.current.height;
-        baseCanvasRef.current.getContext('2d').drawImage(canvasRef.current, 0, 0);
-    }, [adj, activeFx, applyFx]);
+        const bctx = baseCanvasRef.current.getContext('2d');
+        if (bctx) {
+            bctx.drawImage(canvasRef.current, 0, 0);
+        }
+    }, [adj, activeFx, applyFx, isCropped]);
 
     const drawOverlays = useCallback(() => {
         if (!ctx.current) return;
@@ -685,35 +709,26 @@ export const useImageEditor = (initialImage, open) => {
         const newImg = new Image();
         newImg.onload = () => {
             const nextOrig = newImg;
-            // Keep current adjustments, filters, rotation, and flips - they're already baked into the cropped image
+            // Keep current adjustment values for display but mark as cropped so they won't be applied
             const currentAdj = { ...adj };
             const currentFx = activeFx;
-            const currentRotation = rotation;
-            const currentFlipH = flipH;
-            const currentFlipV = flipV;
 
             setOrigImg(nextOrig); setDrawings([]); setTexts([]);
             setCrop({ x: 0, y: 0, w: 0, h: 0 }); setCropMode(false);
+            setIsCropped(true); // Mark as cropped - adjustments won't be applied but values remain visible
+            setRotation(0); setFlipH(false); setFlipV(false);
 
-            // Immediate UI update to prevent race conditions
-            if (canvasRef.current && nextOrig) {
-                canvasRef.current.width = nw; canvasRef.current.height = nh;
-                canvasRef.current.style.width = nw + 'px'; canvasRef.current.style.height = nh + 'px';
-                if (cwRef.current) { cwRef.current.style.width = nw + 'px'; cwRef.current.style.height = nh + 'px'; }
-                const ctx2d = canvasRef.current.getContext('2d');
-                ctx2d.clearRect(0, 0, nw, nh);
-                ctx2d.drawImage(nextOrig, 0, 0);
-            }
+            // Let the useEffect handle rendering with cropped flag
 
-            // Immediate history push with data overrides to avoid stale closures
+            // Immediate history push with current adjustment values
             pushHistory('Crop', {
                 origImg: nextOrig, drawings: [], texts: [],
-                rotation: currentRotation, flipH: currentFlipH, flipV: currentFlipV,
+                rotation: 0, flipH: false, flipV: false,
                 adj: currentAdj, activeFx: currentFx
             });
         };
         newImg.src = tempCanvas.toDataURL();
-    }, [crop, adj, activeFx, rotation, flipH, flipV, pushHistory]);
+    }, [crop, adj, activeFx, pushHistory]);
 
     const syncEditor = useCallback((t) => {
         if (!txtEditorRef.current || !canvasRef.current) return;
@@ -832,8 +847,77 @@ export const useImageEditor = (initialImage, open) => {
     useEffect(() => { if (origImg) fitCanvas(); }, [rotation, fitCanvas, origImg]);
     useEffect(() => { if (canvasRef.current) ctx.current = canvasRef.current.getContext('2d', { willReadFrequently: true }); }, []);
 
+    // Complete reset when modal closes
+    useEffect(() => {
+        if (!open) {
+            // Reset all refs
+            loadedSrcRef.current = null;
+            hIdxRef.current = -1;
+            
+            // Clear canvas refs
+            if (canvasRef.current) {
+                canvasRef.current.width = 0;
+                canvasRef.current.height = 0;
+            }
+            if (ctx.current && canvasRef.current) {
+                ctx.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            }
+            baseCanvasRef.current = null;
+            ctx.current = null;
+            
+            // Reset all state to initial values
+            setCurrentImage('');
+            setIsImageReady(false);
+            setIsLoading(false);
+            setTab('ctrl');
+            setDrawMode(false);
+            setTextMode(false);
+            setCropMode(false);
+            setAdj({ br: 0, co: 0, sa: 0, sh: 0 });
+            setActiveFx(null);
+            setBrushColor('#ffffff');
+            setBrushSize(12);
+            setBrushOpacity(1);
+            setIsCropped(false);
+            setRotation(0);
+            setFlipH(false);
+            setFlipV(false);
+            setCrop({ x: 0, y: 0, w: 0, h: 0 });
+            setTexts([]);
+            setSelTxt(null);
+            setEditTxt(null);
+            setHistory([]);
+            setHistIdx(-1);
+            setOrigImg(null);
+            setDrawings([]);
+            setCurrentPath(null);
+            setIsDrawing(false);
+            setCropDrag(null);
+            setTxtDrag(null);
+            setResizeDrag(null);
+            setRotDrag(null);
+            setNextId(1);
+            setCutMode(false);
+            setCut({ x: 0, y: 0, w: 0, h: 0 });
+            setCuts([]);
+            setSelCut(null);
+            setCutDrag(null);
+            setHoles([]);
+            setClipboard(null);
+        }
+    }, [open]);
+
+    // Sync currentImage with initialImage prop changes
+    useEffect(() => {
+        if (open && initialImage) {
+            setCurrentImage(initialImage);
+        }
+    }, [initialImage, open]);
+
     useEffect(() => {
         if (open && currentImage && loadedSrcRef.current !== currentImage) {
+            setIsLoading(true);
+            setIsImageReady(false);
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => {
@@ -854,7 +938,12 @@ export const useImageEditor = (initialImage, open) => {
                 setTimeout(() => {
                     if (img) drawImageToCanvas(img, 0);
                     setIsImageReady(true);
+                    setIsLoading(false);
                 }, 80);
+            };
+            img.onerror = () => {
+                console.error('Failed to load image');
+                setIsLoading(false);
             };
             img.src = currentImage;
         }
@@ -901,11 +990,11 @@ export const useImageEditor = (initialImage, open) => {
     }, [undo, redo, cropMode, crop, cutMode, cut, handleApplyCrop, handleApplyCut, handleKeyCut, handleKeyPaste, isImageReady, loadFile]);
 
     return {
-        canvasRef, txtEditorRef, cwRef, currentImage, isImageReady, tab, setTab, drawMode, setDrawMode, textMode, setTextMode, cropMode, setCropMode,
+        canvasRef, txtEditorRef, cwRef, currentImage, isImageReady, isLoading, tab, setTab, drawMode, setDrawMode, textMode, setTextMode, cropMode, setCropMode,
         adj, setAdj, activeFx, setActiveFx, brushColor, setBrushColor, brushSize, setBrushSize, brushOpacity, setBrushOpacity,
         rotation, setRotation, flipH, setFlipH, flipV, setFlipV,
         crop, setCrop, texts, setTexts, selTxt, setSelTxt, editTxt, setEditTxt, history, setHistory, histIdx, setHistIdx, drawings, setDrawings,
-        cutMode, setCutMode, cut, setCut, cuts, setCuts, selCut, setSelCut,
+        cutMode, setCutMode, cut, setCut, cuts, setCuts, selCut, setSelCut, isCropped, setIsCropped,
         handleMouseDown, handleMouseMove, handleMouseUp, handleApplyCrop, handleApplyCut, handleAddText, handleTextDblClick, handleRotate, handleFlipH, handleFlipV, handleFileFunc,
         handleApplyFilter, undo, redo, pushHistory, fitCanvas, getTextBB, removeImage, applyProcessedImage
     };

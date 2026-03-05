@@ -10,27 +10,21 @@ import {
     Tabs,
     Typography,
     Slider,
-    Select,
-    MenuItem,
-    FormControl,
     alpha,
     Slide,
     Fade,
+    Skeleton,
 } from '@mui/material';
 import {
     RotateCw,
     Crop,
-    Scissors,
     FlipHorizontal,
     Paintbrush,
-    Type,
     RefreshCw,
     Undo,
     Redo,
     X as CloseIcon,
     Save,
-    Palette,
-    Wand2,
     Eraser,
     Pencil,
     Maximize,
@@ -48,23 +42,22 @@ const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const ImageEditor = ({ open, onClose, initialImage }) => {
+const ImageEditor = ({ open, onClose, initialImage, onSave }) => {
     const {
-        canvasRef, txtEditorRef, cwRef, isImageReady, tab, setTab, drawMode, setDrawMode, textMode, setTextMode, cropMode, setCropMode,
+        canvasRef, txtEditorRef, cwRef, isImageReady, isLoading, tab, setTab, drawMode, setDrawMode, textMode, setTextMode, cropMode, setCropMode,
         adj, setAdj, activeFx, setActiveFx, brushColor, setBrushColor, brushSize, setBrushSize, brushOpacity, setBrushOpacity,
         rotation, setRotation, flipH, setFlipH, flipV, setFlipV,
         crop, setCrop, texts, setTexts, selTxt, setSelTxt, editTxt, setEditTxt, history, histIdx, setHistIdx, setDrawings,
-        cutMode, setCutMode, cut, setCut, cuts, setCuts, selCut, setSelCut,
+        cutMode, setCutMode, cut, setCut, cuts, setCuts, selCut, setSelCut, isCropped, setIsCropped,
         handleMouseDown, handleMouseMove, handleMouseUp, handleApplyCrop, handleApplyCut, handleAddText, handleTextDblClick, handleRotate, handleFlipH, handleFlipV, handleFileFunc,
         handleApplyFilter, undo, redo, pushHistory, fitCanvas, getTextBB, removeImage, applyProcessedImage
     } = useImageEditor(initialImage, open);
 
     const [isDragging, setIsDragging] = React.useState(false);
-    const rotationTimeoutRef = React.useRef(null);
     const [previewRotation, setPreviewRotation] = React.useState(rotation);
     const [activeProcessor, setActiveProcessor] = React.useState(null);
     const [lastProcessor, setLastProcessor] = React.useState('bg-remover');
-    const [isFullScreen, setIsFullScreen] = React.useState(true);
+    const [isFullScreen, setIsFullScreen] = React.useState(false);
 
     const [isCanvasRotDrag, setIsCanvasRotDrag] = React.useState(false);
     const canvasRotRef = React.useRef({ startAngle: 0, initialRot: 0, currentRot: 0 });
@@ -266,29 +259,57 @@ const ImageEditor = ({ open, onClose, initialImage }) => {
                             {activeProcessor === 'sketch' ? 'Processing...' : 'Sketch'}
                         </Button>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Button
-                            onClick={() => { setRotation(0); setFlipH(false); setFlipV(false); setAdj({ br: 0, co: 0, sa: 0, sh: 0 }); setActiveFx(null); setTexts([]); setDrawings([]); setSelTxt(null); setEditTxt(null); fitCanvas(); }}
-                            sx={{ textTransform: 'none', color: '#6d6b77', fontSize: 13, borderRadius: '6px', px: 1.5, '&:hover': { color: '#ea5455', backgroundColor: 'rgba(234,84,85,0.08)' } }}
-                            startIcon={<RefreshCw size={18} />}
-                        >
-                            Reset
-                        </Button>
-                        {isImageReady && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {/* Action Buttons Group */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pr: 1, borderRight: '1px solid rgba(47, 43, 61, 0.12)' }}>
                             <Button
-                                onClick={removeImage}
-                                sx={{ textTransform: 'none', color: '#ea5455', fontSize: 13, borderRadius: '6px', px: 1.5, '&:hover': { backgroundColor: 'rgba(234,84,85,0.08)' } }}
-                                startIcon={<CloseIcon size={18} />}
+                                onClick={() => { setRotation(0); setFlipH(false); setFlipV(false); setAdj({ br: 0, co: 0, sa: 0, sh: 0 }); setActiveFx(null); setTexts([]); setDrawings([]); setSelTxt(null); setEditTxt(null); fitCanvas(); }}
+                                sx={{ textTransform: 'none', color: '#6d6b77', fontSize: 13, borderRadius: '8px', px: 1.5, height: 36, '&:hover': { color: '#ea5455', backgroundColor: 'rgba(234,84,85,0.08)' } }}
+                                startIcon={<RefreshCw size={18} />}
                             >
-                                Remove
+                                Reset
                             </Button>
-                        )}
-                        <IconButton onClick={undo} size="small" sx={{ color: '#6d6b77', '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' } }} title="Undo"><Undo size={20} /></IconButton>
-                        <IconButton onClick={redo} size="small" sx={{ color: '#6d6b77', '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' } }} title="Redo"><Redo size={20} /></IconButton>
-                        <IconButton onClick={() => setIsFullScreen(!isFullScreen)} size="small" sx={{ color: '#6d6b77', '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' } }} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
-                            {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                        </IconButton>
-                        <IconButton onClick={onClose} size="small" sx={{ color: '#6d6b77', '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' } }} title="Close"><CloseIcon size={20} /></IconButton>
+                        </Box>
+
+                        {/* History Controls Group */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pr: 1, borderRight: '1px solid rgba(47, 43, 61, 0.12)' }}>
+                            <IconButton
+                                onClick={undo}
+                                size="small"
+                                disabled={histIdx <= 0}
+                                sx={{
+                                    color: histIdx <= 0 ? 'rgba(109, 107, 119, 0.3)' : '#6d6b77',
+                                    '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' },
+                                    '&:disabled': { color: 'rgba(109, 107, 119, 0.3)' }
+                                }}
+                                title="Undo"
+                            >
+                                <Undo size={20} />
+                            </IconButton>
+                            <IconButton
+                                onClick={redo}
+                                size="small"
+                                disabled={histIdx >= history.length - 1}
+                                sx={{
+                                    color: histIdx >= history.length - 1 ? 'rgba(109, 107, 119, 0.3)' : '#6d6b77',
+                                    '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' },
+                                    '&:disabled': { color: 'rgba(109, 107, 119, 0.3)' }
+                                }}
+                                title="Redo"
+                            >
+                                <Redo size={20} />
+                            </IconButton>
+                        </Box>
+
+                        {/* View Controls Group */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <IconButton onClick={() => setIsFullScreen(!isFullScreen)} size="small" sx={{ color: '#6d6b77', '&:hover': { backgroundColor: 'rgba(47, 43, 61, 0.08)', color: '#2f2b3d' } }} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
+                                {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                            </IconButton>
+                            <IconButton onClick={onClose} size="small" sx={{ color: '#6d6b77', '&:hover': { backgroundColor: 'rgba(234, 84, 85, 0.08)', color: '#ea5455' } }} title="Close">
+                                <CloseIcon size={20} />
+                            </IconButton>
+                        </Box>
                     </Box>
                 </Box>
 
@@ -316,43 +337,17 @@ const ImageEditor = ({ open, onClose, initialImage }) => {
                             </Box>
                         )}
 
-                        {!isImageReady ? (
+
+
+                        {/* Loading Skeleton */}
+                        {isLoading && (
                             <Box sx={{
                                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, zIndex: 50,
-                                width: 480, p: 6, borderRadius: '24px', backgroundColor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)',
-                                border: '1px solid rgba(255,255,255,0.8)', boxShadow: '0 20px 50px rgba(47, 43, 61, 0.08)'
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, zIndex: 50
                             }}>
-                                <Box sx={{ position: 'relative' }}>
-                                    <Box sx={{ width: 100, height: 100, borderRadius: '30px', backgroundColor: 'rgba(115,103,240,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7367f0', transform: 'rotate(-5deg)', transition: 'transform 0.3s ease', '&:hover': { transform: 'rotate(0deg) scale(1.05)' } }}>
-                                        <Save size={44} />
-                                    </Box>
-                                    <Box sx={{ position: 'absolute', bottom: -8, right: -8, width: 44, height: 44, borderRadius: '14px', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', color: '#7367f0' }}>
-                                        <Paintbrush size={22} />
-                                    </Box>
-                                </Box>
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Typography sx={{ fontSize: 26, fontWeight: 800, color: '#2f2b3d', letterSpacing: '-0.5px' }}>Drop image here</Typography>
-                                    <Typography sx={{ fontSize: 14, color: '#6d6b77', mt: 1, fontWeight: 500 }}>Support for PNG · JPG · WEBP · GIF</Typography>
-                                    <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                                        <Box sx={{ height: 1, width: 24, backgroundColor: 'rgba(47, 43, 61, 0.1)' }} />
-                                        <Typography sx={{ fontSize: 12, color: '#a5a3ae', fontWeight: 600, textTransform: 'uppercase' }}>or</Typography>
-                                        <Box sx={{ height: 1, width: 24, backgroundColor: 'rgba(47, 43, 61, 0.1)' }} />
-                                    </Box>
-                                </Box>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
-                                    <Button component="label" variant="contained" sx={{ borderRadius: '12px', py: 1.75, textTransform: 'none', fontWeight: 700, fontSize: 15, backgroundColor: '#7367f0', '&:hover': { backgroundColor: '#6459d8', transform: 'translateY(-2px)' }, transition: 'all 0.2s', boxShadow: '0 8px 20px rgba(115,103,240,0.3)' }}>
-                                        Browse Files
-                                        <input hidden type="file" accept="image/*" onChange={e => handleFileFunc(e.target.files?.[0])} />
-                                    </Button>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, color: '#6d6b77' }}>
-                                        <Typography sx={{ fontSize: 12, fontWeight: 600 }}>Pro Tip:</Typography>
-                                        <Typography sx={{ fontSize: 12, fontWeight: 500, backgroundColor: 'rgba(47, 43, 61, 0.05)', px: 1, py: 0.25, borderRadius: '4px' }}>Ctrl + V</Typography>
-                                        <Typography sx={{ fontSize: 12, fontWeight: 500 }}>to paste from clipboard</Typography>
-                                    </Box>
-                                </Box>
+                                <Skeleton variant="rectangular" width={400} height={700} sx={{ borderRadius: '16px', bgcolor: 'rgba(115, 103, 240, 0.08)' }} />
                             </Box>
-                        ) : null}
+                        )}
 
                         <Box ref={cwRef} onMouseDown={localMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onDoubleClick={handleTextDblClick} sx={{ position: 'relative', lineHeight: 0, borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', cursor: drawMode ? 'crosshair' : textMode ? 'text' : 'default', border: '1px solid rgba(47, 43, 61, 0.08)', display: isImageReady ? 'block' : 'none' }}>
                             <canvas ref={canvasRef} style={{ borderRadius: '16px', position: 'relative', zIndex: 1, backgroundColor: '#fff', transform: `rotate(${previewRotation - rotation}deg)` }} />
@@ -573,7 +568,10 @@ const ImageEditor = ({ open, onClose, initialImage }) => {
                                                         </Box>
                                                         <Slider
                                                             value={adj[it.k]} size="small"
-                                                            onChange={(_, v) => setAdj(prev => ({ ...prev, [it.k]: v }))}
+                                                            onChange={(_, v) => {
+                                                                setAdj(prev => ({ ...prev, [it.k]: v }));
+                                                                if (isCropped) setIsCropped(false); // Reset cropped flag when user changes adjustments
+                                                            }}
                                                             onChangeCommitted={() => pushHistory(`Adj: ${it.label}`)}
                                                             min={-100} max={100}
                                                             sx={{ py: 1, '& .MuiSlider-thumb': { width: 12, height: 12, backgroundColor: '#7367f0' }, '& .MuiSlider-track': { height: 4, backgroundColor: '#7367f0' }, '& .MuiSlider-rail': { height: 4 } }}
@@ -606,11 +604,32 @@ const ImageEditor = ({ open, onClose, initialImage }) => {
 
                                             <Box sx={{ px: 2, py: 3, mt: 'auto' }}>
                                                 <Button
-                                                    onClick={() => { if (!canvasRef.current) return; const link = document.createElement('a'); link.download = 'edited_image.png'; link.href = canvasRef.current.toDataURL('image/png'); link.click(); }}
+                                                    onClick={() => {
+                                                        if (!canvasRef.current) return;
+                                                        if (onSave) {
+                                                            // If onSave callback provided, use it
+                                                            canvasRef.current.toBlob((blob) => {
+                                                                if (blob) {
+                                                                    const editedFile = new File([blob], 'edited_image.png', {
+                                                                        type: 'image/png',
+                                                                        lastModified: Date.now()
+                                                                    });
+                                                                    onSave(editedFile);
+                                                                    onClose();
+                                                                }
+                                                            }, 'image/png');
+                                                        } else {
+                                                            // Default download behavior
+                                                            const link = document.createElement('a');
+                                                            link.download = 'edited_image.png';
+                                                            link.href = canvasRef.current.toDataURL('image/png');
+                                                            link.click();
+                                                        }
+                                                    }}
                                                     fullWidth variant="contained" startIcon={<Save />}
                                                     sx={{ height: 48, borderRadius: '12px', backgroundColor: '#7367f0', boxShadow: '0 8px 16px rgba(115,103,240,0.3)', textTransform: 'none', fontWeight: 700, fontSize: 15, '&:hover': { backgroundColor: '#6459d8', transform: 'translateY(-2px)' }, transition: 'all 0.2s' }}
                                                 >
-                                                    Save Export
+                                                    {onSave ? 'Save & Apply' : 'Save Export'}
                                                 </Button>
                                             </Box>
                                         </>

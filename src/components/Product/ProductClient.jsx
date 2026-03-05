@@ -21,6 +21,8 @@ import { SearchModeToggle } from "../Common/HomeCommon";
 import { searchService } from "@/services/apiService";
 import { autoScrollToRestoredTarget, base64ToFile, compressImagesToWebP } from "@/utils/globalFunc";
 import ProductGrid from "./ProductGrid";
+import ProductListView from "./ProductListView";
+import ProductSummaryCards from "./ProductSummaryCards";
 import SimilarProductsModal from "./SimilarProductsModal";
 import { getMatchedDesignCollections, filterProducts, createSearchChip } from "./ProductHelpers";
 import { useCart } from '@/context/CartContext';
@@ -84,6 +86,23 @@ function ProductClientContent() {
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     const [showTrainingModal, setShowTrainingModal] = useState(false);
+
+    // View mode state (grid or list)
+    const [viewMode, setViewMode] = useState(() => {
+        // if (typeof window !== 'undefined') {
+        //     return sessionStorage.getItem('productViewMode') || 'grid';
+        // }
+        return 'grid';
+    });
+
+    // Summary cards visibility
+    const [showSummary, setShowSummary] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('showProductSummary');
+            return saved !== null ? saved === 'true' : true; // Default to true
+        }
+        return true;
+    });
 
     // Get auth context for config flags
     const { isConfigEnabled } = useAuth();
@@ -290,6 +309,16 @@ function ProductClientContent() {
             sessionStorage.setItem('searchMode', searchMode);
         }
     }, [searchMode]);
+
+    useEffect(() => {
+        if (viewMode) {
+            sessionStorage.setItem('productViewMode', viewMode);
+        }
+    }, [viewMode]);
+
+    useEffect(() => {
+        sessionStorage.setItem('showProductSummary', showSummary.toString());
+    }, [showSummary]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -777,6 +806,10 @@ function ProductClientContent() {
                     isFilterOpen={isFilterOpen}
                     searchMode={searchMode}
                     onFilterClick={() => setIsFilterOpen(prev => !prev)}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    showSummary={showSummary}
+                    onToggleSummary={() => setShowSummary(prev => !prev)}
                 />
 
                 {error ? (
@@ -807,17 +840,33 @@ function ProductClientContent() {
                 ) : (
                     <Fade in={!isTransitioning} timeout={200}>
                         <Box sx={{ p: '10px 16px !important', mt: 2 }}>
-                            <ProductGrid
-                                designData={displayedProducts}
-                                appliedFilters={appliedFilters}
-                                clearAllFilters={clearAllFilters}
-                                onSearchSimilar={handleSearchSimilar}
-                                loading={isFilterLoading}
-                                isFilterOpen={isFilterOpen}
-                                restoreTargetIndex={restoreTargetIndex}
-                                searchTerm={searchTerm}
-                                searchMode={searchMode}
-                            />
+                            {/* Summary Cards */}
+                            {showSummary && viewMode === 'list' && (
+                                <ProductSummaryCards
+                                    products={finalFilteredProducts}
+                                />
+                            )}
+
+                            {viewMode === 'grid' ? (
+                                <ProductGrid
+                                    designData={displayedProducts}
+                                    appliedFilters={appliedFilters}
+                                    clearAllFilters={clearAllFilters}
+                                    onSearchSimilar={handleSearchSimilar}
+                                    loading={isFilterLoading}
+                                    isFilterOpen={isFilterOpen}
+                                    restoreTargetIndex={restoreTargetIndex}
+                                    searchTerm={searchTerm}
+                                    searchMode={searchMode}
+                                />
+                            ) : (
+                                <ProductListView
+                                    designData={displayedProducts}
+                                    onSearchSimilar={handleSearchSimilar}
+                                    loading={isFilterLoading}
+                                    restoreTargetIndex={restoreTargetIndex}
+                                />
+                            )}
                         </Box>
                     </Fade>
                 )}

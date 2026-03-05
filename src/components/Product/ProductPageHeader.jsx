@@ -9,9 +9,10 @@ import {
     Chip,
     IconButton,
     Badge,
+    Tooltip,
     useTheme,
 } from "@mui/material";
-import { ShoppingCart, ChevronLeft, ChevronRight, CheckSquare, Square, X as XIcon, Filter } from "lucide-react";
+import { ShoppingCart, ChevronLeft, ChevronRight, CheckSquare, Square, X as XIcon, Filter, Grid3x3, List, BarChart3 } from "lucide-react";
 import Image from "next/image";
 import PageHeader from "@/components/Common/PageHeader";
 import FilterChips from "@/components/Product/FilterChips";
@@ -44,7 +45,15 @@ export default function ProductPageHeader({
     onFilterPopoverOpen,
     isFilterOpen, // New prop
     searchMode,
-    onFilterClick
+    onFilterClick,
+
+    // View mode props
+    viewMode,
+    onViewModeChange,
+
+    // Summary props
+    showSummary,
+    onToggleSummary
 }) {
     const theme = useTheme();
     // Filter Chips Scroll State
@@ -246,6 +255,70 @@ export default function ProductPageHeader({
             }
             rightContent={
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    {/* Summary Toggle (only in list view) */}
+                    {/* {!isMultiSelectMode && viewMode === 'list' && (
+                        <Tooltip title={showSummary ? "Hide summary" : "Show summary"}>
+                            <IconButton
+                                size="small"
+                                onClick={onToggleSummary}
+                                sx={{
+                                    borderRadius: 1.5,
+                                    bgcolor: showSummary ? 'primary.main' : 'rgba(0, 0, 0, 0.04)',
+                                    color: showSummary ? 'white' : 'text.secondary',
+                                    '&:hover': {
+                                        bgcolor: showSummary ? 'primary.dark' : 'rgba(0, 0, 0, 0.08)'
+                                    }
+                                }}
+                            >
+                                <BarChart3 size={18} />
+                            </IconButton>
+                        </Tooltip>
+                    )} */}
+
+                    {/* View Mode Toggle */}
+                    {/* {!isMultiSelectMode && (
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                borderRadius: 2,
+                                p: 0.5,
+                                mr: 1
+                            }}
+                        >
+                            <IconButton
+                                size="small"
+                                onClick={() => onViewModeChange('grid')}
+                                sx={{
+                                    borderRadius: 1.5,
+                                    bgcolor: viewMode === 'grid' ? 'white' : 'transparent',
+                                    color: viewMode === 'grid' ? 'primary.main' : 'text.secondary',
+                                    boxShadow: viewMode === 'grid' ? 1 : 0,
+                                    '&:hover': {
+                                        bgcolor: viewMode === 'grid' ? 'white' : 'rgba(0, 0, 0, 0.04)'
+                                    }
+                                }}
+                            >
+                                <Grid3x3 size={18} />
+                            </IconButton>
+                            <IconButton
+                                size="small"
+                                onClick={() => onViewModeChange('list')}
+                                sx={{
+                                    borderRadius: 1.5,
+                                    bgcolor: viewMode === 'list' ? 'white' : 'transparent',
+                                    color: viewMode === 'list' ? 'primary.main' : 'text.secondary',
+                                    boxShadow: viewMode === 'list' ? 1 : 0,
+                                    '&:hover': {
+                                        bgcolor: viewMode === 'list' ? 'white' : 'rgba(0, 0, 0, 0.04)'
+                                    }
+                                }}
+                            >
+                                <List size={18} />
+                            </IconButton>
+                        </Box>
+                    )} */}
+
                     {(searchMode === 'ai' && !isMultiSelectMode) && (
                         <Fade in={true}>
                             <Button

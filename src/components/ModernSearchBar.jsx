@@ -32,7 +32,7 @@ import { formatMasterData, getAuthData, isSafariBrowser } from "@/utils/globalFu
 import FilterDropdown from "./Product/FilterDropdown";
 import SearchSuggestions from "./SearchSuggestions";
 import DragDropOverlay from "./Common/DragDropOverlay";
-import ImageEditorModal from "./Common/modals/ImageEditorModal";
+import ImageEditor from "./Image-Editor/ImageEditor";
 import { Pencil } from "lucide-react";
 
 export default function ModernSearchBar({
@@ -1085,10 +1085,10 @@ export default function ModernSearchBar({
                 </Box >
 
             </ClickAwayListener >
-            <ImageEditorModal
+            <ImageEditor
                 open={isEditorOpen}
                 onClose={() => setIsEditorOpen(false)}
-                imageFile={imageFile}
+                initialImage={imagePreview}
                 onSave={handleSaveEditedImage}
             />
         </>
