@@ -14,12 +14,12 @@ export const encryptData = (data) => {
     try {
         const jsonString = typeof data === 'string' ? data : JSON.stringify(data);
         let encrypted = '';
-        
+
         for (let i = 0; i < jsonString.length; i++) {
             const charCode = jsonString.charCodeAt(i) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length);
             encrypted += String.fromCharCode(charCode);
         }
-        
+
         return btoa(encrypted);
     } catch (error) {
         console.error('Encryption error:', error);
@@ -36,12 +36,12 @@ export const decryptData = (encryptedData) => {
     try {
         const decoded = atob(encryptedData);
         let decrypted = '';
-        
+
         for (let i = 0; i < decoded.length; i++) {
             const charCode = decoded.charCodeAt(i) ^ SECRET_KEY.charCodeAt(i % SECRET_KEY.length);
             decrypted += String.fromCharCode(charCode);
         }
-        
+
         return JSON.parse(decrypted);
     } catch (error) {
         console.error('Decryption error:', error);
@@ -56,12 +56,9 @@ export const decryptData = (encryptedData) => {
  */
 export const setEncryptedSession = (key, data) => {
     try {
-        console.log(`🔐 Encrypting and storing data for key: ${key}`, data);
         const encrypted = encryptData(data);
         if (encrypted) {
             sessionStorage.setItem(key, encrypted);
-            console.log(`✅ Successfully stored encrypted data for key: ${key}`);
-            console.log(`📦 Encrypted value length: ${encrypted.length}`);
         } else {
             console.error(`❌ Encryption failed for key: ${key}`);
         }
@@ -77,15 +74,11 @@ export const setEncryptedSession = (key, data) => {
  */
 export const getEncryptedSession = (key) => {
     try {
-        console.log(`🔍 Attempting to retrieve encrypted data for key: ${key}`);
         const encrypted = sessionStorage.getItem(key);
         if (!encrypted) {
-            console.log(`⚠️ No data found in sessionStorage for key: ${key}`);
             return null;
         }
-        console.log(`📦 Found encrypted data, length: ${encrypted.length}`);
         const decrypted = decryptData(encrypted);
-        console.log(`🔓 Successfully decrypted data for key: ${key}`, decrypted);
         return decrypted;
     } catch (error) {
         console.error('❌ Error retrieving encrypted session:', error);

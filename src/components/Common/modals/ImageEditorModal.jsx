@@ -380,7 +380,6 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
             const blob = await new Promise(resolve => canvasRef.current.toBlob(resolve, 'image/png'));
             const currentFile = new File([blob], "current_edit.png", { type: 'image/png' });
             const resultBlob = await processingService.processImage(processorId, currentFile);
-            console.log(resultBlob)
 
             // Create new image from result
             const url = URL.createObjectURL(resultBlob);

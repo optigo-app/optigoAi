@@ -431,7 +431,6 @@ function ProductClientContent() {
         toggleMultiSelectMode();
 
         // Show success feedback
-        console.log(`${addedCount} new items added to cart`);
     }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode, cartItems]);
 
     const isRemovalMode = useMemo(() => {
@@ -589,7 +588,6 @@ function ProductClientContent() {
         }
 
         if ((!effectiveSearchFlag || effectiveSearchFlag === 0) && modeToUse === 'ai') {
-            console.log('No search criteria provided, showing all products');
             setIsSearchLoading(true);
             setLastSearchData(searchData);
             setError(null);
@@ -641,10 +639,8 @@ function ProductClientContent() {
                     const compressedResults = await compressImagesToWebP(finalImage);
                     if (compressedResults.length > 0) {
                         finalImage = compressedResults[0].blob;
-                        console.log(`original image size: ${compressedResults[0].originalSize} compressed image size: ${compressedResults[0].compressedSize}`);
                     }
                 } catch (compressErr) {
-                    console.error("Compression failed, using original image", compressErr);
                     logErrorToServer({
                         shortReason: "Image compression failed on Product page",
                         detailedReason: compressErr
@@ -944,6 +940,7 @@ function ProductClientContent() {
                 onSearch={handleSearch}
                 currentSearchTerm={searchTerm}
                 urlParamsFlag={urlParamsFlag}
+                productData={allDesignCollections}
             />
 
 

@@ -73,6 +73,30 @@ export default function ModernSearchBar({
             onExpandChange(isExpanded);
         }
     }, [isExpanded, onExpandChange]);
+
+    useEffect(() => {
+        const handleGlobalKeyDown = (e) => {
+            // Check for Ctrl+F or Cmd+F
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                // Only intercept if we are not already focused on an input/textarea (unless it's our own)
+                const activeElement = document.activeElement;
+                const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+                
+                if (!isInput || activeElement === textFieldRef.current) {
+                    e.preventDefault();
+                    setIsExpanded(true);
+                    setTimeout(() => {
+                        if (textFieldRef.current) {
+                            textFieldRef.current.focus();
+                        }
+                    }, 50);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, []);
     const actionIconButtonSx = {
         width: 40,
         height: 40,
@@ -735,18 +759,18 @@ export default function ModernSearchBar({
                                                 <X size={16} />
                                             </IconButton>
 
-                                            {!isSafariBrowser() && (
-                                                <IconButton
-                                                    size="small"
-                                                    className="edit-image"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setIsEditorOpen(true);
-                                                    }}
-                                                >
-                                                    <Pencil size={16} />
-                                                </IconButton>
-                                            )}
+                                            {/* {!isSafariBrowser() && ( */}
+                                            <IconButton
+                                                size="small"
+                                                className="edit-image"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsEditorOpen(true);
+                                                }}
+                                            >
+                                                <Pencil size={16} />
+                                            </IconButton>
+                                            {/* )} */}
                                         </Box>
                                     </Box>
                                 </Zoom>

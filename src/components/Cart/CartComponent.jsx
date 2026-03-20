@@ -44,7 +44,6 @@ const CartPageMUI = () => {
     const [selectedProductIndex, setSelectedProductIndex] = useState(0);
 
     const handleClearCart = () => {
-        console.log("Clear cart");
         setOpenConfirmModal(true);
         setConfirmModalType('clearCart');
     };

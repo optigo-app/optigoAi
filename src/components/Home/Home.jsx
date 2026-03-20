@@ -23,6 +23,8 @@ const GradientWaves = dynamic(
     { ssr: false }
 );
 
+console.log("Home page log")
+
 // --- ANIMATION CONFIG ---
 const floatAnimation = {
     animate: {
@@ -212,7 +214,7 @@ const Home = () => {
     };
 
     const handleScrollToHowItWorks = () => {
-        scrollToSectionWithHighlight('how-it-works-section', 40);
+        scrollToSectionWithHighlight('how-it-works-section', 10);
     };
 
     return (
@@ -544,16 +546,16 @@ const Home = () => {
                         }}
                     >
                         {[
-                            { id: 0, label: "Search by Photo", icon: <Play size={14} /> },
-                            { id: 1, label: "Manage Catalog", icon: <Layers size={14} /> },
-                            { id: 2, label: "Generate Quotes", icon: <BadgeDollarSign size={14} /> },
-                            { id: 3, label: "Watch All Guides", icon: <Video size={14} /> }
-                        ].map((card) => (
+                            // { id: 0, label: "Search by Image", icon: <Play size={14} /> },
+                            // { id: 1, label: "Search by Text", icon: <Layers size={14} /> },
+                            // { id: 2, label: "Remove Background", icon: <BadgeDollarSign size={14} /> },
+                            { id: 0, label: "Watch All Help Guides", icon: <Video size={14} /> }
+                        ].map((card, index) => (
                             <Box
-                                key={card.id}
+                                key={index}
                                 onClick={() => {
                                     setHelpStep(card.id);
-                                    scrollToSectionWithHighlight('how-it-works-section', 40);
+                                    scrollToSectionWithHighlight('how-it-works-section', 10);
                                 }}
                                 sx={{
                                     display: 'flex',

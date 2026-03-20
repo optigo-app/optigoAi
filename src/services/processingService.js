@@ -36,9 +36,6 @@ export const processingService = {
         // Add prompt for AI generators (v2 processors)
         if (isAIGenerator && options.prompt) {
             formData.append('prompt', options.prompt);
-            console.log(`🎨 Generating jewelry with ${processorId} using prompt: "${options.prompt.substring(0, 50)}..."`);
-        } else {
-            console.log(`🔄 Processing image with ${processorId} at ${endpoint}`);
         }
 
         const result = await apiCallBinary(endpoint, {
@@ -47,7 +44,6 @@ export const processingService = {
         });
 
         if (result && !(result instanceof Blob) && result.image_url) {
-            console.log(`🔗 Received image URL from ${processorId}, fetching actual image...`);
             const imageUrl = result.image_url.startsWith('http')
                 ? result.image_url
                 : `${process.env.NEXT_PUBLIC_IMAGE_BASE_URL}/${result.image_url.replace(/\\/g, '/')}`;
@@ -58,8 +54,6 @@ export const processingService = {
             }
             return await imageResponse.blob();
         }
-
-        console.log(`✅ ${processorId} processing result:`, result);
         return result;
     },
 
@@ -101,11 +95,6 @@ export const processingService = {
             throw new Error('At least one processor must be selected');
         }
 
-        console.log(`🎨 Starting batch processing with ${processorIds.length} processors`);
-        if (options.prompt) {
-            console.log(`📝 Using prompt: "${options.prompt.substring(0, 100)}${options.prompt.length > 100 ? '...' : ''}"`);
-        }
-
         const promises = processorIds.map(async (processorId) => {
             try {
                 const result = await this.processImage(processorId, file, options);
@@ -135,8 +124,6 @@ export const processingService = {
         const failedResults = results
             .filter(result => result.status === 'rejected' || result.value.status === 'error')
             .map(result => result.status === 'rejected' ? result.reason : result.value);
-
-        console.log(`✅ Batch processing completed: ${successfulResults.length} successful, ${failedResults.length} failed`);
 
         return {
             successful: successfulResults,

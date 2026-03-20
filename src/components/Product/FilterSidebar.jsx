@@ -14,6 +14,7 @@ import {
     IconButton,
     useMediaQuery,
     useTheme,
+    Slider,
 } from "@mui/material";
 import { X, ChevronDown, Search } from "lucide-react";
 
@@ -22,7 +23,6 @@ import "../../Style/FilterSidebar.scss";
 import { filterMasterApi } from "@/app/api/filterMasterApi";
 import { formatMasterData } from "@/utils/globalFunc";
 import useDebounce from "@/hooks/useDebounce";
-import { isFrontendFeRoute } from "@/utils/urlUtils";
 
 const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle, focusId, tabIndex, onFocus, onKeyDown, registerFocusable }) => (
     <Box
@@ -70,6 +70,168 @@ const FilterItem = React.memo(({ categoryName, item, isSelected, onToggle, focus
 ));
 
 FilterItem.displayName = 'FilterItem';
+
+const RangeFilter = React.memo(({ label, field, min, max, value, onChange, unit }) => {
+    const vMin = value ? value[0] : min;
+    const vMax = value ? value[1] : max;
+
+    const [localValue, setLocalValue] = useState([vMin, vMax]);
+    const [inputValue, setInputValue] = useState({ min: vMin.toString(), max: vMax.toString() });
+
+    const prevPropValue = useRef([vMin, vMax]);
+
+    useEffect(() => {
+        // If the parent string/number changes independently (e.g. clicking "Clear Filter", or new data bounds)
+        if (prevPropValue.current[0] !== vMin || prevPropValue.current[1] !== vMax) {
+            setLocalValue([vMin, vMax]);
+            setInputValue({ min: vMin.toString(), max: vMax.toString() });
+            prevPropValue.current = [vMin, vMax];
+        }
+    }, [vMin, vMax]);
+
+    const handleSliderChange = (event, newValue) => {
+        setLocalValue(newValue);
+        setInputValue({ min: newValue[0].toString(), max: newValue[1].toString() });
+    };
+
+    const handleSliderChangeCommitted = (event, newValue) => {
+        prevPropValue.current = newValue;
+        onChange(field, newValue);
+    };
+
+    const handleMinInputChange = (e) => {
+        setInputValue((prev) => ({ ...prev, min: e.target.value }));
+    };
+
+    const handleMaxInputChange = (e) => {
+        setInputValue((prev) => ({ ...prev, max: e.target.value }));
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            let parseMin = parseFloat(inputValue.min);
+            let parseMax = parseFloat(inputValue.max);
+
+            if (isNaN(parseMin) || isNaN(parseMax)) return;
+
+            // clamp bounds to fix inversion or out of bounds typing
+            if (parseMin < min) parseMin = min;
+            if (parseMax > max) parseMax = max;
+            if (parseMin > parseMax) parseMin = parseMax;
+
+            if (parseMin !== localValue[0] || parseMax !== localValue[1]) {
+                const next = [parseMin, parseMax];
+                setLocalValue(next);
+                setInputValue({ min: parseMin.toString(), max: parseMax.toString() });
+                prevPropValue.current = next;
+                onChange(field, next);
+            }
+        }, 800);
+
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inputValue.min, inputValue.max, min, max, field, onChange]);
+
+    return (
+        <Box sx={{ mb: 3, px: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {label} {unit ? `(${unit})` : ''}
+            </Typography>
+            <Slider
+                value={localValue}
+                onChange={handleSliderChange}
+                onChangeCommitted={handleSliderChangeCommitted}
+                valueLabelDisplay="auto"
+                min={min}
+                max={max}
+                step={field.includes('pcs') ? 1 : 0.01}
+                sx={{
+                    color: 'text.primary',
+                    height: 2,
+                    padding: '13px 0',
+                    mt: 1.5, // Push slider down so tooltips don't clip at top of the container
+                    '& .MuiSlider-thumb': {
+                        width: 22,
+                        height: 22,
+                        backgroundColor: 'currentColor',
+                        border: '2px solid',
+                        borderColor: 'background.paper',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        '&:hover': {
+                            boxShadow: '0 0 0 8px rgba(0, 0, 0, 0.04)',
+                        },
+                        '&.Mui-active': {
+                            boxShadow: '0 0 0 10px rgba(0, 0, 0, 0.08)',
+                        },
+                    },
+                    '& .MuiSlider-track': {
+                        height: 2,
+                        border: 'none',
+                    },
+                    '& .MuiSlider-rail': {
+                        height: 2,
+                        opacity: 0.5,
+                        backgroundColor: '#bfbfbf',
+                    },
+                    '& .MuiSlider-valueLabel': {
+                        fontSize: 10,
+                        backgroundColor: 'background.paper',
+                        color: 'text.primary',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        zIndex: 99,
+                        // The z-index and container styling ensure it renders over other elements
+                    },
+                }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2, gap: 2 }}>
+                <TextField
+                    size="small"
+                    placeholder="Min"
+                    type="number"
+                    value={inputValue.min}
+                    onChange={handleMinInputChange}
+                    inputProps={{ min, max, step: field.includes('pcs') ? 1 : 0.01 }}
+                    sx={{
+                        width: '45%',
+                        '& input[type=number]': {
+                            MozAppearance: 'textfield',
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                            WebkitAppearance: 'none',
+                            margin: 0,
+                        },
+                        '& .MuiInputBase-input': { py: 0.8, px: 1, fontSize: '0.85rem', textAlign: 'center' }
+                    }}
+                />
+                <Typography variant="body2" color="text.secondary">-</Typography>
+                <TextField
+                    size="small"
+                    placeholder="Max"
+                    type="number"
+                    value={inputValue.max}
+                    onChange={handleMaxInputChange}
+                    inputProps={{ min, max, step: field.includes('pcs') ? 1 : 0.01 }}
+                    sx={{
+                        width: '45%',
+                        '& input[type=number]': {
+                            MozAppearance: 'textfield',
+                        },
+                        '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                            WebkitAppearance: 'none',
+                            margin: 0,
+                        },
+                        '& .MuiInputBase-input': { py: 0.8, px: 1, fontSize: '0.85rem', textAlign: 'center' }
+                    }}
+                />
+            </Box>
+        </Box>
+    );
+});
+
+RangeFilter.displayName = 'RangeFilter';
 
 const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordion, selectedFilters, onToggleItem, count, categoryFocusId, registerFocusable, onFocusFocusable, onKeyDownFocusable }) => {
     const headerId = `cat:${category.name}`;
@@ -170,7 +332,7 @@ const FilterCategory = React.memo(({ category, index, expanded, onToggleAccordio
 
 FilterCategory.displayName = 'FilterCategory';
 
-export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters = [] }) {
+export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters = [], productData = [] }) {
     const [filters, setFilters] = useState([]);
     const [selectedFilters, setSelectedFilters] = useState(new Set());
     const [loadingFilters, setLoadingFilters] = useState(false);
@@ -181,6 +343,7 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     const [focusedId, setFocusedId] = useState(null);
+    const [expandedRanges, setExpandedRanges] = useState({});
     const focusablesRef = useRef(new Map());
     const shouldProgrammaticallyFocusRef = useRef(false);
     const pendingFocusIdRef = useRef(null);
@@ -276,9 +439,15 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                 }
             }
         });
-
         setSelectedFilters(newSelected);
     }, [isOpen, filterLookup, appliedFilters]);
+
+    const toggleRangeAccordion = (field) => {
+        setExpandedRanges(prev => ({
+            ...prev,
+            [field]: !prev[field]
+        }));
+    };
 
     const toggleAccordion = useCallback((toggledCategory) => {
         setFilters(prev => {
@@ -304,6 +473,15 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
         startTransition(() => {
             const drawerFilters = [];
             const drawerCategoryNames = new Set(filters.map(c => c.name));
+
+            // Re-calculate all current filters
+            // 1. Preserve non-drawer and range filters
+            const rangeFields = rangeConfigs.map(c => c.field);
+            const preservedFilters = appliedFilters.filter(
+                (f) => !drawerCategoryNames.has(f.category) && !rangeFields.includes(f.category)
+            );
+
+            // 2. Add current drawer filters
             filters.forEach(cat => {
                 cat.items.forEach(it => {
                     if (next.has(`${cat.name}-${it.id}`)) {
@@ -311,14 +489,59 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                     }
                 });
             });
-            const preservedFilters = appliedFilters.filter(
-                (f) => !drawerCategoryNames.has(f.category)
-            );
+
+            // 3. Add current range filters
+            rangeFields.forEach(field => {
+                const existingRange = appliedFilters.find(f => f.category === field);
+                if (existingRange) {
+                    drawerFilters.push(existingRange);
+                }
+            });
 
             const allAppliedFilters = [...preservedFilters, ...drawerFilters];
             onApply?.(allAppliedFilters);
         });
     }, [filters, appliedFilters, onApply, selectedFilters]);
+
+    const handleRangeChange = useCallback((field, [min, max]) => {
+        startTransition(() => {
+            const rangeItem = { id: `range-${field}`, min, max, isRange: true };
+            const nextApplied = appliedFilters.filter(f => f.category !== field);
+            nextApplied.push({ category: field, item: rangeItem });
+            onApply?.(nextApplied);
+        });
+    }, [appliedFilters, onApply]);
+
+    const rangeConfigs = useMemo(() => {
+        if (!productData || productData.length === 0) return [];
+
+        const fields = [
+            { field: 'MetalWeight', label: 'Metal Weight', unit: 'Gms' },
+            { field: 'ActualGrossweight', label: 'Gross Weight', unit: 'Gms' },
+            { field: 'diamondpcs', label: 'Diamond Pcs', unit: 'Pcs' },
+            { field: 'diamondctw', label: 'Diamond Ctw', unit: 'Ctw' }
+        ];
+
+        return fields.map(cfg => {
+            const values = productData.map(p => Number(p[cfg.field])).filter(v => !isNaN(v));
+            const minV = values.length ? Math.min(...values) : 0;
+            const maxV = values.length ? Math.max(...values) : 100;
+
+            return {
+                ...cfg,
+                min: cfg.field.includes('pcs') ? Math.floor(minV) : parseFloat(minV.toFixed(2)),
+                max: cfg.field.includes('pcs') ? Math.ceil(maxV) : parseFloat(maxV.toFixed(2))
+            };
+        });
+    }, [productData]);
+
+    const getRangeValue = (field, minDefault, maxDefault) => {
+        const found = appliedFilters.find(f => f.category === field);
+        if (found && found.item && found.item.isRange) {
+            return [found.item.min, found.item.max];
+        }
+        return [minDefault, maxDefault];
+    };
 
     const filteredFilters = useMemo(() => {
         if (!debouncedSearchTerm) {
@@ -485,12 +708,13 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
         setSelectedFilters(next);
         startTransition(() => {
             const drawerCategoryNames = new Set(filters.map(c => c.name));
+            const rangeFields = rangeConfigs.map(c => c.field);
             const preservedFilters = appliedFilters.filter(
-                (f) => !drawerCategoryNames.has(f.category)
+                (f) => !drawerCategoryNames.has(f.category) && !rangeFields.includes(f.category)
             );
             onApply?.(preservedFilters);
         });
-    }, [appliedFilters, filters, onApply]);
+    }, [appliedFilters, filters, onApply, rangeConfigs]);
 
     useEffect(() => {
         if (debouncedSearchTerm) {
@@ -598,6 +822,51 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                     overflowY: 'auto',
                     p: 2
                 }}>
+                    {/* Individual Range Filter Accordions */}
+                    {isOpen && rangeConfigs.map(cfg => (
+                        <Accordion
+                            key={cfg.field}
+                            expanded={!!expandedRanges[cfg.field]}
+                            onChange={() => toggleRangeAccordion(cfg.field)}
+                            disableGutters
+                            className="filterSidebar__accordion"
+                            sx={{
+                                boxShadow: 'none',
+                                '&:before': { display: 'none' },
+                                mb: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: '8px !important',
+                                overflow: 'hidden',
+                                '&.MuiAccordionSummary-content': { margin: '8px 0px !important' },
+                            }}
+                        >
+                            <AccordionSummary
+                                expandIcon={<ChevronDown size={18} />}
+                                sx={{
+                                    bgcolor: expandedRanges[cfg.field] ? 'background.light' : 'background.paper',
+                                    outline: 'none',
+                                    '&.Mui-expanded': { minHeight: 40 }
+                                }}
+                            >
+                                <Typography className="filterSidebar__title">
+                                    {cfg.label}
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className="filterSidebar__details" sx={{ p: 1, pt: 1 }}>
+                                <RangeFilter
+                                    label={cfg.label}
+                                    field={cfg.field}
+                                    min={cfg.min}
+                                    max={cfg.max}
+                                    value={getRangeValue(cfg.field, cfg.min, cfg.max)}
+                                    onChange={handleRangeChange}
+                                    unit={cfg.unit}
+                                />
+                            </AccordionDetails>
+                        </Accordion>
+                    ))}
+
                     {!shouldRenderFilters || (loadingFilters && !hasLoaded) ? (
                         <Box>
                             {Array.from({ length: 5 }).map((_, index) => (

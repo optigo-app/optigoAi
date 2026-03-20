@@ -1,9 +1,10 @@
 "use client";
 import React, { useState } from 'react';
-import { Box, Typography, Container, Card, CardContent, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Slide, Accordion, AccordionSummary, AccordionDetails, GlobalStyles } from '@mui/material';
-import { ChevronDown, Layers, Play, BadgeDollarSign, PackageSearch, Maximize, Minimize, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Box, Typography, Container, Card, CardContent, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Slide, Accordion, AccordionSummary, AccordionDetails, GlobalStyles, Fade } from '@mui/material';
+import { ChevronDown, Layers, Play, BadgeDollarSign, PackageSearch, Maximize, Minimize, X, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
+import { motion } from 'framer-motion';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -12,7 +13,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const SectionHeader = ({ title, subtitle, align = "left" }) => (
-    <Box sx={{ mb: 6, textAlign: align }}>
+    <Box sx={{ mb: 2, textAlign: align }}>
         {title && (
             <Typography
                 variant="h2"
@@ -32,7 +33,6 @@ const SectionHeader = ({ title, subtitle, align = "left" }) => (
                 sx={{
                     fontSize: "0.9rem",
                     color: "text.secondary",
-                    maxWidth: '39%',
                     mx: align === "center" ? "auto" : 0,
                     lineHeight: 1.6
                 }}
@@ -43,107 +43,217 @@ const SectionHeader = ({ title, subtitle, align = "left" }) => (
     </Box>
 );
 
-const VideoListItem = ({ title, description, active, onClick }) => (
-    <Box
-        onClick={onClick}
-        sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-            p: 3,
-            borderRadius: '24px',
-            cursor: 'pointer',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            border: active ? '1px solid #7367f0' : '1px solid transparent',
-            bgcolor: active ? 'rgba(115, 103, 240, 0.08)' : 'transparent',
-            maxWidth: 600,
-            width: '100%',
-            '&:hover': {
-                bgcolor: active ? 'rgba(115, 103, 240, 0.12)' : 'rgba(0,0,0,0.02)',
-                transform: active ? 'none' : 'translateX(10px)'
-            }
-        }}
-    >
-        {/* Icon / Indicator */}
+const VideoCard = ({ title, description, youtubeId, onClick, index }) => {
+    const thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
+
+    return (
         <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: index * 0.15, ease: "easeOut" }}
+            onClick={onClick}
             sx={{
-                width: 64,
-                height: 64,
-                borderRadius: '16px',
-                background: active ? 'rgba(115, 103, 240, 0.2)' : 'rgba(0,0,0,0.05)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                color: active ? '#7367f0' : '#94a3b8'
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '5/4',
+                borderRadius: '32px',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': {
+                    transform: 'translateY(-8px)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+                    '& .video-overlay': {
+                        bgcolor: 'rgba(0,0,0,0.2)'
+                    }
+                }
             }}
         >
-            {active ? <Play size={24} fill="currentColor" /> : <Box sx={{ width: 24, height: 2, bgcolor: 'currentColor', borderRadius: 1 }} />}
-        </Box>
+            {/* Background Image */}
+            <Box
+                component="img"
+                src={thumbnailUrl}
+                alt={title}
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                }}
+            />
 
-        {/* Text Content */}
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            {active && (
-                <Typography variant="caption" sx={{ color: '#7367f0', fontWeight: 700, mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Active
-                </Typography>
-            )}
-            <Typography variant="h6" sx={{ fontWeight: 500, lineHeight: 1.2, mb: 0.5, color: active ? 'text.primary' : 'text.secondary' }}>
-                {title}
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 400 }}>
-                {description}
-            </Typography>
-        </Box>
-    </Box>
-);
+            {/* Overlay Gradient */}
+            <Box
+                className="video-overlay"
+                sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%)',
+                    transition: 'background-color 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    p: 3
+                }}
+            >
+                {/* Top Controls */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box
+                        sx={{
+                            bgcolor: 'white',
+                            px: 2,
+                            py: 0.75,
+                            borderRadius: '100px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                        }}
+                    >
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'black' }}>
+                            View video
+                        </Typography>
+                    </Box>
+                    <Box
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            bgcolor: 'white',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'black'
+                        }}
+                    >
+                        <ArrowUpRight size={20} />
+                    </Box>
+                </Box>
 
-const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0" }) => (
+                {/* Bottom Content */}
+                <Box>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            mb: 0.5,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}
+                    >
+                        {title}
+                    </Typography>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            color: 'white',
+                            fontWeight: 600,
+                            lineHeight: 1.1,
+                            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                            fontSize: { xs: '1.5rem', md: '1.75rem' }
+                        }}
+                    >
+                        {description}
+                    </Typography>
+                </Box>
+            </Box>
+        </Box>
+    );
+};
+
+const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0", index }) => (
     <Card
+        component={motion.div}
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
         elevation={0}
         sx={{
             width: '100%',
-            maxWidth: 800,
-            mx: 'auto',
-            borderRadius: '24px',
-            border: '1px solid rgba(255,255,255,0.6)',
-            background: 'rgba(255, 255, 255, 0.3)', // Glassmorphism
-            backdropFilter: 'blur(20px)',
+            height: '100%',
+            borderRadius: '32px',
+            border: '1px solid rgba(0,0,0,0.05)',
+            bgcolor: 'white',
             transition: 'all 0.3s ease',
-            overflow: 'visible',
             position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
             '&:hover': {
-                transform: 'translateY(-5px)',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
-                background: 'rgba(255, 255, 255, 0.5)',
-                borderColor: 'rgba(255,255,255,0.8)'
+                transform: 'translateY(-8px)',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
+                borderColor: 'transparent',
             }
         }}
     >
-        <CardContent sx={{ p: { xs: 3, md: 5 } }}>
+        <CardContent sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Box
                 sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '20px',
+                    width: 56,
+                    height: 56,
+                    borderRadius: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    bgcolor: `${color}15`,
+                    bgcolor: `${color}10`,
                     color: color,
-                    flexShrink: 0,
-                    mb: 2
+                    mb: 3,
+                    transition: 'transform 0.3s ease',
+                    '.MuiCard-root:hover &': {
+                        transform: 'scale(1.1) rotate(-5deg)'
+                    }
                 }}
             >
-                <Icon size={32} />
+                <Icon size={28} />
             </Box>
-            <Box>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, mt: 1.5 }}>
-                    {title}
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {description}
-                </Typography>
+
+            <Typography
+                variant="h5"
+                sx={{
+                    fontWeight: 700,
+                    mb: 1.5,
+                    color: 'text.primary',
+                    fontSize: '1.25rem'
+                }}
+            >
+                {title}
+            </Typography>
+
+            <Typography
+                variant="body1"
+                sx={{
+                    color: 'text.secondary',
+                    lineHeight: 1.6,
+                    fontSize: '0.95rem'
+                }}
+            >
+                {description}
+            </Typography>
+
+            <Box sx={{ mt: 'auto', pt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                <Box
+                    sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(0,0,0,0.03)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '.MuiCard-root:hover &': {
+                            bgcolor: color,
+                            color: 'white',
+                            transform: 'rotate(45deg)'
+                        }
+                    }}
+                >
+                    <ArrowUpRight size={18} />
+                </Box>
             </Box>
         </CardContent>
     </Card>
@@ -230,12 +340,11 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
         }, 300);
     };
 
-    // Mock video paths - cycling through available videos
+    // Video guide steps
     const steps = [
-        { title: "Search by Text & Image", description: "Multimodal search guide", active: true, video: "/videos/1.mp4" },
-        { title: "Managing Your Catalog & Albums", description: "Asset organization utility", active: false, video: "/videos/2.mp4" },
-        { title: "Generating Quotations & Orders", description: "Sales workflow automation", active: false, video: "/videos/3.mp4" },
-        { title: "Advanced Enterprise Features", description: "Scaling for large teams", active: false, video: "/videos/4.mp4" },
+        { title: "Search by Image", description: "Upload a jewelry image or describe your idea to find instant matches", youtubeId: "jXVzXa6T3gs" },
+        { title: "Search by Text Prompt", description: "Use natural language prompts to discover products with precision", youtubeId: "y5lxSNUaK2Q" },
+        { title: "Remove Background via Image Editor", description: "Clean up product images using the built-in background removal tool", youtubeId: "vdxHn4b2rKs" },
     ];
 
     const features = [
@@ -290,145 +399,63 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                     },
                     '.section-highlight-active': {
                         position: 'relative',
-                    }
+                    },
+                    '@keyframes pulse': {
+                        '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                        '50%': { opacity: 0.5, transform: 'scale(0.85)' },
+                    },
                 }}
             />
 
             {/* --- 1. How It Works --- */}
-            <Container maxWidth={false} sx={{ mb: 16 }} id="how-it-works-section">
-                <SectionHeader
-                    title="How it works?"
-                    subtitle="Step-by-step video guides to help you harness the full potential of Cloud AI's catalog management and multimodal search capabilities."
-                />
+            <Container maxWidth="xl" sx={{ mb: 16 }} id="how-it-works-section">
+                <Box
+                    component={motion.div}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    sx={{ textAlign: 'center', mb: 8 }}
+                >
+                    <Typography
+                        variant="h2"
+                        sx={{
+                            my: 2,
+                            fontSize: { xs: "2rem", md: "3rem" },
+                            fontWeight: 700,
+                            color: "text.primary",
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1
+                        }}
+                    >
+                        How it works?
+                    </Typography>
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            fontSize: "1.1rem",
+                            color: "text.secondary",
+                            maxWidth: "700px",
+                            mx: "auto",
+                            lineHeight: 1.6
+                        }}
+                    >
+                        Step-by-step video guides to help you harness the full potential of Cloud AI catalog management and multimodal search capabilities.
+                    </Typography>
+                </Box>
 
-                <Grid container spacing={4}>
-                    {/* Left Column (Video Player) */}
-                    <Grid size={{ xs: 12, md: 8, lg: 8 }}>
-                        <Box
-                            id="video-player-container"
-                            sx={{
-                                width: '100%',
-                                aspectRatio: '16/9',
-                                borderRadius: '24px',
-                                overflow: 'hidden',
-                                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                                bgcolor: '#000',
-                                position: 'relative',
-                                transition: 'all 0.5s ease',
-                                '&:hover .fullscreen-btn': { opacity: 1 }
-                            }}
-                        >
-                            <video
-                                ref={videoRef}
-                                key={activeVideo}
-                                src={steps[activeVideo].video}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    opacity: isChanging ? 0 : 1,
-                                    transition: 'opacity 0.3s ease-in-out'
+                <Grid container spacing={4} justifyContent="center">
+                    {steps.map((step, index) => (
+                        <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                            <VideoCard
+                                {...step}
+                                index={index}
+                                onClick={() => {
+                                    setActiveVideo(index);
+                                    setModalOpen(true);
                                 }}
-                                controls={isPlaying}
-                                playsInline
-                                onPlay={() => setIsPlaying(true)}
-                                onPause={() => setIsPlaying(false)}
-                                onEnded={() => setIsPlaying(false)}
                             />
-
-                            {/* Overlay (Visible when not playing) */}
-                            {!isPlaying && (
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        inset: 0,
-                                        bgcolor: 'rgba(0,0,0,0.4)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
-                                    }}
-                                    onClick={handlePlayClick}
-                                >
-                                    {/* Play Button */}
-                                    <Box
-                                        sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            bgcolor: 'rgba(255,255,255,0.2)',
-                                            backdropFilter: 'blur(10px)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            mb: 4,
-                                            transition: 'transform 0.2s ease',
-                                            '&:hover': { transform: 'scale(1.1)', bgcolor: 'rgba(255,255,255,0.3)' }
-                                        }}
-                                    >
-                                        <Play size={40} fill="white" color="white" style={{ marginLeft: 4 }} />
-                                    </Box>
-
-                                    {/* Bottom Info Overlay */}
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
-                                            p: 4,
-                                            pt: 8
-                                        }}
-                                    >
-                                        <Typography variant="h5" sx={{ color: 'white', fontWeight: 700, mb: 1 }}>
-                                            {steps[activeVideo].title}
-                                        </Typography>
-                                        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                                            {steps[activeVideo].description}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            )}
-
-                            {/* Fullscreen Button */}
-                            <IconButton
-                                className="fullscreen-btn"
-                                onClick={handleFullscreenOpen}
-                                sx={{
-                                    position: 'absolute',
-                                    top: 16,
-                                    right: 16,
-                                    bgcolor: 'rgba(0,0,0,0.5)',
-                                    color: 'white',
-                                    opacity: 0,
-                                    transition: 'opacity 0.2s ease',
-                                    '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
-                                }}
-                            >
-                                <Maximize size={20} />
-                            </IconButton>
-                        </Box>
-                    </Grid>
-
-                    {/* Right List (80%) */}
-                    <Grid size={{ xs: 12, md: 4, lg: 4 }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <Typography variant="h6" sx={{ mb: 1, textTransform: 'uppercase', color: 'text.secondary', fontSize: '0.875rem', fontWeight: 700, letterSpacing: 1 }}>
-                                Guide Library
-                            </Typography>
-                            {steps.map((step, index) => (
-                                <VideoListItem
-                                    key={index}
-                                    {...step}
-                                    active={activeVideo === index}
-                                    onClick={() => handleStepClick(index)}
-                                />
-                            ))}
-                        </Box>
-                    </Grid>
+                        </Grid>
+                    ))}
                 </Grid>
 
                 {/* Video Modal */}
@@ -436,28 +463,34 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                     open={modalOpen}
                     TransitionComponent={Transition}
                     onClose={handleFullscreenClose}
-                    maxWidth={isFullscreen ? false : "xl"}
+                    maxWidth={isFullscreen ? false : "lg"}
                     fullWidth
                     fullScreen={isFullscreen}
                     PaperProps={{
                         sx: {
-                            bgcolor: 'black',
-                            borderRadius: isFullscreen ? 0 : '16px',
+                            bgcolor: 'background.paper',
+                            borderRadius: isFullscreen ? 0 : 3,
                             overflow: 'hidden',
                             maxWidth: isFullscreen ? '100%' : '1200px',
+                            width: '100%',
                             height: isFullscreen ? '100%' : 'auto',
                             maxHeight: isFullscreen ? '100%' : '90vh',
-                            m: isFullscreen ? 0 : 2
+                            display: 'flex',
+                            flexDirection: 'column',
+                            m: isFullscreen ? 0 : 2,
+                            boxShadow: '0 24px 48px rgba(0,0,0,0.12)',
                         }
                     }}
                     sx={{
                         '& .MuiDialog-container': {
-                            height: isFullscreen ? '100%' : '100%',
+                            height: '100%',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                         }
                     }}
                 >
-                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#1a1a1a', borderBottom: '1px solid #333' }}>
-                        <Typography variant="h6" fontWeight="bold" sx={{ color: 'white', mr: 2 }}>
+                    <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.primary', mr: 2 }}>
                             {steps[activeVideo].title}
                         </Typography>
 
@@ -469,16 +502,17 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                                     disabled={activeVideo === 0}
                                     size="small"
                                     sx={{
-                                        color: 'white',
+                                        color: 'text.secondary',
                                         opacity: activeVideo === 0 ? 0.3 : 1,
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
                                     }}
                                 >
                                     <ChevronLeft size={18} />
                                 </IconButton>
 
-                                <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 600, minWidth: '40px', textAlign: 'center', color: 'text.secondary' }}>
                                     {activeVideo + 1} / {steps.length}
                                 </Typography>
 
@@ -487,32 +521,33 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                                     disabled={activeVideo === steps.length - 1}
                                     size="small"
                                     sx={{
-                                        color: 'white',
+                                        color: 'text.secondary',
                                         opacity: activeVideo === steps.length - 1 ? 0.3 : 1,
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
                                     }}
                                 >
                                     <ChevronRight size={18} />
                                 </IconButton>
                             </Box>
 
-                            <Box sx={{ display: 'flex', gap: 1, borderLeft: '1px solid rgba(255,255,255,0.1)', pl: 2 }}>
+                            <Box sx={{ display: 'flex', gap: 1, borderLeft: '1px solid', borderColor: 'divider', pl: 2 }}>
                                 <IconButton
                                     onClick={() => setIsFullscreen(!isFullscreen)}
                                     size="small"
-                                    sx={{ color: 'grey.500', padding: 1 }}
+                                    sx={{ color: 'text.secondary', padding: 1 }}
                                 >
                                     {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
                                 </IconButton>
-                                <IconButton onClick={handleFullscreenClose} sx={{ color: 'grey.500', padding: 1 }}>
+                                <IconButton onClick={handleFullscreenClose} sx={{ color: 'text.secondary', padding: 1 }}>
                                     <X size={20} />
                                 </IconButton>
                             </Box>
                         </Box>
                     </DialogTitle>
 
-                    <DialogContent sx={{ p: 0, bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <DialogContent sx={{ p: 0, bgcolor: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexGrow: 1, aspectRatio: '16/9' }}>
                         <Swiper
                             modules={[Virtual, Keyboard, Mousewheel, Navigation]}
                             onSwiper={setSwiperRef}
@@ -527,13 +562,16 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                             {steps.map((step, index) => (
                                 <SwiperSlide key={index}>
                                     <Box sx={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <video
+                                        <iframe
                                             width="100%"
                                             height="100%"
-                                            controls
-                                            autoPlay={index === activeVideo} // Only autoplay active slide
-                                            src={step.video}
-                                            style={{ display: 'block', maxHeight: isFullscreen ? 'calc(100vh - 120px)' : '80vh' }}
+                                            src={`https://www.youtube.com/embed/${step.youtubeId}?rel=0&modestbranding=1${index === activeVideo ? '&autoplay=1' : ''}`}
+                                            title={step.title}
+                                            frameBorder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            referrerPolicy="strict-origin-when-cross-origin"
+                                            allowFullScreen
+                                            style={{ display: 'block', width: '100%', height: '100%', border: 'none' }}
                                         />
                                     </Box>
                                 </SwiperSlide>
@@ -545,35 +583,44 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                 </Dialog>
             </Container>
 
+
+
+
             {/* --- 2. Empowering Your Enterprise --- */}
-            <Box sx={{ position: 'relative', py: 10, mb: 12, background: "#F9F8F6" }}>
-                {/* Background Waves (Simulated with CSS for now, assuming GridBackground in parent handles global bg, but we need specific section bg) */}
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        zIndex: -1,
-                        background: 'radial-gradient(circle at 50% 50%, rgba(115, 103, 240, 0.15), transparent 70%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        overflow: 'hidden'
-                    }}
-                >
-                    {/* Can add SVGs or more complex gradients here if needed to match the 'wave' look exactly */}
-                </Box>
+            <Box sx={{ position: 'relative', py: 12, mb: 12, background: "#F9F8F6" }}>
+                <Container maxWidth="xl">
+                    <Box sx={{ textAlign: 'center', mb: 8 }}>
+                        <Typography
+                            variant="h2"
+                            sx={{
+                                mb: 2,
+                                fontSize: { xs: "2rem", md: "3rem" },
+                                fontWeight: 700,
+                                color: "text.primary",
+                                letterSpacing: '-0.02em',
+                                lineHeight: 1
+                            }}
+                        >
+                            Empowering Your Enterprise
+                        </Typography>
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                fontSize: "1.1rem",
+                                color: "text.secondary",
+                                maxWidth: "700px",
+                                mx: "auto",
+                                lineHeight: 1.6
+                            }}
+                        >
+                            Everything you need to modernize your business intelligence in one platform.
+                        </Typography>
+                    </Box>
 
-                <Container maxWidth={false}>
-                    <SectionHeader
-                        title="Empowering Your Enterprise"
-                        subtitle="Everything you need to modernize your business intelligence in one platform."
-                        align="center"
-                    />
-
-                    <Grid container spacing={3}>
+                    <Grid container spacing={4}>
                         {features.map((feature, index) => (
                             <Grid key={index} size={{ xs: 12, md: 6, lg: 4 }}>
-                                <FeatureCard {...feature} />
+                                <FeatureCard {...feature} index={index} />
                             </Grid>
                         ))}
                     </Grid>

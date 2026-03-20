@@ -362,12 +362,20 @@ export default function FilterChips({
 
                 return (
                     <React.Fragment key={category}>
-                        {visibleItems.map(({ item }) => (
-                            <Chip
-                                key={item.id}
-                                label={`${category}: ${item.name}`}
-                                size="small"
-                                onDelete={() => onRemoveFilter({ item })}
+                        {visibleItems.map(({ item }) => {
+                            let labelStr;
+                            if (item.isRange) {
+                                labelStr = `${category}: ${item.min} - ${item.max}`;
+                            } else {
+                                labelStr = `${category}: ${item.name}`;
+                            }
+
+                            return (
+                                <Chip
+                                    key={item.id}
+                                    label={labelStr}
+                                    size="small"
+                                    onDelete={() => onRemoveFilter({ item })}
                                 sx={{
                                     ...softPrimaryChipSx,
                                     flexShrink: 0,
@@ -383,8 +391,10 @@ export default function FilterChips({
                                         '&:hover': { opacity: 1 }
                                     }
                                 }}
-                            />
-                        ))}
+                                
+                                />
+                            );
+                        })}
                         {hiddenItems.length > 0 && (
                             <Chip
                                 label={`+${hiddenItems.length}`}

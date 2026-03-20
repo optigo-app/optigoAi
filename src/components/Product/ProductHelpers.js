@@ -64,6 +64,13 @@ export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm)
 
         temp = temp.filter((product) => {
             return Object.entries(filtersByCategory).every(([category, items]) => {
+                // If the filter is a range filter
+                if (items[0]?.isRange) {
+                    const { min, max } = items[0];
+                    const val = Number(product[category]);
+                    return val >= min && val <= max;
+                }
+
                 return items.some((item) => {
                     const categoryLower = category.toLowerCase();
                     let productKey = CATEGORY_FIELD_MAP[categoryLower];
