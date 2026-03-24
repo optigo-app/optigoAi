@@ -120,8 +120,6 @@ export default function FilterDrawer({ isOpen, onClose, onApply, appliedFilters 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const ignoreNextUpdate = React.useRef(false);
-
   useEffect(() => {
     const fetchFilters = async () => {
       const cachedFilters = sessionStorage.getItem('filterMasterData');

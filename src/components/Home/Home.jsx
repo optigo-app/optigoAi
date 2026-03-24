@@ -541,7 +541,7 @@ const Home = () => {
                             flexWrap: 'wrap',
                             justifyContent: 'center',
                             gap: 1.5,
-                            mt: 5,
+                            mt: 2,
                             px: 2
                         }}
                     >

@@ -460,6 +460,29 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
         });
     }, []);
 
+    const rangeConfigs = useMemo(() => {
+        if (!productData || productData.length === 0) return [];
+
+        const fields = [
+            { field: 'MetalWeight', label: 'Metal Weight', shortLabel: 'Nwt', unit: 'Gms' },
+            { field: 'ActualGrossweight', label: 'Gross Weight', shortLabel: 'Gwt', unit: 'Gms' },
+            { field: 'diamondpcs', label: 'Diamond Pcs', shortLabel: 'Dia. Pcs', unit: 'Pcs' },
+            { field: 'diamondctw', label: 'Diamond Ctw', shortLabel: 'Dia. Ctw', unit: 'Ctw' }
+        ];
+
+        return fields.map(cfg => {
+            const values = productData.map(p => Number(p[cfg.field])).filter(v => !isNaN(v));
+            const minV = values.length ? Math.min(...values) : 0;
+            const maxV = values.length ? Math.max(...values) : 100;
+
+            return {
+                ...cfg,
+                min: cfg.field.includes('pcs') ? Math.floor(minV) : parseFloat(minV.toFixed(2)),
+                max: cfg.field.includes('pcs') ? Math.ceil(maxV) : parseFloat(maxV.toFixed(2))
+            };
+        });
+    }, [productData]);
+
     const toggleFilterItem = useCallback((categoryName, item, e) => {
         e.stopPropagation();
         const key = `${categoryName}-${item.id}`;
@@ -476,9 +499,8 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
 
             // Re-calculate all current filters
             // 1. Preserve non-drawer and range filters
-            const rangeFields = rangeConfigs.map(c => c.field);
             const preservedFilters = appliedFilters.filter(
-                (f) => !drawerCategoryNames.has(f.category) && !rangeFields.includes(f.category)
+                (f) => !drawerCategoryNames.has(f.category) && !rangeConfigs.some(c => c.field === f.category)
             );
 
             // 2. Add current drawer filters
@@ -491,49 +513,38 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
             });
 
             // 3. Add current range filters
-            rangeFields.forEach(field => {
-                const existingRange = appliedFilters.find(f => f.category === field);
+            rangeConfigs.forEach(cfg => {
+                const existingRange = appliedFilters.find(f => f.category === cfg.field);
                 if (existingRange) {
-                    drawerFilters.push(existingRange);
+                    const updatedItem = {
+                        ...existingRange.item,
+                        shortLabel: existingRange.item.shortLabel || cfg.shortLabel || cfg.label
+                    };
+                    drawerFilters.push({ ...existingRange, item: updatedItem });
                 }
             });
 
             const allAppliedFilters = [...preservedFilters, ...drawerFilters];
             onApply?.(allAppliedFilters);
         });
-    }, [filters, appliedFilters, onApply, selectedFilters]);
+    }, [filters, appliedFilters, onApply, selectedFilters, rangeConfigs]);
 
     const handleRangeChange = useCallback((field, [min, max]) => {
         startTransition(() => {
-            const rangeItem = { id: `range-${field}`, min, max, isRange: true };
+            const config = rangeConfigs.find(c => c.field === field);
+            const rangeItem = {
+                id: `range-${field}`,
+                min,
+                max,
+                isRange: true,
+                shortLabel: config?.shortLabel || config?.label || field
+            };
             const nextApplied = appliedFilters.filter(f => f.category !== field);
             nextApplied.push({ category: field, item: rangeItem });
             onApply?.(nextApplied);
         });
-    }, [appliedFilters, onApply]);
+    }, [appliedFilters, onApply, rangeConfigs]);
 
-    const rangeConfigs = useMemo(() => {
-        if (!productData || productData.length === 0) return [];
-
-        const fields = [
-            { field: 'MetalWeight', label: 'Metal Weight', unit: 'Gms' },
-            { field: 'ActualGrossweight', label: 'Gross Weight', unit: 'Gms' },
-            { field: 'diamondpcs', label: 'Diamond Pcs', unit: 'Pcs' },
-            { field: 'diamondctw', label: 'Diamond Ctw', unit: 'Ctw' }
-        ];
-
-        return fields.map(cfg => {
-            const values = productData.map(p => Number(p[cfg.field])).filter(v => !isNaN(v));
-            const minV = values.length ? Math.min(...values) : 0;
-            const maxV = values.length ? Math.max(...values) : 100;
-
-            return {
-                ...cfg,
-                min: cfg.field.includes('pcs') ? Math.floor(minV) : parseFloat(minV.toFixed(2)),
-                max: cfg.field.includes('pcs') ? Math.ceil(maxV) : parseFloat(maxV.toFixed(2))
-            };
-        });
-    }, [productData]);
 
     const getRangeValue = (field, minDefault, maxDefault) => {
         const found = appliedFilters.find(f => f.category === field);
@@ -822,6 +833,35 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                     overflowY: 'auto',
                     p: 2
                 }}>
+
+
+                    {!shouldRenderFilters || (loadingFilters && !hasLoaded) ? (
+                        <Box>
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <Box key={`skeleton-${index}`} sx={{ mb: 2 }}>
+                                    <Skeleton variant="rectangular" height={48} sx={{ mb: 1, borderRadius: 1 }} />
+                                </Box>
+                            ))}
+                        </Box>
+                    ) : (
+                        filteredFilters?.map((category, index) => (
+                            <FilterCategory
+                                key={`${category.name}-${index}`}
+                                category={category}
+                                index={index}
+                                expanded={category.expanded}
+                                onToggleAccordion={toggleAccordion}
+                                selectedFilters={selectedFilters}
+                                onToggleItem={toggleFilterItem}
+                                count={categoryCounts[category.name] || 0}
+                                categoryFocusId={focusedId && (focusedId === `cat:${category.name}` || focusedId.startsWith(`item:${category.name}:`)) ? focusedId : null}
+                                registerFocusable={registerFocusable}
+                                onFocusFocusable={onFocusFocusable}
+                                onKeyDownFocusable={onKeyDownFocusable}
+                            />
+                        ))
+                    )}
+
                     {/* Individual Range Filter Accordions */}
                     {isOpen && rangeConfigs.map(cfg => (
                         <Accordion
@@ -866,33 +906,6 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
                             </AccordionDetails>
                         </Accordion>
                     ))}
-
-                    {!shouldRenderFilters || (loadingFilters && !hasLoaded) ? (
-                        <Box>
-                            {Array.from({ length: 5 }).map((_, index) => (
-                                <Box key={`skeleton-${index}`} sx={{ mb: 2 }}>
-                                    <Skeleton variant="rectangular" height={48} sx={{ mb: 1, borderRadius: 1 }} />
-                                </Box>
-                            ))}
-                        </Box>
-                    ) : (
-                        filteredFilters?.map((category, index) => (
-                            <FilterCategory
-                                key={`${category.name}-${index}`}
-                                category={category}
-                                index={index}
-                                expanded={category.expanded}
-                                onToggleAccordion={toggleAccordion}
-                                selectedFilters={selectedFilters}
-                                onToggleItem={toggleFilterItem}
-                                count={categoryCounts[category.name] || 0}
-                                categoryFocusId={focusedId && (focusedId === `cat:${category.name}` || focusedId.startsWith(`item:${category.name}:`)) ? focusedId : null}
-                                registerFocusable={registerFocusable}
-                                onFocusFocusable={onFocusFocusable}
-                                onKeyDownFocusable={onKeyDownFocusable}
-                            />
-                        ))
-                    )}
                 </Box>
             </Box>
         </>

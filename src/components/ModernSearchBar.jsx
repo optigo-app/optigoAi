@@ -81,7 +81,7 @@ export default function ModernSearchBar({
                 // Only intercept if we are not already focused on an input/textarea (unless it's our own)
                 const activeElement = document.activeElement;
                 const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
-                
+
                 if (!isInput || activeElement === textFieldRef.current) {
                     e.preventDefault();
                     setIsExpanded(true);
@@ -853,19 +853,21 @@ export default function ModernSearchBar({
                                 {(isExpanded && !isMultiline) && (
                                     <Zoom in={isExpanded || text.length > 0 || Boolean(imagePreview)}>
                                         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                            <Tooltip title={isExpanded ? "Minimize" : "Maximize"}>
-                                                <IconButton
-                                                    size="small"
-                                                    className="iconbuttonsearch"
-                                                    onClick={() => setIsExpanded(!isExpanded)}
-                                                    sx={{
-                                                        ...actionIconButtonSx,
-                                                        mr: 0.5
-                                                    }}
-                                                >
-                                                    <Settings2 size={20} />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {isDesignMode && (
+                                                <Tooltip title={isExpanded ? "Minimize" : "Maximize"}>
+                                                    <IconButton
+                                                        size="small"
+                                                        className="iconbuttonsearch"
+                                                        onClick={() => setIsExpanded(!isExpanded)}
+                                                        sx={{
+                                                            ...actionIconButtonSx,
+                                                            mr: 0.5
+                                                        }}
+                                                    >
+                                                        <Settings2 size={20} />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
                                             {isDesignMode ? (
                                                 <IconButton className="iconbuttonsearch" onClick={() => handleSend(false)} sx={sendIconButtonSx} disabled={isCatalogLoading || isLoading}>
                                                     {(isLoading && !isDesignMode) ?
@@ -883,8 +885,8 @@ export default function ModernSearchBar({
                                                         }
                                                     }}
                                                     sx={{
-                                                        width: '40px',
-                                                        height: '40px',
+                                                        width: '36px',
+                                                        height: '36px',
                                                         objectFit: 'cover',
                                                         borderRadius: '50%',
                                                         opacity: (isCatalogLoading || isLoading) ? 0.6 : 1,
@@ -924,17 +926,18 @@ export default function ModernSearchBar({
                                     </Tooltip>
 
                                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                        <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
-                                            <IconButton
-                                                size="small"
-                                                className="iconbuttonsearch"
-                                                onClick={() => setIsExpanded(!isExpanded)}
-                                                sx={actionIconButtonSx}
-                                            >
-                                                <Settings2 size={20} />
-                                            </IconButton>
-                                        </Tooltip>
-
+                                        {isDesignMode && (
+                                            <Tooltip title={isExpanded ? "Minimize" : "Expand"}>
+                                                <IconButton
+                                                    size="small"
+                                                    className="iconbuttonsearch"
+                                                    onClick={() => setIsExpanded(!isExpanded)}
+                                                    sx={actionIconButtonSx}
+                                                >
+                                                    <Settings2 size={20} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                         <Tooltip title="AI Search" placement="top">
                                             <IconButton
                                                 className="iconbuttonsearch"

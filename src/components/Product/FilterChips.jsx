@@ -365,7 +365,7 @@ export default function FilterChips({
                         {visibleItems.map(({ item }) => {
                             let labelStr;
                             if (item.isRange) {
-                                labelStr = `${category}: ${item.min} - ${item.max}`;
+                                labelStr = `${item.shortLabel || category}: ${item.min} - ${item.max}`;
                             } else {
                                 labelStr = `${category}: ${item.name}`;
                             }
