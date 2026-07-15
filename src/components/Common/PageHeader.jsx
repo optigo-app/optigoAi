@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { motion } from 'framer-motion';
 
 /**
  * Premium Page Header Component with Blur Effect
@@ -15,11 +16,14 @@ const PageHeader = ({
     sx = {}
 }) => {
     return (
+        <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: 'sticky', top: 0, zIndex: 100 }}
+        >
         <Box
             sx={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
                 bgcolor: 'rgba(255, 255, 255, 0.7)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
@@ -109,6 +113,7 @@ const PageHeader = ({
                 )}
             </Box>
         </Box>
+        </motion.div>
     );
 };
 

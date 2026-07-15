@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "npx fix-react2shell-next && next dev -p 5051",
     "build": "npx fix-react2shell-next && next build",
-    "start": "next start -p 5002",
+    "start": "next start -p 5003",
     "lint": "eslint"
   },
   "dependencies": {
@@ -21,7 +21,7 @@
     "fabric": "^6.9.0",
     "fabric-history": "^2.0.0",
     "framer-motion": "^12.23.24",
-    "fuse.js": "^7.1.0",
+    "fuse.js": "^7.1.0",  
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.554.0",

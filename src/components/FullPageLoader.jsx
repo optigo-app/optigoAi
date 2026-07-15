@@ -2,8 +2,9 @@
 import React from 'react';
 import { Box, CircularProgress, Backdrop, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
+import RotatingLoadingText from './Common/RotatingLoadingText';
 
-const FullPageLoader = ({ open, message = "Loading...", subtitle, showLogo = true }) => {
+const FullPageLoader = ({ open, message = "Loading...", subtitle, showLogo = true, rotatingType }) => {
     if (!open) return null;
 
     return (
@@ -72,7 +73,11 @@ const FullPageLoader = ({ open, message = "Loading...", subtitle, showLogo = tru
                     >
                         {message}
                     </Typography>
-                    {subtitle && (
+                    {rotatingType ? (
+                        <Box sx={{ mt: 0.5, color: 'rgba(255,255,255,0.85)' }}>
+                            <RotatingLoadingText type={rotatingType} />
+                        </Box>
+                    ) : subtitle ? (
                         <Typography
                             variant="body2"
                             color="rgba(255,255,255,0.8)"
@@ -80,7 +85,7 @@ const FullPageLoader = ({ open, message = "Loading...", subtitle, showLogo = tru
                         >
                             {subtitle}
                         </Typography>
-                    )}
+                    ) : null}
                 </Box>
             </motion.div>
         </Backdrop>

@@ -26,6 +26,7 @@ import ProductSummaryCards from "./ProductSummaryCards";
 import SimilarProductsModal from "./SimilarProductsModal";
 import { getMatchedDesignCollections, filterProducts, createSearchChip } from "./ProductHelpers";
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
 import { useProductData } from '@/context/ProductDataContext';
 import GridBackground from "@/components/Common/GridBackground";
@@ -37,6 +38,9 @@ import { AiMaintenanceModal, AiSubscriptionModal, AiTrainingModal } from '@/comp
 import { MultiSelectProvider, useMultiSelect } from '@/context/MultiSelectContext';
 import { saveAiSearchRequestApi } from '@/app/api/saveAiSearchRequestApi';
 import { useAuth } from '@/context/AuthContext';
+import { TokenUsageProvider, useTokenUsage } from '@/context/TokenUsageContext';
+import { getTokenDetailsApi } from '@/app/api/getTokenDetailsApi';
+import { getTokenMasterApi, getTokenCost } from '@/app/api/getTokenMasterApi';
 
 
 function ProductClientContent() {
@@ -47,6 +51,7 @@ function ProductClientContent() {
     const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false); // New state for removal confirm
     const [isSearchBarExpanded, setIsSearchBarExpanded] = useState(true);
     const { totalCount, items: cartItems, addToCart, removeFromCart } = useCart();
+    const { showSuccess, showInfo, showWarning } = useToast();
     const router = useRouter();
 
     // Multi-select context
@@ -85,6 +90,7 @@ function ProductClientContent() {
     });
     const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+    const [subscriptionVariant, setSubscriptionVariant] = useState('subscription');
     const [showTrainingModal, setShowTrainingModal] = useState(false);
 
     // View mode state (grid or list)
@@ -106,6 +112,12 @@ function ProductClientContent() {
 
     // Get auth context for config flags
     const { isConfigEnabled } = useAuth();
+    const { incrementUsage: incrementTokenUsage, setTokenData, refreshTokens, hasEnoughTokens } = useTokenUsage();
+
+    // Fetch token master config on mount
+    useEffect(() => {
+        getTokenMasterApi();
+    }, []);
 
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
@@ -431,7 +443,12 @@ function ProductClientContent() {
         toggleMultiSelectMode();
 
         // Show success feedback
-    }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode, cartItems]);
+        if (addedCount > 0) {
+            showSuccess(`${addedCount} ${addedCount === 1 ? 'item' : 'items'} added to cart`);
+        } else {
+            showInfo('All selected items are already in your cart');
+        }
+    }, [getSelectedProducts, finalFilteredProducts, addToCart, toggleMultiSelectMode, cartItems, showSuccess, showInfo]);
 
     const isRemovalMode = useMemo(() => {
         const selectedProducts = getSelectedProducts(finalFilteredProducts);
@@ -455,12 +472,14 @@ function ProductClientContent() {
 
     const executeBulkRemove = useCallback(() => {
         const selectedProducts = getSelectedProducts(finalFilteredProducts);
+        const removedCount = selectedProducts.length;
         selectedProducts.forEach(product => {
             removeFromCart(product.id);
         });
         setIsRemoveConfirmOpen(false);
         toggleMultiSelectMode();
-    }, [getSelectedProducts, finalFilteredProducts, removeFromCart, toggleMultiSelectMode]);
+        showSuccess(`${removedCount} ${removedCount === 1 ? 'item' : 'items'} removed from cart`);
+    }, [getSelectedProducts, finalFilteredProducts, removeFromCart, toggleMultiSelectMode, showSuccess]);
 
     const isAllSelected = useMemo(() => {
         if (!displayedProducts.length) return false;
@@ -471,10 +490,12 @@ function ProductClientContent() {
         const ids = displayedProducts.map(p => p.id);
         if (isAllSelected) {
             deselectBatch(ids);
+            showInfo('All items deselected');
         } else {
             selectBatch(ids);
+            showSuccess(`${ids.length} items selected`);
         }
-    }, [isAllSelected, displayedProducts, selectBatch, deselectBatch]);
+    }, [isAllSelected, displayedProducts, selectBatch, deselectBatch, showSuccess, showInfo]);
 
     const handleCancelMultiSelect = useCallback(() => {
         toggleMultiSelectMode();
@@ -558,7 +579,8 @@ function ProductClientContent() {
 
 
     const handleSubmit = useCallback(async (searchData) => {
-        const modeToUse = searchData?.mode || searchMode;
+        const requestedMode = searchData?.mode || searchMode;
+        const modeToUse = requestedMode === 'design' && searchData?.image ? 'ai' : requestedMode;
 
         // Check config flags if AI mode is selected
         if (modeToUse === 'ai') {
@@ -569,12 +591,39 @@ function ProductClientContent() {
             }
             // Check IsAiEnable (when enabled, show subscription modal)
             if (isConfigEnabled('IsAiEnable')) {
+                setSubscriptionVariant('subscription');
                 setShowSubscriptionModal(true);
                 return;
             }
             // Check IsAiReady (when enabled, show training modal)
             if (isConfigEnabled('IsAiReady')) {
                 setShowTrainingModal(true);
+                return;
+            }
+            // Determine search type for token cost check
+            let effectiveSearchFlag = searchData?.isSearchFlag ?? 0;
+            if (effectiveSearchFlag === 0) {
+                if (searchData?.image && searchData?.text) effectiveSearchFlag = 3;
+                else if (searchData?.image) effectiveSearchFlag = 2;
+                else if (searchData?.text) effectiveSearchFlag = 1;
+            }
+            const eventNames = { 1: 'TextSearch', 2: 'ImageSearch', 3: 'HybridSearch' };
+            const eventName = eventNames[effectiveSearchFlag] || 'TextSearch';
+
+            // Check token availability before AI search (fresh API call)
+            const tokenData = await getTokenDetailsApi();
+            if (!tokenData) {
+                setSubscriptionVariant('upgrade');
+                setShowSubscriptionModal(true);
+                return;
+            }
+            // Sync local state with fresh API data
+            setTokenData(tokenData);
+            const freshRemaining = Math.max(0, (tokenData.totalToken ?? 0) - (tokenData.tokenUsed ?? 0));
+            const searchCost = getTokenCost(eventName);
+            if (freshRemaining < searchCost) {
+                setSubscriptionVariant('upgrade');
+                setShowSubscriptionModal(true);
                 return;
             }
         }
@@ -589,8 +638,9 @@ function ProductClientContent() {
 
         if ((!effectiveSearchFlag || effectiveSearchFlag === 0) && modeToUse === 'ai') {
             setIsSearchLoading(true);
-            setLastSearchData(searchData);
+            setLastSearchData({ ...searchData, mode: modeToUse });
             setError(null);
+            incrementTokenUsage(getTokenCost('TextSearch'));
 
             setTimeout(() => {
                 setSearchResults(null);
@@ -605,8 +655,9 @@ function ProductClientContent() {
         // UNLESS an image is provided, then we force AI search
         if (modeToUse === 'design' && !searchData?.image) {
             setIsSearchLoading(true);
-            setLastSearchData(searchData);
+            setLastSearchData({ ...searchData, mode: modeToUse });
             setError(null);
+            incrementTokenUsage(getTokenCost('TextSearch'));
 
             // Synthetic delay to show the search loader and prevent flicker
             setTimeout(() => {
@@ -623,13 +674,16 @@ function ProductClientContent() {
             return;
         }
 
-        setLastSearchData(searchData);
+        setLastSearchData({ ...searchData, mode: modeToUse });
         setError(null);
         setIsSearchLoading(true);
+        const eventNames = { 1: 'TextSearch', 2: 'ImageSearch', 3: 'HybridSearch' };
+        incrementTokenUsage(getTokenCost(eventNames[effectiveSearchFlag] || 'TextSearch'));
         let finalImage = searchData.image;
         try {
             const options = {
                 top_k: searchData?.numResults || "10",
+                aiApi: sessionStorage.getItem('aiApi') || "",
                 min_percent: searchData?.accuracy || "50.0",
             };
 
@@ -743,6 +797,7 @@ function ProductClientContent() {
 
         } finally {
             setIsSearchLoading(false);
+            refreshTokens();
         }
     }, [allDesignCollections, searchMode, isConfigEnabled]);
 
@@ -763,7 +818,7 @@ function ProductClientContent() {
     }, [fetchProductData]);
 
     const loading = isLoadingProducts;
-    if (loading) return <FullPageLoader open={true} />;
+    const showInitialLoader = loading;
 
     const getBottomPadding = () => {
         if (finalFilteredProducts.length > 7) {
@@ -774,7 +829,7 @@ function ProductClientContent() {
 
     return (
         <GridBackground>
-            <Container maxWidth={false} sx={{ px: 0, pb: getBottomPadding(), position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)' }} disableGutters>
+            <Container maxWidth={false} sx={{ px: 0, pb: getBottomPadding(), position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)', visibility: showInitialLoader ? 'hidden' : 'visible' }} disableGutters>
                 <ProductPageHeader
                     isMultiSelectMode={isMultiSelectMode}
                     selectedCount={selectedCount}
@@ -806,6 +861,10 @@ function ProductClientContent() {
                     onViewModeChange={setViewMode}
                     showSummary={showSummary}
                     onToggleSummary={() => setShowSummary(prev => !prev)}
+                    onTokenUpgrade={() => {
+                        setSubscriptionVariant('upgrade');
+                        setShowSubscriptionModal(true);
+                    }}
                 />
 
                 {error ? (
@@ -896,7 +955,10 @@ function ProductClientContent() {
                                 activeMode={searchMode}
                                 onModeChange={setSearchMode}
                                 onMaintenanceClick={() => setShowMaintenanceModal(true)}
-                                onSubscriptionClick={() => setShowSubscriptionModal(true)}
+                                onSubscriptionClick={() => {
+                                    setSubscriptionVariant('subscription');
+                                    setShowSubscriptionModal(true);
+                                }}
                                 onTrainingClick={() => setShowTrainingModal(true)}
                                 isConfigEnabled={isConfigEnabled}
                                 sx={{
@@ -1044,13 +1106,24 @@ function ProductClientContent() {
             />
 
             <FullPageLoader
-                open={isSearchLoading}
-                showLogo={searchMode === 'ai'}
-                message="Searching designs..."
+                open={showInitialLoader || isSearchLoading}
+                showLogo={showInitialLoader || lastSearchData?.mode === 'ai'}
+                message={showInitialLoader ? "Loading products..." : "Searching designs..."}
+                rotatingType={
+                    showInitialLoader
+                        ? 'text'
+                        : lastSearchData?.mode === 'ai'
+                            ? ({ 1: 'text', 2: 'image', 3: 'hybrid' }[lastSearchData?.isSearchFlag] || 'text')
+                            : undefined
+                }
                 subtitle={
-                    lastSearchData?.text?.trim()
-                        ? `Finding matches for "${lastSearchData.text.trim()}"`
-                        : "Analyzing your design and matching collections"
+                    showInitialLoader
+                        ? undefined
+                        : lastSearchData?.mode !== 'ai'
+                            ? (lastSearchData?.text?.trim()
+                                ? `Finding matches for "${lastSearchData.text.trim()}"`
+                                : "Analyzing your design and matching collections")
+                            : undefined
                 }
             />
             <ReusableConfirmModal
@@ -1071,6 +1144,7 @@ function ProductClientContent() {
             <AiSubscriptionModal
                 open={showSubscriptionModal}
                 onClose={() => setShowSubscriptionModal(false)}
+                variant={subscriptionVariant}
             />
 
             {/* AI Training Modal */}
@@ -1082,11 +1156,13 @@ function ProductClientContent() {
     );
 }
 
-// Wrap with MultiSelectProvider
+// Wrap with MultiSelectProvider and TokenUsageProvider
 export default function ProductClient() {
     return (
-        <MultiSelectProvider>
-            <ProductClientContent />
-        </MultiSelectProvider>
+        <TokenUsageProvider>
+            <MultiSelectProvider>
+                <ProductClientContent />
+            </MultiSelectProvider>
+        </TokenUsageProvider>
     );
 }

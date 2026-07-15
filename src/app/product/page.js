@@ -1,11 +1,16 @@
+"use client";
 import { Suspense } from "react";
-import ProductClient from "@/components/Product/ProductClient";
+import dynamic from "next/dynamic";
 import FullPageLoader from "@/components/FullPageLoader";
 
-export const metadata = {
-  title: "Optigo Ai Studio | Search Designs",
-  description: "Browse and search through our extensive collection of AI-generated jewelry designs.",
-};
+// Dynamically import ProductClient with SSR disabled to prevent server-side chunk errors
+const ProductClient = dynamic(
+  () => import("@/components/Product/ProductClient"),
+  {
+    ssr: false,
+    loading: () => <FullPageLoader open={true} />
+  }
+);
 
 export default function ProductPage() {
   return (

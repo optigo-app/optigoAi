@@ -112,6 +112,7 @@ const Home = () => {
     const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     const [showTrainingModal, setShowTrainingModal] = useState(false);
     const [helpStep, setHelpStep] = useState(0);
+    const [isSearchFocus, setIsSearchFocus] = useState(true);
 
     // Use product data context
     const { productData, isLoading: isLoadingProducts, fetchProductData, setPendingSearch } = useProductData();
@@ -217,6 +218,15 @@ const Home = () => {
         scrollToSectionWithHighlight('how-it-works-section', 10);
     };
 
+    const handleSearchFocus = () => {
+        scrollToSectionWithHighlight('search-section', 500);
+        setSelectedMode("ai");
+        setIsSearchFocus(false);
+        setTimeout(() => {
+            setIsSearchFocus(true);
+        }, 50);
+    };
+
     return (
         <GridBackground>
             <Box sx={{
@@ -253,7 +263,7 @@ const Home = () => {
                             borderRadius: '30px',
                             cursor: 'pointer',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                            transition: 'all 0.3s ease',
+                            transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                             border: '1px solid rgba(0,0,0,0.05)',
 
                             animation: 'pulseHighlight 2s infinite',
@@ -510,6 +520,7 @@ const Home = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.8, duration: 0.6, type: "spring", stiffness: 100 }}
                         sx={{ width: "100%", maxWidth: 800 }}
+                        id="search-section"
                     >
                         <ModernSearchBar
                             onSubmit={handleSearch}
@@ -522,7 +533,7 @@ const Home = () => {
                             showSuggestions={true}
                             productData={productData}
                             onSuggestionClick={handleSuggestionClick}
-                            autoFocus={true}
+                            autoFocus={isSearchFocus}
                             externalLoading={isLoadingProducts}
                             isLoading={isRedirecting}
                             searchMode={selectedMode}
@@ -568,7 +579,7 @@ const Home = () => {
                                     backdropFilter: 'blur(10px)',
                                     border: '1px solid rgba(255, 255, 255, 0.6)',
                                     cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
+                                    transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                                     boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
                                     '&:hover': {
                                         bgcolor: 'rgba(115, 103, 240, 0.08)',
@@ -580,7 +591,7 @@ const Home = () => {
                                     }
                                 }}
                             >
-                                <Box className="card-icon" sx={{ display: 'flex', color: 'text.secondary', transition: 'all 0.3s ease' }}>
+                                <Box className="card-icon" sx={{ display: 'flex', color: 'text.secondary', transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)' }}>
                                     {card.icon}
                                 </Box>
                                 <Typography
@@ -589,7 +600,7 @@ const Home = () => {
                                         fontSize: '0.85rem',
                                         fontWeight: 500,
                                         color: 'text.secondary',
-                                        transition: 'all 0.3s ease'
+                                        transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)'
                                     }}
                                 >
                                     {card.label}
@@ -602,7 +613,7 @@ const Home = () => {
             </Box>
 
             {/* --- NEW SECTIONS --- */}
-            <HowItWorks activeStep={helpStep} />
+            <HowItWorks activeStep={helpStep} handleSearchFocus={handleSearchFocus} />
 
             {/* Footer */}
             {/* <Footer /> */}

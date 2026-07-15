@@ -17,6 +17,7 @@ import {
     Tooltip
 } from '@mui/material';
 import { X, SearchX, ArrowLeft, ArrowRight, Minimize, Maximize, ThumbsUp, ThumbsDown, Check, MessageSquare } from 'lucide-react';
+import { motion } from 'framer-motion';
 import ProductCard from './ProductCard';
 import ImageHoverPreview from '@/components/Common/ImageHoverPreview';
 import { searchService } from '@/services/apiService';
@@ -24,6 +25,7 @@ import { getMatchedDesignCollections } from '@/utils/globalFunc';
 import { saveAiSearchFeedbackApi } from '@/app/api/saveAiSearchFeedbackApi';
 import { saveAiSearchRequestApi } from '@/app/api/saveAiSearchRequestApi';
 import useCustomToast from '@/hook/useCustomToast';
+import RotatingLoadingText from '@/components/Common/RotatingLoadingText';
 
 export default function SimilarProductsModal({ open, onClose, baseProduct, allProducts, onSearchSimilar, onBack, onForward, canGoBack, canGoForward }) {
     const [loading, setLoading] = useState(false);
@@ -115,6 +117,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             const searchNumResults = sessionStorage.getItem("searchNumResults");
             const options = {
                 top_k: searchNumResults || 200,
+                aiApi: sessionStorage.getItem('aiApi') || "",
                 min_percent: searchAccuracy || 40
             };
             const results = await searchService.searchByImage(file, options);
@@ -127,10 +130,12 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             setSimilarProducts(filteredMatched);
 
             // Background logging for Success
+            const fullImgUrl = baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl || "";
+            const fileNameOnly = fullImgUrl ? fullImgUrl.split('/').pop().split('?')[0] : "";
             saveAiSearchRequestApi({
-                EventName: "ImageSearch",
+                EventName: "similarSearch",
                 SearchText: `Visual match for: ${baseProduct.designno || baseProduct.name}`,
-                ImageUrl: baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl || "",
+                ImageUrl: fileNameOnly,
                 IsSuccess: "1"
             }).catch(logErr => console.error("Logging failed:", logErr));
 
@@ -140,10 +145,12 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
             setSimilarProducts([]);
 
             // Background logging for Failure
+            const fullImgUrlFail = baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl || "";
+            const fileNameOnlyFail = fullImgUrlFail ? fullImgUrlFail.split('/').pop().split('?')[0] : "";
             saveAiSearchRequestApi({
-                EventName: "ImageSearch",
+                EventName: "similarSearch",
                 SearchText: `Visual match for: ${baseProduct.designno || baseProduct.name}`,
-                ImageUrl: baseProduct.originalUrl || baseProduct.image || baseProduct.thumbUrl || "",
+                ImageUrl: fileNameOnlyFail,
                 IsSuccess: "0"
             }).catch(logErr => console.error("Logging failed:", logErr));
 
@@ -322,7 +329,7 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                                 <ArrowRight size={18} />
                             </IconButton>
                         </Box>
-                        <Typography variant="h6" fontWeight="bold">Similar Products</Typography>
+                        <Typography component="span" variant="subtitle1" fontWeight="bold" sx={{ fontSize: '1.25rem' }}>Similar Products</Typography>
                         {baseProduct && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, bgcolor: 'grey.100', borderRadius: 2 }}>
                                 <ImageHoverPreview
@@ -471,8 +478,48 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                         </Grid>
                     ) : loading && !isNavigating ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
-                            <CircularProgress size={40} sx={{ mb: 2 }} />
-                            <Typography color="text.secondary">Finding visual matches...</Typography>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            >
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <Box
+                                        sx={{
+                                            position: 'relative',
+                                            width: 80,
+                                            height: 80,
+                                            mb: 2,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                    >
+                                        <CircularProgress
+                                            size={60}
+                                            thickness={2.5}
+                                            disableShrink
+                                            sx={{
+                                                color: 'primary.main',
+                                                position: 'absolute',
+                                                animationDuration: '1.5s'
+                                            }}
+                                        />
+                                        <Box
+                                            component="img"
+                                            src="/icons/base-icon2.svg"
+                                            alt="Loading"
+                                            sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: '50%',
+                                                animation: 'pulse 2s infinite ease-in-out'
+                                            }}
+                                        />
+                                    </Box>
+                                    <RotatingLoadingText type="similar" />
+                                </Box>
+                            </motion.div>
                         </Box>
                     ) : error ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>

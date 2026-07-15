@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { Box, Typography, Container, Card, CardContent, Grid, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Slide, Accordion, AccordionSummary, AccordionDetails, GlobalStyles, Fade } from '@mui/material';
-import { ChevronDown, Layers, Play, BadgeDollarSign, PackageSearch, Maximize, Minimize, X, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { Box, Typography, Container, Card, CardContent, Grid, Button, Dialog, DialogTitle, DialogContent, IconButton, Slide, Accordion, AccordionSummary, AccordionDetails, GlobalStyles, Fade, CircularProgress } from '@mui/material';
+import { ChevronDown, Layers, BadgeDollarSign, PackageSearch, Maximize, Minimize, X, ChevronLeft, ChevronRight, ArrowUpRight, Star } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Keyboard, Mousewheel, Navigation, Virtual } from 'swiper/modules';
 import { motion } from 'framer-motion';
@@ -11,37 +11,6 @@ import 'swiper/css/navigation';
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
-
-const SectionHeader = ({ title, subtitle, align = "left" }) => (
-    <Box sx={{ mb: 2, textAlign: align }}>
-        {title && (
-            <Typography
-                variant="h2"
-                sx={{
-                    mb: 1,
-                    fontSize: { xs: "1.25rem", md: "2rem" },
-                    fontWeight: 700,
-                    color: "text.primary"
-                }}
-            >
-                {title}
-            </Typography>
-        )}
-        {subtitle && (
-            <Typography
-                variant="body1"
-                sx={{
-                    fontSize: "0.9rem",
-                    color: "text.secondary",
-                    mx: align === "center" ? "auto" : 0,
-                    lineHeight: 1.6
-                }}
-            >
-                {subtitle}
-            </Typography>
-        )}
-    </Box>
-);
 
 const VideoCard = ({ title, description, youtubeId, onClick, index }) => {
     const thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
@@ -57,7 +26,7 @@ const VideoCard = ({ title, description, youtubeId, onClick, index }) => {
             sx={{
                 position: 'relative',
                 width: '100%',
-                aspectRatio: '5/4',
+                aspectRatio: 1.58,
                 borderRadius: '32px',
                 overflow: 'hidden',
                 cursor: 'pointer',
@@ -163,7 +132,7 @@ const VideoCard = ({ title, description, youtubeId, onClick, index }) => {
     );
 };
 
-const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0", index }) => (
+const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0", index, handleSearchFocus }) => (
     <Card
         component={motion.div}
         initial={{ opacity: 0, scale: 0.9 }}
@@ -171,9 +140,11 @@ const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0", index 
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
         elevation={0}
+        onClick={handleSearchFocus}
         sx={{
             width: '100%',
             height: '100%',
+            aspectRatio: 1.58,
             borderRadius: '32px',
             border: '1px solid rgba(0,0,0,0.05)',
             bgcolor: 'white',
@@ -186,6 +157,7 @@ const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0", index 
                 transform: 'translateY(-8px)',
                 boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
                 borderColor: 'transparent',
+                cursor: 'pointer',
             }
         }}
     >
@@ -259,6 +231,197 @@ const FeatureCard = ({ icon: Icon, title, description, color = "#7367f0", index 
     </Card>
 );
 
+const FeedbackSection = ({
+    title = "Share Your Feedback",
+    subtitle = "Tell us about your experience so we can improve the platform.",
+    rating,
+    feedback,
+    submitted,
+    maxRating = 5,
+    isloading,
+    onRatingChange,
+    onFeedbackChange,
+    onSubmit
+}) => {
+
+    return (
+        <Box sx={{ position: 'relative', py: { xs: 8, md: 12 } }}>
+            <Container maxWidth="md">
+
+                {/* Header */}
+                <Box
+                    component={motion.div}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    sx={{ textAlign: "center", mb: 8 }}
+                >
+                    <Typography
+                        variant="h2"
+                        sx={{
+                            mb: 2,
+                            fontSize: { xs: "2rem", md: "3rem" },
+                            fontWeight: 700,
+                            color: "text.primary",
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1
+                        }}
+                    >
+                        {title}
+                    </Typography>
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            fontSize: "1.1rem",
+                            color: "text.secondary",
+                            maxWidth: "700px",
+                            mx: "auto",
+                            lineHeight: 1.6
+                        }}
+                    >
+                        {subtitle}
+                    </Typography>
+                </Box>
+
+                {/* Card */}
+                <Card
+                    component={motion.div}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    elevation={0}
+                    sx={{
+                        borderRadius: "32px",
+                        border: "1px solid rgba(0,0,0,0.05)",
+                        bgcolor: 'white',
+                        transition: 'all 0.3s ease',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        '&:hover': {
+                            transform: 'translateY(-8px)',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
+                            borderColor: 'transparent',
+                        }
+                    }}
+                >
+                    <CardContent sx={{ p: { xs: 4, md: 6 }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+                        {/* Rating */}
+                        <Box sx={{ display: "flex", gap: 1.5, mb: 4 }}>
+                            {[...Array(maxRating)].map((_, index) => {
+                                const starValue = index + 1;
+                                return (
+                                    <Box
+                                        key={starValue}
+                                        component={motion.div}
+                                        whileHover={{ scale: 1.15 }}
+                                        whileTap={{ scale: 0.9 }}
+                                    >
+                                        <Star
+                                            size={40}
+                                            style={{
+                                                cursor: "pointer",
+                                                fill: rating >= starValue ? "#f59e0b" : "none",
+                                                color: rating >= starValue ? "#f59e0b" : "#e1e1e1ff",
+                                                transition: "all 0.2s ease"
+                                            }}
+                                            onClick={() => onRatingChange && onRatingChange(starValue)}
+                                        />
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+
+                        {/* Feedback */}
+                        <Box sx={{ width: '100%', mb: 4 }}>
+                            <Box
+                                component="textarea"
+                                value={feedback}
+                                onChange={(e) => onFeedbackChange && onFeedbackChange(e.target.value)}
+                                placeholder="Tell us what you loved or what we could do better..."
+                                style={{
+                                    width: "100%",
+                                    padding: "20px",
+                                    borderRadius: "20px",
+                                    border: "2px solid #f1f5f9",
+                                    fontSize: "16px",
+                                    resize: "none",
+                                    outline: "none",
+                                    transition: "all 0.3s ease",
+                                    backgroundColor: "#fbfbfbff",
+                                    fontFamily: 'inherit',
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#7367f0';
+                                    e.target.style.backgroundColor = 'white';
+                                    e.target.style.boxShadow = '0 0 0 4px rgba(115, 103, 240, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#f1f5f9';
+                                    e.target.style.backgroundColor = '#f8fafc';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                                rows={3}
+                            />
+                        </Box>
+
+                        {/* Submit Button */}
+                        <Button
+                            variant="contained"
+                            size="small"
+                            component={motion.button}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={onSubmit}
+                            className="ai-feedback-btn"
+                            disabled={isloading}
+                            sx={{
+                                padding: '10px 18px',
+                                '.MuiButton-startIcon': {
+                                    marginRight: isloading ? 1 : 0,
+                                    transition: 'margin-right 200ms ease',
+                                },
+                            }}
+                            startIcon={
+                                <Box
+                                    component="span"
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: isloading ? 16 : 0,
+                                        opacity: isloading ? 1 : 0,
+                                        overflow: 'hidden',
+                                        transition: 'width 200ms ease, opacity 200ms ease',
+                                    }}
+                                >
+                                    <CircularProgress size={16} color="inherit" />
+                                </Box>
+                            }
+                        >
+                            Submit Feedback
+                        </Button>
+
+                        {submitted && (
+                            <Box
+                                component={motion.div}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                sx={{ mt: 3 }}
+                            >
+                                <Typography sx={{ color: "success.main", fontWeight: 500 }}>
+                                    Thank you for your feedback! We appreciate your input.
+                                </Typography>
+                            </Box>
+                        )}
+                    </CardContent>
+                </Card>
+            </Container>
+        </Box>
+    );
+};
+
 const FAQAccordion = ({ question, answer }) => (
     <Accordion
         elevation={0}
@@ -285,14 +448,17 @@ const FAQAccordion = ({ question, answer }) => (
     </Accordion>
 );
 
-const HowItWorks = ({ activeStep, onStepChange }) => {
+const HowItWorks = ({ activeStep, onStepChange, handleSearchFocus }) => {
     const [activeVideo, setActiveVideo] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isChanging, setIsChanging] = useState(false);
-    const videoRef = React.useRef(null);
     const [swiperRef, setSwiperRef] = useState(null);
+    const [isfeedbackloading, setIsFeedbackLoading] = useState(false);
+    const [rating, setRating] = React.useState(0);
+    const [feedback, setFeedback] = React.useState("");
+    const [submitted, setSubmitted] = React.useState(false);
 
     // Sync external activeStep with internal activeVideo
     React.useEffect(() => {
@@ -308,29 +474,12 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
         }
     }, [modalOpen, activeVideo, swiperRef]);
 
-    const handlePlayClick = () => {
-        if (videoRef.current) {
-            videoRef.current.play();
-            setIsPlaying(true);
-        }
-    };
-
-    const handleFullscreenOpen = (e) => {
-        e.stopPropagation(); // Prevent play toggle if clicking fullscreen
-        setModalOpen(true);
-        if (videoRef.current) {
-            videoRef.current.pause();
-            setIsPlaying(false);
-        }
-    };
-
     const handleFullscreenClose = () => {
         setModalOpen(false);
     };
 
     const handleStepClick = (index) => {
         if (activeVideo === index && !isChanging) return;
-
         setIsChanging(true);
         setTimeout(() => {
             setActiveVideo(index);
@@ -338,6 +487,15 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
             setIsChanging(false);
             if (onStepChange) onStepChange(index);
         }, 300);
+    };
+
+    const handleFeedbackSubmit = () => {
+        setIsFeedbackLoading(true);
+        console.log({ rating, feedback });
+        setSubmitted(true);
+        setRating(0);
+        setFeedback("");
+        setIsFeedbackLoading(false);
     };
 
     // Video guide steps
@@ -378,7 +536,7 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
 
 
     return (
-        <Box sx={{ width: '100%', py: 3 }}>
+        <Box sx={{ width: '100%', pt: 2, pb: 6 }}>
             <GlobalStyles
                 styles={{
                     '@keyframes sectionPulse': {
@@ -408,7 +566,7 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
             />
 
             {/* --- 1. How It Works --- */}
-            <Container maxWidth="xl" sx={{ mb: 16 }} id="how-it-works-section">
+            <Container maxWidth="xl" sx={{ py: { xs: 8, md: 12 } }} id="how-it-works-section">
                 <Box
                     component={motion.div}
                     initial={{ opacity: 0, y: 20 }}
@@ -419,7 +577,7 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                     <Typography
                         variant="h2"
                         sx={{
-                            my: 2,
+                            mb: 2,
                             fontSize: { xs: "2rem", md: "3rem" },
                             fontWeight: 700,
                             color: "text.primary",
@@ -445,7 +603,7 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
 
                 <Grid container spacing={4} justifyContent="center">
                     {steps.map((step, index) => (
-                        <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                        <Grid key={index} size={{ xs: 12, md: 6, lg: 4 }}>
                             <VideoCard
                                 {...step}
                                 index={index}
@@ -490,7 +648,7 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                     }}
                 >
                     <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
-                        <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.primary', mr: 2 }}>
+                        <Typography component="span" variant="subtitle1" fontWeight="bold" sx={{ color: 'text.primary', mr: 2, fontSize: '1.25rem' }}>
                             {steps[activeVideo].title}
                         </Typography>
 
@@ -583,11 +741,8 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                 </Dialog>
             </Container>
 
-
-
-
             {/* --- 2. Empowering Your Enterprise --- */}
-            <Box sx={{ position: 'relative', py: 12, mb: 12, background: "#F9F8F6" }}>
+            <Box sx={{ position: 'relative', py: { xs: 8, md: 12 }, background: "#F9F8F6" }}>
                 <Container maxWidth="xl">
                     <Box sx={{ textAlign: 'center', mb: 8 }}>
                         <Typography
@@ -620,19 +775,29 @@ const HowItWorks = ({ activeStep, onStepChange }) => {
                     <Grid container spacing={4}>
                         {features.map((feature, index) => (
                             <Grid key={index} size={{ xs: 12, md: 6, lg: 4 }}>
-                                <FeatureCard {...feature} index={index} />
+                                <FeatureCard {...feature} index={index} handleSearchFocus={handleSearchFocus} />
                             </Grid>
                         ))}
                     </Grid>
                 </Container>
             </Box>
 
+            <FeedbackSection
+                rating={rating}
+                feedback={feedback}
+                submitted={submitted}
+                isloading={isfeedbackloading}
+                onRatingChange={setRating}
+                onFeedbackChange={setFeedback}
+                onSubmit={handleFeedbackSubmit}
+                title="Share Your Feedback"
+                subtitle="Tell us about your experience so we can improve the platform."
+                maxRating={5}
+            />
+
             {/* --- 3. FAQ --- */}
-            <Container maxWidth="md">
-                <Box sx={{ textAlign: 'center', mb: 6 }}>
-                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1.5, mb: 1, display: 'block', textTransform: 'uppercase' }}>
-                        FAQ
-                    </Typography>
+            <Container maxWidth="md" sx={{ py: { xs: 8, md: 12 } }}>
+                <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <Typography variant="h3" sx={{ fontWeight: 700, color: '#334155' }}>
                         Common Questions
                     </Typography>

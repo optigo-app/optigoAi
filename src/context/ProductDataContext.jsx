@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { designCollectionApi } from '@/app/api/designCollectionApi';
 
 const ProductDataContext = createContext(undefined);
@@ -29,6 +29,7 @@ export const ProductDataProvider = ({ children }) => {
             const thumbBase = thumbBaseRaw && !thumbBaseRaw.endsWith('/') ? `${thumbBaseRaw}/` : thumbBaseRaw;
             const originalBase = originalBaseRaw && !originalBaseRaw.endsWith('/') ? `${originalBaseRaw}/` : originalBaseRaw;
             sessionStorage.setItem('ukey', meta?.ImageuKey);
+            if (meta?.AIAPI) sessionStorage.setItem('aiApi', meta.AIAPI);
             const mapped = allProducts.map((p) => {
                 const thumbUrl = p?.ThumbImageName ? `${thumbBase}${p.ThumbImageName}` : undefined;
                 const originalUrl = p?.OriginalImageName ? `${originalBase}${p.OriginalImageName}` : undefined;
@@ -55,7 +56,7 @@ export const ProductDataProvider = ({ children }) => {
         setError(null);
     }, []);
 
-    const value = {
+    const value = useMemo(() => ({
         productData,
         isLoading,
         error,
@@ -63,7 +64,7 @@ export const ProductDataProvider = ({ children }) => {
         clearProductData,
         pendingSearch,
         setPendingSearch
-    };
+    }), [productData, isLoading, error, fetchProductData, clearProductData, pendingSearch]);
 
     return (
         <ProductDataContext.Provider value={value}>

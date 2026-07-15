@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Grid, Box, Typography, Button, Skeleton } from '@mui/material';
+import { motion } from 'framer-motion';
 import { SearchX } from 'lucide-react';
 import ProductCard from './ProductCard';
 import { useMultiSelect } from '@/context/MultiSelectContext';
@@ -125,49 +126,75 @@ const ProductGrid = memo(function ProductGrid({
   if (designData.length === 0 && (appliedFilters.length > 0 || searchTerm)) {
     return (
       <Box display="flex" flexDirection="column" alignItems="center" py={8}>
-        <Box
-          sx={{
-            width: 120,
-            height: 120,
-            borderRadius: '50%',
-            bgcolor: 'grey.100',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mb: 3,
-          }}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <SearchX size={60} color="#9e9e9e" />
-        </Box>
+          <Box
+            sx={{
+              width: 120,
+              height: 120,
+              borderRadius: '50%',
+              bgcolor: 'grey.100',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 3,
+            }}
+          >
+            <SearchX size={60} color="#9e9e9e" />
+          </Box>
+        </motion.div>
 
-        <Typography variant="h5" fontWeight="medium" mb={2}>
-          No match product found
-        </Typography>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <Typography variant="h5" fontWeight="medium" mb={2}>
+            No match product found
+          </Typography>
+        </motion.div>
 
-        <Typography variant="body1" color="text.secondary" mb={4}>
-          Try adjusting your filters to see more results.
-        </Typography>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <Typography variant="body1" color="text.secondary" mb={4}>
+            Try adjusting your filters to see more results.
+          </Typography>
+        </motion.div>
 
-        <Button
-          variant="contained"
-          size="large"
-          onClick={clearAllFilters}
-          sx={{
-            textTransform: 'none',
-            boxShadow: 'none',
-            borderRadius: 2,
-            bgcolor: 'rgba(0, 0, 0, 0.04)',
-            color: 'text.white',
-            border: '1px solid rgba(0, 0, 0, 0.10)',
-            '&:hover': {
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Button
+            variant="contained"
+            size="large"
+            onClick={clearAllFilters}
+            sx={{
+              textTransform: 'none',
               boxShadow: 'none',
-              bgcolor: 'rgba(0, 0, 0, 0.06)',
-              borderColor: 'rgba(0, 0, 0, 0.12)'
-            }
-          }}
-        >
-          Clear All Filters
-        </Button>
+              borderRadius: 2,
+              bgcolor: 'rgba(0, 0, 0, 0.04)',
+              color: 'text.white',
+              border: '1px solid rgba(0, 0, 0, 0.10)',
+              '&:hover': {
+                boxShadow: 'none',
+                bgcolor: 'rgba(0, 0, 0, 0.06)',
+                borderColor: 'rgba(0, 0, 0, 0.12)'
+              }
+            }}
+          >
+            Clear All Filters
+          </Button>
+        </motion.div>
       </Box>
     );
   }
@@ -175,24 +202,34 @@ const ProductGrid = memo(function ProductGrid({
   return (
     <Box>
       <Grid container spacing={2}>
-        {visibleItems.map((product, index) => (
-          <Grid
-            key={`${product.id}-${index}`}
-            size={{ xs: 6, sm: 4, md: isFilterOpen ? 4 : 3, lg: 3, xl: 2 }}
-          >
-            <ProductCard
-              product={product}
-              products={designData}
-              index={index}
-              onSearchSimilar={onSearchSimilar}
-              showSimilarButton={searchMode !== 'design'}
-              urlParamsFlag={urlParamsFlag}
-              isMultiSelectMode={isMultiSelectMode}
-              isSelected={isProductSelected(product.id)}
-              onToggleSelection={toggleProductSelection}
-            />
-          </Grid>
-        ))}
+        {visibleItems.map((product, index) => {
+          const staggerDelay = Math.min(index * 0.03, 0.3);
+          return (
+            <Grid
+              key={`${product.id}-${index}`}
+              size={{ xs: 6, sm: 4, md: isFilterOpen ? 4 : 3, lg: 3, xl: 2 }}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: staggerDelay, ease: [0.22, 1, 0.36, 1] }}
+                style={{ height: '100%' }}
+              >
+                <ProductCard
+                  product={product}
+                  products={designData}
+                  index={index}
+                  onSearchSimilar={onSearchSimilar}
+                  showSimilarButton={searchMode !== 'design'}
+                  urlParamsFlag={urlParamsFlag}
+                  isMultiSelectMode={isMultiSelectMode}
+                  isSelected={isProductSelected(product.id)}
+                  onToggleSelection={toggleProductSelection}
+                />
+              </motion.div>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* Single sentinel – clean & stable */}

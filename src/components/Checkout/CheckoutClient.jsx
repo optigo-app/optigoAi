@@ -12,6 +12,7 @@ import {
     CircularProgress,
 } from "@mui/material";
 import { ArrowLeft, ShoppingCart, Images, FileText, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -93,10 +94,16 @@ const sendPostMessage = (event, code) => {
 /* ----------------------------------------------------
    REUSABLE ACTION CARD
    ---------------------------------------------------- */
-const ActionCard = ({ actionKey, config, loading, onClick }) => {
+const ActionCard = ({ actionKey, config, loading, onClick, index = 0 }) => {
     const { title, description, ui } = config;
 
     return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            style={{ height: '100%' }}
+        >
         <Paper
             elevation={0}
             sx={{
@@ -110,12 +117,12 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
                 background: ui.cardBg,
                 border: "1px solid",
                 borderColor: "rgba(0,0,0,0.08)",
-                transition: "0.3s",
+                transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
                 cursor: "pointer",
                 boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
                 "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 15px 30px rgba(0,0,0,0.1)",
+                    transform: "translateY(-6px)",
+                    boxShadow: "0 16px 36px rgba(0,0,0,0.1)",
                 },
             }}
         >
@@ -134,6 +141,7 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
                         mb: 2,
                         boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         color: "white",
+                        transition: "transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
                 >
                     {React.cloneElement(ui.icon, { size: 24 })}
@@ -164,14 +172,17 @@ const ActionCard = ({ actionKey, config, loading, onClick }) => {
                         fontSize: "0.9rem",
                         fontWeight: 600,
                         background: ui.buttonBg,
-                        "&:hover": { background: ui.buttonHover },
+                        "&:hover": { background: ui.buttonHover, transform: "translateY(-1px)" },
+                        "&:active": { transform: "scale(0.98)" },
                         boxShadow: "none",
+                        transition: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
                 >
                     {loading ? "Processing..." : `Continue`}
                 </Button>
             </Box>
         </Paper>
+        </motion.div>
     );
 };
 /* ----------------------------------------------------
@@ -245,13 +256,14 @@ const CheckoutClient = () => {
                 >
                     {/* Dynamic Config-based Action Cards */}
                     <Grid container spacing={2} justifyContent="center">
-                        {Object.entries(ACTION_CONFIG).map(([key, cfg]) => (
+                        {Object.entries(ACTION_CONFIG).map(([key, cfg], index) => (
                             <Grid key={key} size={{ xs: 12, sm: 6, md: 4 }}>
                                 <ActionCard
                                     actionKey={key}
                                     config={cfg}
                                     loading={!!loading[key]}
                                     onClick={() => handleAction(key)}
+                                    index={index}
                                 />
                             </Grid>
                         ))}

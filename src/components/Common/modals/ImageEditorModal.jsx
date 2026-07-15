@@ -726,7 +726,7 @@ const ImageEditorModal = React.memo(function ImageEditorModal({
 
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, m: 0, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h6" fontWeight={600}>{title}</Typography>
+                    <Typography component="span" variant="subtitle1" fontWeight={600} sx={{ fontSize: '1.25rem' }}>{title}</Typography>
                     {/* Process Buttons */}
                     <Button
                         variant="text"

@@ -238,7 +238,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
             }}
         >
             <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="h6" fontWeight="bold">
+                <Typography component="span" variant="subtitle1" fontWeight="bold" sx={{ fontSize: '1.25rem' }}>
                     Product Details
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>

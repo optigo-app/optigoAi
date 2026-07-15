@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2, ArrowLeft, ArrowRightCircle, ShoppingCart } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 import {
     Container,
@@ -17,6 +18,7 @@ import {
 } from '@mui/material';
 
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 import GridBackground from '../Common/GridBackground';
 import ReusableConfirmModal from '../Common/modals/ReusableConfirmModal';
 import ProductModal from '../Product/ProductModal';
@@ -33,6 +35,7 @@ const LucideIconWrapper = ({ Icon, size = 24, ...props }) => (
 const CartPageMUI = () => {
     const router = useRouter();
     const { items: cartItems, removeFromCart, addToCart, clearCart, totalCount, hasHydrated, loading } = useCart();
+    const { showSuccess, showInfo } = useToast();
     const [openConfirmModal, setOpenConfirmModal] = useState(false);
     const [confirmModalType, setConfirmModalType] = useState(null);
     const [itemToRemove, setItemToRemove] = useState(null);
@@ -57,8 +60,10 @@ const CartPageMUI = () => {
     const handleConfirmModalConfirm = () => {
         if (confirmModalType === 'clearCart') {
             clearCart();
+            showSuccess('Cart cleared successfully');
         } else if (confirmModalType === 'removeItem' && itemToRemove) {
             removeFromCart(itemToRemove);
+            showInfo('Item removed from cart');
         }
         setOpenConfirmModal(false);
         setConfirmModalType(null);
@@ -172,6 +177,12 @@ const CartPageMUI = () => {
                                 key={`${item.id}-${index}`}
                                 size={{ xs: 6, sm: 4, md: 3, lg: 3, xl: 2 }}
                             >
+                                <motion.div
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.3), ease: [0.22, 1, 0.36, 1] }}
+                                    style={{ height: '100%' }}
+                                >
                                 <Card
                                     onClick={() => handleProductClick(index)}
                                     sx={{
@@ -179,10 +190,10 @@ const CartPageMUI = () => {
                                         overflow: 'hidden',
                                         cursor: 'pointer',
                                         borderRadius: 2,
-                                        transition: 'all 0.3s ease-in-out',
+                                        transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                                         '&:hover': {
-                                            transform: 'translateY(-8px)',
-                                            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                                            transform: 'translateY(-6px)',
+                                            boxShadow: '0 16px 36px rgba(0,0,0,0.1)',
                                         },
                                     }}
                                 >
@@ -238,7 +249,8 @@ const CartPageMUI = () => {
                                             {item.designno}
                                         </Typography>
                                     </CardContent>
-                                </Card>
+                                        </Card>
+                                </motion.div>
                             </Grid>
                         ))}
                     </Grid>
@@ -254,51 +266,77 @@ const CartPageMUI = () => {
                             textAlign: 'center',
                         }}
                     >
-                        <Box
-                            sx={{
-                                width: 120,
-                                height: 120,
-                                borderRadius: '50%',
-                                bgcolor: 'grey.100',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                mb: 3,
-                            }}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                         >
-                            <ShoppingCart size={60} color="#9e9e9e" />
-                        </Box>
-                        <Typography
-                            variant="h5"
-                            color="text.primary"
-                            fontWeight="medium"
-                            sx={{ mb: 2 }}
+                            <Box
+                                sx={{
+                                    width: 120,
+                                    height: 120,
+                                    borderRadius: '50%',
+                                    bgcolor: 'grey.100',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mb: 3,
+                                }}
+                            >
+                                <ShoppingCart size={60} color="#9e9e9e" />
+                            </Box>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                         >
-                            Your cart is empty
-                        </Typography>
-                        <Typography
-                            variant="body1"
-                            color="text.secondary"
-                            sx={{ mb: 4, maxWidth: 400 }}
+                            <Typography
+                                variant="h5"
+                                color="text.primary"
+                                fontWeight="medium"
+                                sx={{ mb: 2 }}
+                            >
+                                Your cart is empty
+                            </Typography>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
                         >
-                            Looks like you haven't added any items to your cart yet.
-                            Start browsing our collection to find something special!
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            size="large"
-                            onClick={() => router.push('/product')}
-                            sx={{
-                                px: 4,
-                                py: 1.5,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                fontWeight: 'bold',
-                                fontSize: '1.1rem'
-                            }}
+                            <Typography
+                                variant="body1"
+                                color="text.secondary"
+                                sx={{ mb: 4, maxWidth: 400 }}
+                            >
+                                Looks like you haven't added any items to your cart yet.
+                                Start browsing our collection to find something special!
+                            </Typography>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                         >
-                            Browse Products
-                        </Button>
+                            <Button
+                                variant="contained"
+                                size="large"
+                                onClick={() => router.push('/product')}
+                                sx={{
+                                    px: 4,
+                                    py: 1.5,
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontWeight: 'bold',
+                                    fontSize: '1.1rem'
+                                }}
+                            >
+                                Browse Products
+                            </Button>
+                        </motion.div>
                     </Box>
                 )}
 

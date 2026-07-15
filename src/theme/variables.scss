@@ -142,3 +142,13 @@ $z-index-modal-backdrop: 1040;
 $z-index-modal: 1050;
 $z-index-popover: 1060;
 $z-index-tooltip: 1070;
+
+
+ .ai-feedback-btn {
+            font-size: 13px;
+            text-transform: none;
+            font-weight: 600;
+            color: #fff;
+            background: #000 !important;
+            padding: 8px 16px !important;
+        }

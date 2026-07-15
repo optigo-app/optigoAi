@@ -143,6 +143,7 @@ const theme = createTheme({
           padding: '8px 24px',
           boxShadow: 'none',
           outline: 'none',
+          transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease, border-color 0.25s ease',
           '&:focus': {
             outline: 'none',
             boxShadow: 'none',
@@ -153,6 +154,13 @@ const theme = createTheme({
           },
           '&:hover': {
             boxShadow: '0 2px 8px rgba(115, 103, 240, 0.3)',
+            transform: 'translateY(-1px)',
+          },
+          '&:active': {
+            transform: 'translateY(0) scale(0.98)',
+          },
+          '&:disabled': {
+            transform: 'none',
           },
         },
         containedPrimary: {
@@ -160,10 +168,12 @@ const theme = createTheme({
           color: '#ffffff',
           '&:hover': {
             background: 'linear-gradient(270deg, rgba(115, 103, 240, 0.8) 0%, #7367f0 100%)',
-            boxShadow: '0 4px 12px rgba(115, 103, 240, 0.4)',
+            boxShadow: '0 4px 16px rgba(115, 103, 240, 0.4)',
+            transform: 'translateY(-2px)',
           },
           '&:active': {
             background: 'linear-gradient(270deg, rgba(115, 103, 240, 0.9) 0%, #7367f0 100%)',
+            transform: 'translateY(0) scale(0.98)',
           },
         },
         outlinedPrimary: {
@@ -171,7 +181,13 @@ const theme = createTheme({
           color: '#7367f0',
           '&:hover': {
             borderColor: '#5e56d6',
-            backgroundColor: 'rgba(115, 103, 240, 0.04)',
+            backgroundColor: 'rgba(115, 103, 240, 0.06)',
+            transform: 'translateY(-1px)',
+          },
+        },
+        text: {
+          '&:hover': {
+            transform: 'translateY(-1px)',
           },
         },
       },
@@ -181,8 +197,10 @@ const theme = createTheme({
         root: {
           borderRadius: 12,
           boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+          transition: 'box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
           '&:hover': {
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
+            boxShadow: '0 8px 28px rgba(0, 0, 0, 0.12)',
+            transform: 'translateY(-2px)',
           },
         },
       },
@@ -192,6 +210,13 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
+            transition: 'box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
+            '&:hover:not(.Mui-focused)': {
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            },
+            '&.Mui-focused': {
+              boxShadow: '0 0 0 4px rgba(115, 103, 240, 0.08)',
+            },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
               borderColor: '#7367f0',
               borderWidth: 2,
@@ -207,6 +232,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 6,
+          transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+          },
         },
         colorPrimary: {
           background: 'linear-gradient(270deg, rgba(115, 103, 240, 0.7) 0%, #7367f0 100%)',
@@ -216,6 +245,9 @@ const theme = createTheme({
     },
     MuiPaper: {
       styleOverrides: {
+        root: {
+          transition: 'box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+        },
         elevation1: {
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
         },
@@ -230,8 +262,13 @@ const theme = createTheme({
     MuiIconButton: {
       styleOverrides: {
         root: {
+          transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
           '&:hover': {
             backgroundColor: 'rgba(115, 103, 240, 0.08)',
+            transform: 'scale(1.08)',
+          },
+          '&:active': {
+            transform: 'scale(0.94)',
           },
         },
       },
@@ -240,8 +277,14 @@ const theme = createTheme({
       styleOverrides: {
         primary: {
           background: 'linear-gradient(270deg, rgba(115, 103, 240, 0.7) 0%, #7367f0 100%)',
+          transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
           '&:hover': {
             background: 'linear-gradient(270deg, rgba(115, 103, 240, 0.8) 0%, #5e56d6 100%)',
+            transform: 'translateY(-2px) scale(1.05)',
+            boxShadow: '0 8px 24px rgba(115, 103, 240, 0.4)',
+          },
+          '&:active': {
+            transform: 'translateY(0) scale(0.96)',
           },
         },
       },
@@ -249,11 +292,65 @@ const theme = createTheme({
     MuiModal: {
       styleOverrides: {
         root: {
-          // Prevent scrollbar compensation
           '&[aria-hidden="false"]': {
             '& ~ body': {
               paddingRight: '0 !important',
             },
+          },
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          backgroundColor: 'rgba(40, 40, 40, 0.92)',
+          fontSize: '0.75rem',
+          borderRadius: 6,
+          padding: '6px 10px',
+          fontWeight: 500,
+        },
+        arrow: {
+          color: 'rgba(40, 40, 40, 0.92)',
+        },
+      },
+    },
+    MuiBackdrop: {
+      styleOverrides: {
+        root: {
+          transition: 'opacity 0.3s ease !important',
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          transition: 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease !important',
+        },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important',
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          transition: 'background-color 0.2s ease, padding-left 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+          '&:hover': {
+            paddingLeft: '12px',
+          },
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          transition: 'background-color 0.2s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+          '&:hover': {
+            transform: 'translateX(2px)',
           },
         },
       },

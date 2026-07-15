@@ -38,7 +38,7 @@ export const ModeSwitch = ({ selectedMode, onSelect }) => {
                             '&:hover': {
                                 background: isSelected ? "linear-gradient(135deg, #7367f0 0%, #5e50ee 100%)" : "rgba(255,255,255,0.5)"
                             },
-                            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                            transition: "all 0.3s cubic-bezier(0.22, 1, 0.36, 1)"
                         }}
                     >
                         {mode === 'design' ? "Search by Design" : "Search by Stock"}
@@ -175,7 +175,7 @@ export const SearchModeToggle = ({ activeMode, onModeChange, onMaintenanceClick,
                                 opacity: showIssueBadge ? 0.85 : 1,
                                 cursor: 'pointer',
 
-                                transition: "all 0.25s ease",
+                                transition: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
 
                                 '&:hover': {
                                     backgroundColor: isActive

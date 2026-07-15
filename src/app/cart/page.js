@@ -1,3 +1,5 @@
+'use client';
+
 import CartPageMUI from '@/components/Cart/CartComponent'
 import React from 'react'
 

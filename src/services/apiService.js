@@ -73,6 +73,7 @@ export const searchService = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('top_k', params.top_k || DEFAULT_SEARCH_PARAMS.image.top_k);
+    if (params.aiApi) formData.append('aiApi', params.aiApi);
     formData.append('min_percent', params.min_percent || DEFAULT_SEARCH_PARAMS.image.min_percent);
 
     return apiCall(API_ENDPOINTS.search.image, {
@@ -89,6 +90,7 @@ export const searchService = {
     const requestBody = {
       query: query.trim(),
       top_k: params.top_k || DEFAULT_SEARCH_PARAMS.text.top_k,
+      ...(params.aiApi && { aiApi: params.aiApi }),
       min_percent: params.min_percent || DEFAULT_SEARCH_PARAMS.text.min_percent,
     };
 
@@ -119,6 +121,7 @@ export const searchService = {
     }
 
     formData.append('top_k', params.top_k || DEFAULT_SEARCH_PARAMS.hybrid.top_k);
+    if (params.aiApi) formData.append('aiApi', params.aiApi);
     formData.append('min_percent', params.min_percent || DEFAULT_SEARCH_PARAMS.hybrid.min_percent);
 
     return apiCall(API_ENDPOINTS.search.hybrid, {

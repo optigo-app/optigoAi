@@ -50,10 +50,8 @@ export default function FilterChips({
     const [likedIds, setLikedIds] = React.useState([]);
     const [sentIds, setSentIds] = React.useState([]); // Track what actually made it to DB
     const [feedbackIds, setFeedbackIds] = React.useState({}); // { itemId: feedbackID from DB }
-    const [anchorEl, setAnchorEl] = React.useState(null);
     const [reasonMenuAnchor, setReasonMenuAnchor] = React.useState(null);
     const [activeReasonItem, setActiveReasonItem] = React.useState(null);
-    const [commentingItem, setCommentingItem] = React.useState(null);
     const [commentText, setCommentText] = React.useState('');
     const [showOtherInput, setShowOtherInput] = React.useState(false);
 
@@ -170,15 +168,7 @@ export default function FilterChips({
         }
     };
 
-    const handleOpenComment = (event, item) => {
-        setAnchorEl(event.currentTarget);
-        setCommentingItem(item);
-        setCommentText('');
-    };
-
     const handleCloseComment = () => {
-        setAnchorEl(null);
-        setCommentingItem(null);
         setCommentText('');
         setShowOtherInput(false);
     };
@@ -376,22 +366,22 @@ export default function FilterChips({
                                     label={labelStr}
                                     size="small"
                                     onDelete={() => onRemoveFilter({ item })}
-                                sx={{
-                                    ...softPrimaryChipSx,
-                                    flexShrink: 0,
-                                    maxWidth: '240px',
-                                    '& .MuiChip-label': {
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                    },
-                                    '& .MuiChip-deleteIcon': {
-                                        color: 'text.secondary',
-                                        opacity: 0.8,
-                                        '&:hover': { opacity: 1 }
-                                    }
-                                }}
-                                
+                                    sx={{
+                                        ...softPrimaryChipSx,
+                                        flexShrink: 0,
+                                        maxWidth: '240px',
+                                        '& .MuiChip-label': {
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        },
+                                        '& .MuiChip-deleteIcon': {
+                                            color: 'text.secondary',
+                                            opacity: 0.8,
+                                            '&:hover': { opacity: 1 }
+                                        }
+                                    }}
+
                                 />
                             );
                         })}

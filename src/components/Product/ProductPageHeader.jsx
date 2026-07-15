@@ -16,6 +16,7 @@ import { ShoppingCart, ChevronLeft, ChevronRight, CheckSquare, Square, X as XIco
 import Image from "next/image";
 import PageHeader from "@/components/Common/PageHeader";
 import FilterChips from "@/components/Product/FilterChips";
+import TokenBadge from "@/components/Common/TokenBadge";
 
 export default function ProductPageHeader({
     // Multi-select props
@@ -53,7 +54,12 @@ export default function ProductPageHeader({
 
     // Summary props
     showSummary,
-    onToggleSummary
+    onToggleSummary,
+
+    // Token usage
+    tokenUsage = 0,
+    maxTokens = 100,
+    onTokenUpgrade,
 }) {
     const theme = useTheme();
     // Filter Chips Scroll State
@@ -223,7 +229,7 @@ export default function ProductPageHeader({
                                     flexShrink: 0,
                                     textDecoration: 'underline',
                                     padding: '5px 10px',
-                                    transition: 'all 0.3s ease-in-out',
+                                    transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
                                     '&:hover': {
                                         bgcolor: theme.palette.primary.danger,
                                         color: '#fff'
@@ -329,7 +335,7 @@ export default function ProductPageHeader({
                                 onClick={onFilterClick}
                                 sx={{
                                     mr: 1,
-                                    transition: 'all 0.2s ease',
+                                    transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
                                 }}
                             >
                                 {isFilterOpen ? "Close Filters" : "More Filters"}
@@ -353,6 +359,9 @@ export default function ProductPageHeader({
                                 </IconButton>
                             </Tooltip> */}
                         </Fade>
+                    )}
+                    {!isMultiSelectMode && (
+                        <TokenBadge onUpgrade={onTokenUpgrade} />
                     )}
                     {isMultiSelectMode ? (
                         <>
@@ -416,7 +425,7 @@ export default function ProductPageHeader({
                                     bgcolor: "rgba(115, 103, 240, 0.12)",
                                     px: 2,
                                     py: 0.6,
-                                    transition: "all 0.2s ease",
+                                    transition: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
                                     "&:hover": {
                                         bgcolor: "rgba(115, 103, 240, 0.2)",
                                         transform: "translateY(-1px)"

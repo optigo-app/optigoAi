@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
 
         if (!token) {
           if (isAllowedHost) {
-            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc2NTQ0MTczOCwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZlkyeHBaVzUwTVY5elpXTnlaWFJmYTJWNVh6RXlNelExIiwiY3V2ZXIiOiJSNTBCMyJ9.Kfx8ylk2omd2zmjP7SwnhN_vjcesCG83jV7M8Nr3ufU';
+            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc4Mzc1NTA2NSwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJRV2xyWVdGZlFVbGZOakkzTXpZMk5EazVNelV3TmpRd01BPT0iLCJjdXZlciI6IlI1MEIzIn0.sTqoac1uVbLBlkgcuSPeP49Mf29IkmIDR1CloNkQ11w';
             const isHttps = window.location.protocol === 'https:';
             Cookies.set('skey', mockToken, isHttps ? { sameSite: 'None', secure: true } : { sameSite: 'Lax' });
             const authQueryParams = sessionStorage.getItem("AuthqueryParams");

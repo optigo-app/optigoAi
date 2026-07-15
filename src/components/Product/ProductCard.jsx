@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import {
     Card,
     CardMedia,
@@ -13,8 +13,9 @@ import {
 } from '@mui/material';
 
 import { ShoppingCart, ScanSearch, Check } from 'lucide-react';
-import ProductModal from './ProductModal';
+const ProductModal = lazy(() => import('./ProductModal'));
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 
 const ProductCard = React.memo(function ProductCard({
     product,
@@ -34,6 +35,7 @@ const ProductCard = React.memo(function ProductCard({
     const [openModal, setOpenModal] = useState(false);
 
     const { addToCart, removeFromCart, items: cartItems } = useCart();
+    const { showSuccess, showInfo } = useToast();
 
     const isInCart = useMemo(() => {
         return cartItems.some(item => item.id === product.id);
@@ -44,8 +46,10 @@ const ProductCard = React.memo(function ProductCard({
         const isProductInCart = cartItems.some(item => item.id === productToToggle.id);
         if (isProductInCart) {
             removeFromCart(productToToggle.id);
+            showInfo('Item removed from cart');
         } else {
             addToCart(productToToggle);
+            showSuccess('Item added to cart');
         }
     };
 
@@ -102,10 +106,11 @@ const ProductCard = React.memo(function ProductCard({
                     overflow: 'hidden',
                     cursor: 'pointer',
                     borderRadius: '16px',
-                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                     boxShadow: isHovered
-                        ? '0 20px 40px rgba(0,0,0,0.05)'
-                        : '0 20px 40px rgba(0,0,0,0.01)',
+                        ? '0 12px 32px rgba(0,0,0,0.08)'
+                        : '0 2px 12px rgba(0,0,0,0.04)',
+                    transform: isHovered && !isMultiSelectMode ? 'translateY(-4px)' : 'translateY(0)',
                     height: '100%',
                 }}
             >
@@ -152,8 +157,8 @@ const ProductCard = React.memo(function ProductCard({
                                 height: "100%",
                                 objectFit: "contain",
                                 opacity: isImageLoaded ? 1 : 0,
-                                transition: "all 0.6s ease-out",
-                                transform: isHovered && !isMultiSelectMode ? 'scale(1.08)' : 'scale(1)',
+                                transition: "opacity 0.5s ease-out, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+                                transform: isHovered && !isMultiSelectMode ? 'scale(1.06)' : 'scale(1)',
                             }}
                         />
                     </Box>
@@ -173,6 +178,8 @@ const ProductCard = React.memo(function ProductCard({
                             fontSize: '0.75rem',
                             fontWeight: 600,
                             pointerEvents: 'none',
+                            transition: 'opacity 0.3s ease',
+                            opacity: isHovered ? 0.7 : 1,
                         }}
                     >
                         {displayDesignNo}
@@ -259,11 +266,12 @@ const ProductCard = React.memo(function ProductCard({
                                     opacity: isHovered ? 1 : 0,
                                     visibility: isHovered ? 'visible' : 'hidden',
                                     transform: isHovered ? 'translateY(0)' : 'translateY(-10px)',
-                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                                     '&:hover': {
                                         bgcolor: 'rgba(255, 255, 255, 1)',
                                         color: "#7367f0",
-                                        transform: 'scale(1.1)',
+                                        transform: 'scale(1.12)',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                                     },
                                     zIndex: 2
                                 }}
@@ -286,7 +294,7 @@ const ProductCard = React.memo(function ProductCard({
                                 left: 0,
                                 right: 0,
                                 transform: isHovered ? 'translateY(0)' : 'translateY(102%)',
-                                transition: 'all 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transition: 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                                 zIndex: 2,
                             }}
                         >
@@ -312,7 +320,7 @@ const ProductCard = React.memo(function ProductCard({
                                         boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
                                         transform: 'translateY(-2px)',
                                     },
-                                    transition: 'all 0.1s ease',
+                                    transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
                                 }}
                             >
                                 {isInCart ? "Remove from Cart" : "Add to Cart"}
@@ -343,18 +351,22 @@ const ProductCard = React.memo(function ProductCard({
                 </Box>
             </Card>
 
-            <ProductModal
-                open={openModal}
-                onClose={() => { setOpenModal(false); setIsHovered(false) }}
-                product={product}
-                products={products}
-                startIndex={index}
-                onAddToCart={handleToggleCart}
-                isInCart={isInCart}
-                onSearchSimilar={onSearchSimilar}
-                showSimilarButton={showSimilarButton}
-                urlParamsFlag={urlParamsFlag}
-            />
+            {openModal && (
+                <Suspense fallback={null}>
+                    <ProductModal
+                        open={openModal}
+                        onClose={() => { setOpenModal(false); setIsHovered(false) }}
+                        product={product}
+                        products={products}
+                        startIndex={index}
+                        onAddToCart={handleToggleCart}
+                        isInCart={isInCart}
+                        onSearchSimilar={onSearchSimilar}
+                        showSimilarButton={showSimilarButton}
+                        urlParamsFlag={urlParamsFlag}
+                    />
+                </Suspense>
+            )}
         </Box>
     );
 });

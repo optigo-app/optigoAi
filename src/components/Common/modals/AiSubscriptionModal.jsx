@@ -15,12 +15,58 @@ import { X, Sparkles, Search, FileText, Zap, Phone, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 
-const AiSubscriptionModal = ({ open, onClose }) => {
-    const features = [
-        { icon: <Zap size={18} />, text: 'AI-Powered Order' },
-        { icon: <Search size={18} />, text: 'Smart Catalog Search' },
-        { icon: <FileText size={18} />, text: 'Automated Quoting' }
-    ];
+const DEFAULT_PRESETS = {
+    subscription: {
+        title: 'Unlock AI Magic',
+        subtitle: 'Transform your workflow with Text, Image and Hybrid search with AI',
+        message: 'This premium module is not currently active on your account.',
+        features: [
+            { icon: 'Zap', text: 'AI-Powered Order' },
+            { icon: 'Search', text: 'Smart Catalog Search' },
+            { icon: 'FileText', text: 'Automated Quoting' },
+        ],
+        imageSrc: '/images/ai_unlock.png',
+        contactLabel: 'Contact Admin',
+    },
+    upgrade: {
+        title: 'Upgrade Your Plan',
+        subtitle: 'Get more AI search credits and unlock premium features',
+        message: 'You are running low on AI search tokens. Upgrade to continue searching without interruption.',
+        features: [
+            { icon: 'Zap', text: 'Unlimited AI Searches' },
+            { icon: 'Search', text: 'Priority Search Results' },
+            { icon: 'Sparkles', text: 'Advanced AI Matching' },
+            { icon: 'FileText', text: 'Export & Share Designs' },
+        ],
+        imageSrc: '/images/ai_unlock.png',
+        contactLabel: 'Talk to Sales',
+    },
+};
+
+const ICON_MAP = { Zap, Search, FileText, Sparkles, Phone, Mail };
+
+const AiSubscriptionModal = ({
+    open,
+    onClose,
+    variant = 'subscription',
+    title,
+    subtitle,
+    message,
+    features,
+    imageSrc,
+    contactLabel,
+    contactPhone = '+91 9510213581',
+    contactEmail = 'Support@orail.in',
+    showContact = true,
+}) => {
+    const preset = DEFAULT_PRESETS[variant] || DEFAULT_PRESETS.subscription;
+
+    const resolvedTitle = title ?? preset.title;
+    const resolvedSubtitle = subtitle ?? preset.subtitle;
+    const resolvedMessage = message ?? preset.message;
+    const resolvedFeatures = features ?? preset.features;
+    const resolvedImageSrc = imageSrc ?? preset.imageSrc;
+    const resolvedContactLabel = contactLabel ?? preset.contactLabel;
 
     return (
         <Dialog
@@ -101,7 +147,7 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                                 lineHeight: 1.2,
                             }}
                         >
-                            Unlock AI Magic
+                            {resolvedTitle}
                         </Typography>
 
                         {/* Subtitle */}
@@ -118,7 +164,7 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                                 fontSize: { xs: '1rem', md: '1.1rem' },
                             }}
                         >
-                            Transform your workflow with Text, Image and Hybrid search with AI
+                            {resolvedSubtitle}
                         </Typography>
 
                         {/* Message */}
@@ -135,7 +181,7 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                                 fontSize: '0.95rem',
                             }}
                         >
-                            This premium module is not currently active on your account.
+                            {resolvedMessage}
                         </Typography>
 
                         {/* Features List */}
@@ -147,50 +193,54 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                             sx={{ mb: 4 }}
                         >
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                                {features.map((feature, index) => (
-                                    <Box
-                                        key={index}
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1,
-                                            px: 2,
-                                            py: 1,
-                                            borderRadius: '20px',
-                                            background: 'rgba(115,103,240,0.08)',
-                                            border: '1px solid rgba(115,103,240,0.2)',
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                background: 'rgba(115,103,240,0.12)',
-                                                transform: 'translateY(-2px)',
-                                            }
-                                        }}
-                                    >
+                                {resolvedFeatures.map((feature, index) => {
+                                    const IconComp = typeof feature.icon === 'string' ? ICON_MAP[feature.icon] : null;
+                                    return (
                                         <Box
+                                            key={index}
                                             sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: '#7367f0',
+                                                gap: 1,
+                                                px: 2,
+                                                py: 1,
+                                                borderRadius: '20px',
+                                                background: 'rgba(115,103,240,0.08)',
+                                                border: '1px solid rgba(115,103,240,0.2)',
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    background: 'rgba(115,103,240,0.12)',
+                                                    transform: 'translateY(-2px)',
+                                                }
                                             }}
                                         >
-                                            {feature.icon}
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#7367f0',
+                                                }}
+                                            >
+                                                {IconComp ? <IconComp size={18} /> : feature.icon}
+                                            </Box>
+                                            <Typography
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    color: '#1a1a2e',
+                                                    fontSize: '0.85rem',
+                                                }}
+                                            >
+                                                {feature.text}
+                                            </Typography>
                                         </Box>
-                                        <Typography
-                                            sx={{
-                                                fontWeight: 600,
-                                                color: '#1a1a2e',
-                                                fontSize: '0.85rem',
-                                            }}
-                                        >
-                                            {feature.text}
-                                        </Typography>
-                                    </Box>
-                                ))}
+                                    );
+                                })}
                             </Box>
                         </Box>
 
                         {/* Contact Box */}
+                        {showContact && (
                         <Box
                             component={motion.div}
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -214,12 +264,12 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                                     mb: 2,
                                 }}
                             >
-                                Contact Admin
+                                {resolvedContactLabel}
                             </Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
                                 <Box
                                     component="a"
-                                    href="tel:+919099887762"
+                                    href={`tel:${contactPhone.replace(/\s/g, '')}`}
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -240,12 +290,12 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                                             fontSize: '0.95rem',
                                         }}
                                     >
-                                        +91 90998 87762
+                                        {contactPhone}
                                     </Typography>
                                 </Box>
                                 <Box
                                     component="a"
-                                    href="mailto:Support@orail.in"
+                                    href={`mailto:${contactEmail}`}
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -266,11 +316,12 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                                             fontSize: '0.95rem',
                                         }}
                                     >
-                                        Support@orail.in
+                                        {contactEmail}
                                     </Typography>
                                 </Box>
                             </Box>
                         </Box>
+                        )}
                     </Box>
 
                     {/* Right Side - Illustration */}
@@ -297,8 +348,8 @@ const AiSubscriptionModal = ({ open, onClose }) => {
                             }}
                         >
                             <Image
-                                src="/images/ai_unlock.png"
-                                alt="AI Unlock"
+                                src={resolvedImageSrc}
+                                alt={resolvedTitle}
                                 fill
                                 style={{
                                     objectFit: 'cover',

@@ -55,9 +55,9 @@ const ScrollToTop = React.memo(function ScrollToTop({
             boxShadow: '0 6px 24px rgba(115, 103, 240, 0.5)',
           },
           '&:active': {
-            transform: 'translateY(0px)',
+            transform: 'translateY(0) scale(0.95)',
           },
-          transition: 'all 0.3s ease',
+          transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <ArrowUp size={20} />

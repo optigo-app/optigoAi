@@ -138,18 +138,21 @@ export default function PaginationControls({
                                 border: '1px solid',
                                 borderColor: 'transparent',
                                 bgcolor: 'transparent',
-                                transition: 'all 0.2s ease-in-out',
+                                transition: 'all 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
                                 '&:hover': {
                                     bgcolor: 'action.hover',
                                     borderColor: 'divider',
+                                    transform: 'translateY(-1px)',
                                 },
                                 '&.Mui-selected': {
                                     bgcolor: 'text.primary',
                                     color: '#fff',
                                     fontWeight: 600,
                                     borderColor: 'transparent',
+                                    transform: 'scale(1.05)',
                                     '&:hover': {
                                         bgcolor: 'text.primary',
+                                        transform: 'scale(1.05)',
                                     },
                                 },
                                 '&.Mui-disabled': {

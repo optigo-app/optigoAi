@@ -133,7 +133,7 @@ const RangeFilter = React.memo(({ label, field, min, max, value, onChange, unit 
     }, [inputValue.min, inputValue.max, min, max, field, onChange]);
 
     return (
-        <Box sx={{ mb: 3, px: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 2 }}>
+        <Box sx={{ mb: 3, px: 1 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                 {label} {unit ? `(${unit})` : ''}
             </Typography>
