@@ -478,48 +478,77 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                         </Grid>
                     ) : loading && !isNavigating ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            <Box
+                                component="svg"
+                                viewBox="0 0 200 200"
+                                role="img"
+                                aria-label="Loading"
+                                sx={{
+                                    display: 'block',
+                                    width: 100,
+                                    height: 100,
+                                    mb: 2,
+                                    '@keyframes loaderRing': {
+                                        from: { strokeDasharray: '0 257 0 0 1 0 0 258' },
+                                        '25%': { strokeDasharray: '0 0 0 0 257 0 258 0' },
+                                        '50%, to': { strokeDasharray: '0 0 0 0 0 515 0 0' },
+                                    },
+                                    '@keyframes loaderBall': {
+                                        'from, 50%': { animationTimingFunction: 'ease-in', strokeDashoffset: 1 },
+                                        '64%': { animationTimingFunction: 'ease-in', strokeDashoffset: -109 },
+                                        '78%': { animationTimingFunction: 'ease-in', strokeDashoffset: -145 },
+                                        '92%': { animationTimingFunction: 'ease-in', strokeDashoffset: -157 },
+                                        '57%, 71%, 85%, 99%, to': { animationTimingFunction: 'ease-out', strokeDashoffset: -163 },
+                                    },
+                                    '& .loader-ring, & .loader-ball': {
+                                        animation: 'loaderRing 2s ease-out infinite',
+                                        willChange: 'stroke-dasharray, stroke-dashoffset',
+                                    },
+                                    '& .loader-ball': {
+                                        animationName: 'loaderBall',
+                                    },
+                                }}
                             >
-                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <Box
-                                        sx={{
-                                            position: 'relative',
-                                            width: 80,
-                                            height: 80,
-                                            mb: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center'
-                                        }}
-                                    >
-                                        <CircularProgress
-                                            size={60}
-                                            thickness={2.5}
-                                            disableShrink
-                                            sx={{
-                                                color: 'primary.main',
-                                                position: 'absolute',
-                                                animationDuration: '1.5s'
-                                            }}
-                                        />
-                                        <Box
-                                            component="img"
-                                            src="/icons/base-icon2.svg"
-                                            alt="Loading"
-                                            sx={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: '50%',
-                                                animation: 'pulse 2s infinite ease-in-out'
-                                            }}
-                                        />
-                                    </Box>
-                                    <RotatingLoadingText type="similar" />
-                                </Box>
-                            </motion.div>
+                                <defs>
+                                    <linearGradient id="similar-loader-gradient-ring" x1="1" y1="0.5" x2="0" y2="0.5">
+                                        <stop offset="0%" stopColor="#B300C3" />
+                                        <stop offset="100%" stopColor="#6200B3" />
+                                    </linearGradient>
+                                    <linearGradient id="similar-loader-gradient-ball" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#B300C3" />
+                                        <stop offset="100%" stopColor="#6200B3" />
+                                    </linearGradient>
+                                    <clipPath id="similar-loader-logo-clip">
+                                        <circle cx="100" cy="100" r="35" />
+                                    </clipPath>
+                                </defs>
+                                <circle
+                                    className="loader-ring"
+                                    cx="100"
+                                    cy="100"
+                                    r="82"
+                                    fill="none"
+                                    stroke="url(#similar-loader-gradient-ring)"
+                                    strokeWidth="36"
+                                    strokeDasharray="0 257 1 257"
+                                    strokeDashoffset="0.01"
+                                    strokeLinecap="round"
+                                    transform="rotate(-90,100,100)"
+                                />
+                                <line
+                                    className="loader-ball"
+                                    stroke="url(#similar-loader-gradient-ball)"
+                                    x1="100"
+                                    y1="18"
+                                    x2="100.01"
+                                    y2="182"
+                                    strokeWidth="36"
+                                    strokeDasharray="1 165"
+                                    strokeLinecap="round"
+                                />
+                                <image href="/icons/base-icon2.svg" x="65" y="65" width="70" height="70" clipPath="url(#similar-loader-logo-clip)" />
+                            </Box>
+                            <RotatingLoadingText type="similar" interval={3500} />
                         </Box>
                     ) : error ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>

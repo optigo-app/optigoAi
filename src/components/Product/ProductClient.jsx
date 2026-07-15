@@ -43,9 +43,10 @@ import { getTokenDetailsApi } from '@/app/api/getTokenDetailsApi';
 import { getTokenMasterApi, getTokenCost } from '@/app/api/getTokenMasterApi';
 
 
-function ProductClientContent() {
+function ProductClientContent({ onInitialLoadComplete }) {
     const PRODUCT_LIST_RESTORE_KEY = 'productListRestoreState';
     const [isSearchLoading, setIsSearchLoading] = useState(false);
+    const [isInitialLoadPending, setIsInitialLoadPending] = useState(true);
     const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false); // New state for removal confirm
@@ -809,16 +810,21 @@ function ProductClientContent() {
             } catch (err) {
                 console.error(err);
                 if (mounted) setError("Failed to load products");
+            } finally {
+                if (mounted) {
+                    setIsInitialLoadPending(false);
+                    onInitialLoadComplete?.();
+                }
             }
         };
         loadData();
         return () => {
             mounted = false;
         };
-    }, [fetchProductData]);
+    }, [fetchProductData, onInitialLoadComplete]);
 
     const loading = isLoadingProducts;
-    const showInitialLoader = loading;
+    const showInitialLoader = isInitialLoadPending || loading;
 
     const getBottomPadding = () => {
         if (finalFilteredProducts.length > 7) {
@@ -829,7 +835,7 @@ function ProductClientContent() {
 
     return (
         <GridBackground>
-            <Container maxWidth={false} sx={{ px: 0, pb: getBottomPadding(), position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1)', visibility: showInitialLoader ? 'hidden' : 'visible' }} disableGutters>
+            <Container maxWidth={false} sx={{ px: 0, pb: getBottomPadding(), position: "relative", zIndex: 2, pl: { xs: 2, md: isFilterOpen ? '340px' : 0 }, transition: 'padding-left 0.4s cubic-bezier(0.86, 0, 0.07, 1), opacity 0.4s ease', opacity: showInitialLoader ? 0 : 1, pointerEvents: showInitialLoader ? 'none' : 'auto' }} disableGutters>
                 <ProductPageHeader
                     isMultiSelectMode={isMultiSelectMode}
                     selectedCount={selectedCount}
@@ -987,6 +993,7 @@ function ProductClientContent() {
                         onSuggestionClick={handleSuggestionClick}
                         searchMode={searchMode}
                         alwaysExpanded={true}
+                        autoFocus={!showInitialLoader}
                         onImageUpload={() => setSearchMode('ai')}
                         onExpandChange={setIsSearchBarExpanded}
                     />
@@ -1106,24 +1113,19 @@ function ProductClientContent() {
             />
 
             <FullPageLoader
-                open={showInitialLoader || isSearchLoading}
-                showLogo={showInitialLoader || lastSearchData?.mode === 'ai'}
-                message={showInitialLoader ? "Loading products..." : "Searching designs..."}
+                open={isSearchLoading}
+                showLogo={lastSearchData?.mode === 'ai'}
                 rotatingType={
-                    showInitialLoader
-                        ? 'text'
-                        : lastSearchData?.mode === 'ai'
-                            ? ({ 1: 'text', 2: 'image', 3: 'hybrid' }[lastSearchData?.isSearchFlag] || 'text')
-                            : undefined
+                    lastSearchData?.mode === 'ai'
+                        ? ({ 1: 'text', 2: 'image', 3: 'hybrid' }[lastSearchData?.isSearchFlag] || 'text')
+                        : undefined
                 }
                 subtitle={
-                    showInitialLoader
-                        ? undefined
-                        : lastSearchData?.mode !== 'ai'
-                            ? (lastSearchData?.text?.trim()
-                                ? `Finding matches for "${lastSearchData.text.trim()}"`
-                                : "Analyzing your design and matching collections")
-                            : undefined
+                    lastSearchData?.mode !== 'ai'
+                        ? (lastSearchData?.text?.trim()
+                            ? `Finding matches for "${lastSearchData.text.trim()}"`
+                            : "Analyzing your design and matching collections")
+                        : undefined
                 }
             />
             <ReusableConfirmModal
@@ -1157,11 +1159,11 @@ function ProductClientContent() {
 }
 
 // Wrap with MultiSelectProvider and TokenUsageProvider
-export default function ProductClient() {
+export default function ProductClient({ onInitialLoadComplete }) {
     return (
         <TokenUsageProvider>
             <MultiSelectProvider>
-                <ProductClientContent />
+                <ProductClientContent onInitialLoadComplete={onInitialLoadComplete} />
             </MultiSelectProvider>
         </TokenUsageProvider>
     );

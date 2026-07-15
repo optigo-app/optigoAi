@@ -8,7 +8,7 @@ const LOCAL_HOSTNAMES = (process.env.REACT_APP_LOCAL_HOSTNAMES || defaultLocalHo
 const isBrowser = typeof window !== 'undefined';
 
 const DOMAINS = {
-    local: process.env.BACKEND_NZEN_API_URL || "http://newnextjs.web/api/report",
+    local: process.env.BACKEND_NZEN_API_URL || "https://apilx.optigoapps.com/api/report",
     live: process.env.BACKEND_LIVE_API_URL || "https://apilx.optigoapps.com/api/report",
 };
 

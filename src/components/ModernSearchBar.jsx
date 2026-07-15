@@ -176,7 +176,7 @@ export default function ModernSearchBar({
         if (autoFocus && textFieldRef.current) {
             const timer = setTimeout(() => {
                 textFieldRef.current.focus();
-            }, 1000);
+            }, 200);
             return () => clearTimeout(timer);
         }
     }, [autoFocus]);

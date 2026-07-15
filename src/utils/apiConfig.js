@@ -7,7 +7,7 @@ export const API_BASE_URL = (() => {
     return process.env.NEXT_NZEN_URL || '';
   }
   if (hostname === 'localhost') {
-    return process.env.NEXT_LOC_DEV_API_URL || 'http://localhost:5050';
+    return process.env.NEXT_LOC_DEV_API_URL || 'https://nxt02.optigoapps.com';
   }
   if (hostname === 'optigoai.web') {
     return process.env.NEXT_NZEN_URL || 'http://apioptigoai.web';

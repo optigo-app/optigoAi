@@ -104,7 +104,8 @@ const RotatingLoadingText = ({ type = "text", interval = 2500 }) => {
                     <Typography
                         variant="body2"
                         sx={{
-                            fontWeight: 400,
+                            color: "inherit",
+                            fontWeight: 500,
                             letterSpacing: "0.3px",
                             textAlign: "center",
                         }}
