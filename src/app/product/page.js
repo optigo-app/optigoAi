@@ -14,12 +14,14 @@ const ProductClient = dynamic(
 
 export default function ProductPage() {
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  const [loaderProps, setLoaderProps] = useState({ subtitle: "Loading products..." });
   const handleInitialLoadComplete = useCallback(() => setIsInitialLoadComplete(true), []);
+  const handleLoaderPropsChange = useCallback((props) => setLoaderProps(props), []);
 
   return (
     <>
-      <FullPageLoader open={!isInitialLoadComplete} showLogo={true} subtitle="Loading products..." />
-      <ProductClient onInitialLoadComplete={handleInitialLoadComplete} />
+      <FullPageLoader open={!isInitialLoadComplete} showLogo={true} {...loaderProps} />
+      <ProductClient onInitialLoadComplete={handleInitialLoadComplete} onLoaderPropsChange={handleLoaderPropsChange} />
     </>
   );
 }

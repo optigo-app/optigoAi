@@ -43,10 +43,11 @@ import { getTokenDetailsApi } from '@/app/api/getTokenDetailsApi';
 import { getTokenMasterApi, getTokenCost } from '@/app/api/getTokenMasterApi';
 
 
-function ProductClientContent({ onInitialLoadComplete }) {
+function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
     const PRODUCT_LIST_RESTORE_KEY = 'productListRestoreState';
     const [isSearchLoading, setIsSearchLoading] = useState(false);
     const [isInitialLoadPending, setIsInitialLoadPending] = useState(true);
+    const [isPendingSearchLoading, setIsPendingSearchLoading] = useState(false);
     const [isFilterLoading, setIsFilterLoading] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isRemoveConfirmOpen, setIsRemoveConfirmOpen] = useState(false); // New state for removal confirm
@@ -171,14 +172,36 @@ function ProductClientContent({ onInitialLoadComplete }) {
 
     const currentSimilarProduct = similarProductHistory[similarProductCurrentIndex] || null;
 
+    const pendingSearchExecutedRef = useRef(false);
+
     useEffect(() => {
         // 1. Priority: Context-based pending search (instant from Home)
-        if (pendingSearch) {
+        if (pendingSearch && !pendingSearchExecutedRef.current) {
+            pendingSearchExecutedRef.current = true;
             const data = { ...pendingSearch };
             setPendingSearch(null); // Clear it so it doesn't re-run
 
             if (data.mode) setSearchMode(data.mode);
             if (Array.isArray(data.filters)) setAppliedFilters(data.filters);
+
+            // Mark that a pending search is in progress so the route loader stays visible
+            isPendingSearchLoadingRef.current = true;
+            setIsPendingSearchLoading(true);
+
+            // Update route-level loader to show search-appropriate content
+            const modeToUse = (data.mode === 'design' && data.image) ? 'ai' : (data.mode || 'ai');
+            if (modeToUse === 'ai') {
+                const searchFlag = data.isSearchFlag || (data.image && data.text ? 3 : data.image ? 2 : data.text ? 1 : 1);
+                onLoaderPropsChange?.({
+                    rotatingType: { 1: 'text', 2: 'image', 3: 'hybrid' }[searchFlag] || 'text',
+                    subtitle: undefined,
+                });
+            } else {
+                onLoaderPropsChange?.({
+                    rotatingType: undefined,
+                    subtitle: data.text?.trim() ? `Finding matches for "${data.text.trim()}"` : "Analyzing your design and matching collections",
+                });
+            }
 
             // Start submission immediately
             handleSubmit(data);
@@ -214,7 +237,7 @@ function ProductClientContent({ onInitialLoadComplete }) {
                 sessionStorage.removeItem('homeSearchData');
             }
         }
-    }, [allDesignCollections, pendingSearch, setPendingSearch]);
+    }, [allDesignCollections, pendingSearch, setPendingSearch, onLoaderPropsChange]);
 
     // Debounce search term for better performance
     useEffect(() => {
@@ -579,25 +602,42 @@ function ProductClientContent({ onInitialLoadComplete }) {
 
 
 
+    const isPendingSearchLoadingRef = useRef(false);
+    const isInitialLoadPendingRef = useRef(true);
+
     const handleSubmit = useCallback(async (searchData) => {
         const requestedMode = searchData?.mode || searchMode;
         const modeToUse = requestedMode === 'design' && searchData?.image ? 'ai' : requestedMode;
+
+        const finishPendingSearch = () => {
+            setIsSearchLoading(false);
+            if (isPendingSearchLoadingRef.current) {
+                isPendingSearchLoadingRef.current = false;
+                setIsPendingSearchLoading(false);
+                if (!isInitialLoadPendingRef.current) onInitialLoadComplete?.();
+            }
+        };
+
+        setIsSearchLoading(true);
 
         // Check config flags if AI mode is selected
         if (modeToUse === 'ai') {
             // Check IsAiMaintenance first
             if (isConfigEnabled('IsAiMaintenance')) {
+                finishPendingSearch();
                 setShowMaintenanceModal(true);
                 return;
             }
             // Check IsAiEnable (when enabled, show subscription modal)
             if (isConfigEnabled('IsAiEnable')) {
+                finishPendingSearch();
                 setSubscriptionVariant('subscription');
                 setShowSubscriptionModal(true);
                 return;
             }
             // Check IsAiReady (when enabled, show training modal)
             if (isConfigEnabled('IsAiReady')) {
+                finishPendingSearch();
                 setShowTrainingModal(true);
                 return;
             }
@@ -614,6 +654,7 @@ function ProductClientContent({ onInitialLoadComplete }) {
             // Check token availability before AI search (fresh API call)
             const tokenData = await getTokenDetailsApi();
             if (!tokenData) {
+                finishPendingSearch();
                 setSubscriptionVariant('upgrade');
                 setShowSubscriptionModal(true);
                 return;
@@ -623,6 +664,7 @@ function ProductClientContent({ onInitialLoadComplete }) {
             const freshRemaining = Math.max(0, (tokenData.totalToken ?? 0) - (tokenData.tokenUsed ?? 0));
             const searchCost = getTokenCost(eventName);
             if (freshRemaining < searchCost) {
+                finishPendingSearch();
                 setSubscriptionVariant('upgrade');
                 setShowSubscriptionModal(true);
                 return;
@@ -638,7 +680,6 @@ function ProductClientContent({ onInitialLoadComplete }) {
         }
 
         if ((!effectiveSearchFlag || effectiveSearchFlag === 0) && modeToUse === 'ai') {
-            setIsSearchLoading(true);
             setLastSearchData({ ...searchData, mode: modeToUse });
             setError(null);
             incrementTokenUsage(getTokenCost('TextSearch'));
@@ -647,7 +688,7 @@ function ProductClientContent({ onInitialLoadComplete }) {
                 setSearchResults(null);
                 setSearchTerm(searchData?.text || '');
                 setDebouncedSearchTerm(searchData?.text || '');
-                setIsSearchLoading(false);
+                finishPendingSearch();
             }, 300);
             return;
         }
@@ -655,7 +696,6 @@ function ProductClientContent({ onInitialLoadComplete }) {
         // In design mode, we don't call the search API, just navigate/filter
         // UNLESS an image is provided, then we force AI search
         if (modeToUse === 'design' && !searchData?.image) {
-            setIsSearchLoading(true);
             setLastSearchData({ ...searchData, mode: modeToUse });
             setError(null);
             incrementTokenUsage(getTokenCost('TextSearch'));
@@ -670,14 +710,13 @@ function ProductClientContent({ onInitialLoadComplete }) {
                         (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
                     )
                 );
-                setIsSearchLoading(false);
+                finishPendingSearch();
             }, 600);
             return;
         }
 
         setLastSearchData({ ...searchData, mode: modeToUse });
         setError(null);
-        setIsSearchLoading(true);
         const eventNames = { 1: 'TextSearch', 2: 'ImageSearch', 3: 'HybridSearch' };
         incrementTokenUsage(getTokenCost(eventNames[effectiveSearchFlag] || 'TextSearch'));
         let finalImage = searchData.image;
@@ -798,9 +837,17 @@ function ProductClientContent({ onInitialLoadComplete }) {
 
         } finally {
             setIsSearchLoading(false);
+            // If this was a pending search from home, notify the route that everything is done
+            if (isPendingSearchLoadingRef.current) {
+                isPendingSearchLoadingRef.current = false;
+                setIsPendingSearchLoading(false);
+                if (!isInitialLoadPendingRef.current) {
+                    onInitialLoadComplete?.();
+                }
+            }
             refreshTokens();
         }
-    }, [allDesignCollections, searchMode, isConfigEnabled]);
+    }, [allDesignCollections, searchMode, isConfigEnabled, refreshTokens, setTokenData, onInitialLoadComplete]);
 
     useEffect(() => {
         let mounted = true;
@@ -813,7 +860,11 @@ function ProductClientContent({ onInitialLoadComplete }) {
             } finally {
                 if (mounted) {
                     setIsInitialLoadPending(false);
-                    onInitialLoadComplete?.();
+                    isInitialLoadPendingRef.current = false;
+                    // Only notify route if no pending search is in progress
+                    if (!isPendingSearchLoadingRef.current) {
+                        onInitialLoadComplete?.();
+                    }
                 }
             }
         };
@@ -1113,7 +1164,7 @@ function ProductClientContent({ onInitialLoadComplete }) {
             />
 
             <FullPageLoader
-                open={isSearchLoading}
+                open={isSearchLoading && !isPendingSearchLoading}
                 showLogo={lastSearchData?.mode === 'ai'}
                 rotatingType={
                     lastSearchData?.mode === 'ai'
@@ -1159,11 +1210,11 @@ function ProductClientContent({ onInitialLoadComplete }) {
 }
 
 // Wrap with MultiSelectProvider and TokenUsageProvider
-export default function ProductClient({ onInitialLoadComplete }) {
+export default function ProductClient({ onInitialLoadComplete, onLoaderPropsChange }) {
     return (
         <TokenUsageProvider>
             <MultiSelectProvider>
-                <ProductClientContent onInitialLoadComplete={onInitialLoadComplete} />
+                <ProductClientContent onInitialLoadComplete={onInitialLoadComplete} onLoaderPropsChange={onLoaderPropsChange} />
             </MultiSelectProvider>
         </TokenUsageProvider>
     );

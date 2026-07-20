@@ -353,7 +353,7 @@ export default function ModernSearchBar({
         if (categoryName === 'Gender') target = 'Gender';
 
         const found = filterData.find(c =>
-            c.name.toLowerCase().includes(target.toLowerCase())
+            c?.name?.toLowerCase().includes(target?.toLowerCase())
         );
         return found ? found.items : [];
     };

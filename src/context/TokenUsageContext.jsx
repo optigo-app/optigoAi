@@ -12,10 +12,13 @@ export const TokenUsageProvider = ({ children }) => {
     const [maxTokens, setMaxTokens] = useState(MAX_TOKENS);
     const [isLoading, setIsLoading] = useState(false);
     const retryCountRef = useRef(0);
+    const requestIdRef = useRef(0);
 
     const fetchTokens = useCallback(async () => {
+        const currentRequestId = ++requestIdRef.current;
         setIsLoading(true);
         const data = await getTokenDetailsApi();
+        if (currentRequestId !== requestIdRef.current) return;
         if (data) {
             setUsage(data.tokenUsed);
             setMaxTokens(data.totalToken || MAX_TOKENS);
