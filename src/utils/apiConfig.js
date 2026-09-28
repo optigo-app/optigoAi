@@ -7,7 +7,7 @@ export const API_BASE_URL = (() => {
     return process.env.NEXT_NZEN_URL || '';
   }
   if (hostname === 'localhost') {
-    return process.env.NEXT_LOC_DEV_API_URL || 'https://nxt02.optigoapps.com';
+    return process.env.NEXT_LOC_DEV_API_URL || 'https://apioptigoai.optigoapps.com';
   }
   if (hostname === 'optigoai.web') {
     return process.env.NEXT_NZEN_URL || 'http://apioptigoai.web';
@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
     hybrid: '/api/search/hybrid',
     keyword: '/api/search/keyword',
   },
+  preload: '/api/preload',
   imageDynamicPrompts: {
     // Placeholder for v2 AI processors if any
   }

@@ -14,6 +14,7 @@ import {
     Slide,
     Fade,
     Skeleton,
+    Tooltip,
 } from '@mui/material';
 import {
     RotateCw,
@@ -29,6 +30,7 @@ import {
     Pencil,
     Maximize,
     Minimize,
+    Check,
 } from 'lucide-react';
 
 import { processingService } from '@/services/processingService';
@@ -442,14 +444,13 @@ const ImageEditor = ({ open, onClose, initialImage, onSave }) => {
                                 <Box
                                     onMouseDown={(e) => { e.stopPropagation(); handleMouseDown(e); }}
                                     sx={{
-                                        position: 'absolute', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        position: 'absolute', zIndex: 30,
                                         left: crop.w > 0 ? crop.x : crop.x + crop.w, top: crop.h > 0 ? crop.y : crop.y + crop.h,
                                         width: Math.abs(crop.w), height: Math.abs(crop.h),
                                         border: '2px solid #7367f0', backgroundColor: 'rgba(115,103,240,0.1)',
                                         boxShadow: '0 0 0 4000px rgba(0,0,0,0.3)', pointerEvents: 'auto', cursor: 'move'
                                     }}
                                 >
-                                    <Button onClick={handleApplyCrop} variant="contained" size="small" sx={{ backgroundColor: '#7367f0', pointerEvents: 'auto', fontSize: 10, height: 24, minWidth: 60, zIndex: 35 }}>Apply</Button>
                                     {crop.w !== 0 && crop.h !== 0 && ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'].map(dir => (
                                         <Box
                                             key={dir}
@@ -468,6 +469,52 @@ const ImageEditor = ({ open, onClose, initialImage, onSave }) => {
                                             }}
                                         />
                                     ))}
+                                </Box>
+                            )}
+                            {cropMode && crop.w !== 0 && crop.h !== 0 && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute', zIndex: 50, display: 'flex', gap: 0.5,
+                                        left: crop.w > 0 ? crop.x : crop.x + crop.w,
+                                        top: crop.h > 0 ? crop.y + Math.abs(crop.h) + 8 : crop.y + crop.h + 8,
+                                        width: Math.abs(crop.w),
+                                        justifyContent: 'center',
+                                        pointerEvents: 'auto',
+                                    }}
+                                >
+                                    <Tooltip title="Apply Crop" placement="top">
+                                        <Button
+                                            onClick={(e) => { e.stopPropagation(); handleApplyCrop(); }}
+                                            size="small"
+                                            variant="contained"
+                                            startIcon={<Check size={14} />}
+                                            sx={{
+                                                backgroundColor: '#7367f0', color: '#fff', textTransform: 'none',
+                                                fontSize: 11, height: 28, minWidth: 'auto', px: 1.5,
+                                                '&:hover': { backgroundColor: '#5b4fd6' },
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                            }}
+                                        >
+                                            Apply
+                                        </Button>
+                                    </Tooltip>
+                                    <Tooltip title="Cancel Crop" placement="top">
+                                        <Button
+                                            onClick={(e) => { e.stopPropagation(); setCropMode(false); setCrop({ x: 0, y: 0, w: 0, h: 0 }); }}
+                                            size="small"
+                                            variant="outlined"
+                                            startIcon={<CloseIcon size={14} />}
+                                            sx={{
+                                                backgroundColor: '#fff', color: '#7367f0', textTransform: 'none',
+                                                fontSize: 11, height: 28, minWidth: 'auto', px: 1.5,
+                                                border: '1px solid #7367f0',
+                                                '&:hover': { backgroundColor: '#fee', color: '#d32f2f', borderColor: '#d32f2f' },
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Tooltip>
                                 </Box>
                             )}
                             {cutMode && (

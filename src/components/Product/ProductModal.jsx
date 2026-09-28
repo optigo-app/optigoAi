@@ -104,6 +104,8 @@ export default function ProductModal({ open, onClose, product, products = [], st
     const [showMore, setShowMore] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
 
+    const isPDFlag = typeof window !== 'undefined' && sessionStorage.getItem("urlParams")?.includes('pd');
+
     const formatWeight = (value) => {
         const n = typeof value === 'number' ? value : Number(value);
         if (!Number.isFinite(n)) return '0.000';
@@ -190,9 +192,30 @@ export default function ProductModal({ open, onClose, product, products = [], st
         setOpenConfirmModal(false);
     };
 
-    const handleCopyDesign = (designNo) => {
+    const handleCopyDesign = async (designNo) => {
         if (!designNo) return;
-        navigator.clipboard.writeText(designNo);
+
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(designNo);
+            } else {
+                throw new Error('Clipboard API unavailable');
+            }
+        } catch {
+            const textarea = document.createElement('textarea');
+            textarea.value = designNo;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                console.error('Clipboard fallback failed:', e);
+            }
+            document.body.removeChild(textarea);
+        }
 
         setCopiedId(designNo);
         setTimeout(() => setCopiedId(null), 2000);
@@ -216,10 +239,11 @@ export default function ProductModal({ open, onClose, product, products = [], st
     return (
         <Dialog
             open={open}
-            TransitionComponent={Transition}
+            {...(!isPDFlag && { TransitionComponent: Transition })}
             onClose={onClose}
             maxWidth={isFullscreen ? false : "lg"}
             fullWidth
+            disableScrollLock
             fullScreen={isFullscreen}
             PaperProps={{
                 sx: {

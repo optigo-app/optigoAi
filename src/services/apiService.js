@@ -22,12 +22,28 @@ async function apiCall(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.log("Error Data:", errorData);
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      const errMsg = errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+      const err = new Error(errMsg);
+      err.status = response.status;
+      err.isNetworkError = false;
+      throw err;
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    if (data && data.detail && typeof data.detail === 'string' && data.detail.includes('Index not found')) {
+      const err = new Error(data.detail);
+      err.isTrainingPending = true;
+      throw err;
+    }
+
+    return data;
   } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const netErr = new Error(API_ERROR_MESSAGES.NETWORK_ERROR);
+      netErr.isNetworkError = true;
+      throw netErr;
+    }
     throw error;
   }
 }
@@ -48,8 +64,11 @@ export async function apiCallBinary(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.log("Error Data:", errorData);
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      const errMsg = errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+      const err = new Error(errMsg);
+      err.status = response.status;
+      err.isNetworkError = false;
+      throw err;
     }
 
     // Check if response is JSON (e.g. for background remover which returns image_url)
@@ -147,8 +166,26 @@ export const searchService = {
 };
 
 
+export async function preloadService() {
+  const aiApi = typeof window !== 'undefined' ? sessionStorage.getItem('aiApi') || '' : '';
+
+  try {
+    return await apiCall(API_ENDPOINTS.preload, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ aiApi }),
+    });
+  } catch (error) {
+    console.warn('Preload API failed (non-blocking):', error.message);
+    return null;
+  }
+}
+
 const apiService = {
   search: searchService,
+  preload: preloadService,
 };
 
 export default apiService;

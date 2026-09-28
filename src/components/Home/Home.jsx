@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import ContinuousTypewriter from "../Common/ContinuousTypewriter";
 import { useProductData } from "@/context/ProductDataContext";
 import { useAuth } from "@/context/AuthContext";
+import { preloadService } from "@/services/apiService";
 import GridBackground from "../Common/GridBackground";
 import FullPageLoader from "../FullPageLoader";
 import { AiMaintenanceModal, AiSubscriptionModal, AiTrainingModal } from "../Common/modals";
@@ -139,6 +140,11 @@ const Home = () => {
             router.prefetch("/product");
         }
     }, [fetchProductData, isAuthReady, router]);
+
+    // Fire-and-forget preload API call on page load (non-blocking, independent)
+    useEffect(() => {
+        preloadService();
+    }, []);
 
     const handleSearch = (searchData) => {
         try {

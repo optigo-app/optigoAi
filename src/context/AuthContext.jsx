@@ -72,8 +72,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (searchParams.get('FE')) {
-      sessionStorage.setItem("urlParams", 'fe')
+    const existing = sessionStorage.getItem("urlParams");
+    const flags = existing ? existing.split(',') : [];
+    if (searchParams.get('FE') && !flags.includes('fe')) {
+      flags.push('fe');
+    }
+    if ((searchParams.get('PD') || searchParams.get('pd')) && !flags.includes('pd')) {
+      flags.push('pd');
+    }
+    if (flags.length) {
+      sessionStorage.setItem("urlParams", flags.join(','));
     }
   }, [pathname, searchParams]);
 
@@ -97,7 +105,7 @@ export const AuthProvider = ({ children }) => {
 
         if (!token) {
           if (isAllowedHost) {
-            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc4Mzc1NTA2NSwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJRV2xyWVdGZlFVbGZOakkzTXpZMk5EazVNelV3TmpRd01BPT0iLCJjdXZlciI6IlI1MEIzIn0.sTqoac1uVbLBlkgcuSPeP49Mf29IkmIDR1CloNkQ11w';
+            const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpdGFzayIsImF1ZCI6IllXUnRhVzVBYjNKaGFXd3VZMjh1YVc0PSIsImV4cCI6MTc4Mzc1NTA2NSwidWlkIjoiWVdSdGFXNUFiM0poYVd3dVkyOHVhVzQ9IiwieWMiOiJlM3R1ZW1WdWZYMTdlekl3ZlgxN2UyOXlZV2xzTWpWOWZYdDdiM0poYVd3eU5YMTkiLCJzdiI6IjAiLCJhdGsiOiJkRzlyWlc1ZlkyeHBaVzUwTWw5elpXTnlaWFJmYTJWNVh6TT0iLCJjdXZlciI6IlI1MEIzIn0.ReUQz2QokC5dNnRSETCaRDy6hkm88BinPTFelnYSPbE';
             const isHttps = window.location.protocol === 'https:';
             Cookies.set('skey', mockToken, isHttps ? { sameSite: 'None', secure: true } : { sameSite: 'Lax' });
             const authQueryParams = sessionStorage.getItem("AuthqueryParams");

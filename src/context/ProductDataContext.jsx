@@ -6,14 +6,14 @@ import { designCollectionApi } from '@/app/api/designCollectionApi';
 const ProductDataContext = createContext(undefined);
 
 export const ProductDataProvider = ({ children }) => {
-    const [productData, setProductData] = useState(null);
+    const [productData, setProductData] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [pendingSearch, setPendingSearch] = useState(null);
 
     const fetchProductData = useCallback(async (force = false) => {
         // If data already exists and not forcing refresh, return cached data
-        if (productData && !force) {
+        if (productData && productData.length > 0 && !force) {
             return productData;
         }
 

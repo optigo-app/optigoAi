@@ -141,7 +141,12 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
 
         } catch (err) {
             console.error('Similar search failed:', err);
-            setError(err.message || 'Failed to load similar products.');
+            const userErrorMsg = err.isNetworkError
+                ? "Network error. Please check your connection and try again."
+                : err.status === 500
+                    ? "Server error. Please try again later."
+                    : err.message || 'Failed to load similar products.';
+            setError(userErrorMsg);
             setSimilarProducts([]);
 
             // Background logging for Failure
@@ -551,9 +556,22 @@ export default function SimilarProductsModal({ open, onClose, baseProduct, allPr
                             <RotatingLoadingText type="similar" interval={3500} />
                         </Box>
                     ) : error ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>
-                            <Typography color="error">{error}</Typography>
-                            <Button onClick={fetchSimilarProducts} sx={{ mt: 2 }}>Try Again</Button>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400, gap: 2 }}>
+                            <SearchX size={60} color="#f44336" />
+                            <Typography variant="h6" color="error" sx={{ textAlign: 'center', maxWidth: 400 }}>
+                                {error}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: 400 }}>
+                                The search service may be temporarily unavailable. Please try again.
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => fetchSimilarProducts(true)}
+                                sx={{ mt: 1, borderRadius: 2, textTransform: 'none', px: 3 }}
+                            >
+                                Retry Search
+                            </Button>
                         </Box>
                     ) : similarProducts.length === 0 ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 400 }}>

@@ -11,7 +11,7 @@ import {
     Paper,
     CircularProgress,
 } from "@mui/material";
-import { ArrowLeft, ShoppingCart, Images, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Images, FileText, Sparkles, PackageCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { useCart } from "@/context/CartContext";
@@ -75,20 +75,39 @@ const ACTION_CONFIG = {
             buttonHover: "linear-gradient(135deg, #14c79a 0%, #0f9b77 100%)",
         },
     },
+
+    pdOrder: {
+        title: "Move to PD Order",
+        description: "Move these items to your PD order for processing",
+        api: SaveCartApi,
+        successMessage: "Items moved to PD Order!",
+        postMessageEvent: "pdOrderNew",
+        responseKey: "QID",
+        sendImages: true,
+
+        ui: {
+            icon: <PackageCheck size={32} />,
+            iconBg: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+            cardBg: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
+            buttonBg: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+            buttonHover: "linear-gradient(135deg, #5457e0 0%, #4338ca 100%)",
+        },
+    },
 };
 
 /* ----------------------------------------------------
    SEPARATE FUNCTION — sends iframe post message
    ---------------------------------------------------- */
-const sendPostMessage = (event, code) => {
-    window.parent.postMessage(
-        {
-            type: "ADD_TAB",
-            evt: event,
-            payload: { code },
-        },
-        "*"
-    );
+const sendPostMessage = (event, code, images = null) => {
+    const payload = { code };
+    if (images) payload.images = images;
+    const message = {
+        type: "ADD_TAB",
+        evt: event,
+        payload,
+    };
+    console.log("postMessage sent:", message);
+    window.parent.postMessage(message, "*");
 };
 
 /* ----------------------------------------------------
@@ -195,6 +214,8 @@ const CheckoutClient = () => {
 
     const [loading, setLoading] = useState({});
 
+    const isPDFlag = typeof window !== 'undefined' && sessionStorage.getItem("urlParams")?.includes('pd');
+
     const totalItems = cartItems?.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const handleBack = () => router.push("/cart");
 
@@ -212,8 +233,17 @@ const CheckoutClient = () => {
             const code = response?.data?.rd?.[0]?.[config.responseKey];
             const curVersion = cartItems[0]?.cuVer
             const url = buildQuoteRedirectUrl(code, curVersion)
-            if (code) sendPostMessage(config.postMessageEvent, code);
-
+            if (code) {
+                if (config.sendImages) {
+                    const images = cartItems
+                        .map(item => item.originalUrl || item.image || item.thumbUrl)
+                        .filter(Boolean);
+                    sendPostMessage(config.postMessageEvent, code, images);
+                } else {
+                    sendPostMessage(config.postMessageEvent, code);
+                }
+            }
+            
         } catch (err) {
             console.error(err);
             showError(err?.message || "Something went wrong.");
@@ -243,10 +273,10 @@ const CheckoutClient = () => {
                 />
                 <Box
                     sx={{
-                        maxWidth: 1200,
+                        maxWidth: 1500,
                         mx: "auto",
                         mt: 4,
-                        p: { xs: 2, md: 4, lg: 8 },
+                        p: { xs: 2, sm: 3, md: 4, lg: 6 },
                         borderRadius: 4,
                         bgcolor: "rgba(255,255,255,0.6)",
                         backdropFilter: "blur(20px)",
@@ -256,8 +286,10 @@ const CheckoutClient = () => {
                 >
                     {/* Dynamic Config-based Action Cards */}
                     <Grid container spacing={2} justifyContent="center">
-                        {Object.entries(ACTION_CONFIG).map(([key, cfg], index) => (
-                            <Grid key={key} size={{ xs: 12, sm: 6, md: 4 }}>
+                        {Object.entries(ACTION_CONFIG)
+                            .filter(([key]) => key !== 'pdOrder' || isPDFlag)
+                            .map(([key, cfg], index) => (
+                            <Grid key={key} size={{ xs: 12, sm: 6, md: isPDFlag ? 3 : 4 }}>
                                 <ActionCard
                                     actionKey={key}
                                     config={cfg}

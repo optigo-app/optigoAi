@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { setupGlobalErrorHandlers } from '@/utils/errorLogger';
 import { getClientIpAddress } from '@/utils/globalFunc';
 import ErrorBoundary from './ErrorBoundary';
+import { AiPrivacyModal } from './modals';
 
 export default function ClientWrappers({ children }) {
     useEffect(() => {
@@ -12,6 +13,7 @@ export default function ClientWrappers({ children }) {
 
     return (
         <ErrorBoundary>
+            <AiPrivacyModal />
             {children}
         </ErrorBoundary>
     );

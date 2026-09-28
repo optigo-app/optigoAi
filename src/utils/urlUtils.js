@@ -1,3 +1,3 @@
 export const isFrontendFeRoute = () => {
-    return typeof window !== "undefined" && sessionStorage.getItem("urlParams")?.toLowerCase() === "fe";
+    return typeof window !== "undefined" && sessionStorage.getItem("urlParams")?.includes('fe');
 };

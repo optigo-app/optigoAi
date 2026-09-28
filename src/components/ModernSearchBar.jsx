@@ -212,7 +212,7 @@ export default function ModernSearchBar({
             { key: 'producttype', type: 'producttype', filterCategory: 'Product Type' }
         ];
 
-        productData.forEach(product => {
+        (productData || []).forEach(product => {
             SEARCH_FIELDS.forEach(field => {
                 const val = product[field.key];
                 if (val && typeof val === 'string') {

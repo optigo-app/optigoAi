@@ -95,8 +95,28 @@ export default function ErrorLogPage() {
         fetchLogs();
     }, []);
 
-    const handleCopy = (text) => {
-        navigator.clipboard.writeText(text);
+    const handleCopy = async (text) => {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                throw new Error('Clipboard API unavailable');
+            }
+        } catch {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                console.error('Clipboard fallback failed:', e);
+            }
+            document.body.removeChild(textarea);
+        }
     };
 
     return (

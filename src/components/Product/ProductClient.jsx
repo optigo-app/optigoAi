@@ -18,7 +18,7 @@ import FullPageLoader from "@/components/FullPageLoader";
 import FilterSidebar from "@/components/Product/FilterSidebar";
 import PaginationControls from "@/components/PaginationControls";
 import { SearchModeToggle } from "../Common/HomeCommon";
-import { searchService } from "@/services/apiService";
+import { searchService, preloadService } from "@/services/apiService";
 import { autoScrollToRestoredTarget, base64ToFile, compressImagesToWebP } from "@/utils/globalFunc";
 import ProductGrid from "./ProductGrid";
 import ProductListView from "./ProductListView";
@@ -121,6 +121,11 @@ function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
         getTokenMasterApi();
     }, []);
 
+    // Fire-and-forget preload API call on page load (non-blocking, independent)
+    useEffect(() => {
+        preloadService();
+    }, []);
+
     // Similar Product Search State
     const [similarProductHistory, setSimilarProductHistory] = useState([]);
     const [similarProductCurrentIndex, setSimilarProductCurrentIndex] = useState(-1);
@@ -173,71 +178,8 @@ function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
     const currentSimilarProduct = similarProductHistory[similarProductCurrentIndex] || null;
 
     const pendingSearchExecutedRef = useRef(false);
-
-    useEffect(() => {
-        // 1. Priority: Context-based pending search (instant from Home)
-        if (pendingSearch && !pendingSearchExecutedRef.current) {
-            pendingSearchExecutedRef.current = true;
-            const data = { ...pendingSearch };
-            setPendingSearch(null); // Clear it so it doesn't re-run
-
-            if (data.mode) setSearchMode(data.mode);
-            if (Array.isArray(data.filters)) setAppliedFilters(data.filters);
-
-            // Mark that a pending search is in progress so the route loader stays visible
-            isPendingSearchLoadingRef.current = true;
-            setIsPendingSearchLoading(true);
-
-            // Update route-level loader to show search-appropriate content
-            const modeToUse = (data.mode === 'design' && data.image) ? 'ai' : (data.mode || 'ai');
-            if (modeToUse === 'ai') {
-                const searchFlag = data.isSearchFlag || (data.image && data.text ? 3 : data.image ? 2 : data.text ? 1 : 1);
-                onLoaderPropsChange?.({
-                    rotatingType: { 1: 'text', 2: 'image', 3: 'hybrid' }[searchFlag] || 'text',
-                    subtitle: undefined,
-                });
-            } else {
-                onLoaderPropsChange?.({
-                    rotatingType: undefined,
-                    subtitle: data.text?.trim() ? `Finding matches for "${data.text.trim()}"` : "Analyzing your design and matching collections",
-                });
-            }
-
-            // Start submission immediately
-            handleSubmit(data);
-            return;
-        }
-
-        // 2. Fallback: Session storage (for refreshes or older flows)
-        const encoded = sessionStorage.getItem("homeSearchData");
-        if (encoded && allDesignCollections.length > 0) {
-            try {
-                const jsonString = decodeURIComponent(escape(atob(encoded)));
-                const searchData = JSON.parse(jsonString);
-                const now = Date.now();
-                const dataAge = now - (searchData.timestamp || 0);
-                const fiveMinutes = 5 * 60 * 1000;
-
-                if (dataAge < fiveMinutes) {
-                    if (searchData.image && typeof searchData.image === "string" && searchData.image.startsWith("data:")) {
-                        searchData.image = base64ToFile(searchData.image, "uploaded-image.png");
-                    }
-                    if (searchData.mode) {
-                        setSearchMode(searchData.mode);
-                    }
-                    handleSubmit({ ...searchData, mode: searchData.mode || 'ai' });
-                    if (Array.isArray(searchData.filters) && searchData.filters.length > 0) {
-                        setAppliedFilters(searchData.filters);
-                    }
-                    sessionStorage.removeItem('homeSearchData');
-                }
-
-            } catch (error) {
-                console.error('Error processing stored search data:', error);
-                sessionStorage.removeItem('homeSearchData');
-            }
-        }
-    }, [allDesignCollections, pendingSearch, setPendingSearch, onLoaderPropsChange]);
+    const isPendingSearchLoadingRef = useRef(false);
+    const isInitialLoadPendingRef = useRef(true);
 
     // Debounce search term for better performance
     useEffect(() => {
@@ -602,9 +544,6 @@ function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
 
 
 
-    const isPendingSearchLoadingRef = useRef(false);
-    const isInitialLoadPendingRef = useRef(true);
-
     const handleSubmit = useCallback(async (searchData) => {
         const requestedMode = searchData?.mode || searchMode;
         const modeToUse = requestedMode === 'design' && searchData?.image ? 'ai' : requestedMode;
@@ -811,7 +750,23 @@ function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
                     searchData
                 }
             });
-            setError("Search failed. Try again.");
+
+            if (err.isTrainingPending) {
+                setShowTrainingModal(true);
+                setSearchResults([]);
+                return;
+            }
+
+            const userErrorMsg = err.isNetworkError
+                ? "Network error. Please check your connection and try again."
+                : err.status === 500
+                    ? "Server error. Please try again later."
+                    : err.status === 429
+                        ? "Too many requests. Please wait a moment and try again."
+                        : err.message || "Search failed. Please try again.";
+
+            setError(userErrorMsg);
+            showWarning(userErrorMsg);
             setSearchResults([]);
 
             // Create error chip to show failed search
@@ -848,6 +803,72 @@ function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
             refreshTokens();
         }
     }, [allDesignCollections, searchMode, isConfigEnabled, refreshTokens, setTokenData, onInitialLoadComplete]);
+
+    // Pending search effect — moved after handleSubmit to avoid TDZ (Cannot access 'handleSubmit' before initialization)
+    useEffect(() => {
+        // 1. Priority: Context-based pending search (instant from Home)
+        if (pendingSearch && !pendingSearchExecutedRef.current) {
+            pendingSearchExecutedRef.current = true;
+            const data = { ...pendingSearch };
+            setPendingSearch(null); // Clear it so it doesn't re-run
+
+            if (data.mode) setSearchMode(data.mode);
+            if (Array.isArray(data.filters)) setAppliedFilters(data.filters);
+
+            // Mark that a pending search is in progress so the route loader stays visible
+            isPendingSearchLoadingRef.current = true;
+            setIsPendingSearchLoading(true);
+
+            // Update route-level loader to show search-appropriate content
+            const modeToUse = (data.mode === 'design' && data.image) ? 'ai' : (data.mode || 'ai');
+            if (modeToUse === 'ai') {
+                const searchFlag = data.isSearchFlag || (data.image && data.text ? 3 : data.image ? 2 : data.text ? 1 : 1);
+                onLoaderPropsChange?.({
+                    rotatingType: { 1: 'text', 2: 'image', 3: 'hybrid' }[searchFlag] || 'text',
+                    subtitle: undefined,
+                });
+            } else {
+                onLoaderPropsChange?.({
+                    rotatingType: undefined,
+                    subtitle: data.text?.trim() ? `Finding matches for "${data.text.trim()}"` : "Analyzing your design and matching collections",
+                });
+            }
+
+            // Start submission immediately
+            handleSubmit(data);
+            return;
+        }
+
+        // 2. Fallback: Session storage (for refreshes or older flows)
+        const encoded = sessionStorage.getItem("homeSearchData");
+        if (encoded && allDesignCollections.length > 0) {
+            try {
+                const jsonString = decodeURIComponent(escape(atob(encoded)));
+                const searchData = JSON.parse(jsonString);
+                const now = Date.now();
+                const dataAge = now - (searchData.timestamp || 0);
+                const fiveMinutes = 5 * 60 * 1000;
+
+                if (dataAge < fiveMinutes) {
+                    if (searchData.image && typeof searchData.image === "string" && searchData.image.startsWith("data:")) {
+                        searchData.image = base64ToFile(searchData.image, "uploaded-image.png");
+                    }
+                    if (searchData.mode) {
+                        setSearchMode(searchData.mode);
+                    }
+                    handleSubmit({ ...searchData, mode: searchData.mode || 'ai' });
+                    if (Array.isArray(searchData.filters) && searchData.filters.length > 0) {
+                        setAppliedFilters(searchData.filters);
+                    }
+                    sessionStorage.removeItem('homeSearchData');
+                }
+
+            } catch (error) {
+                console.error('Error processing stored search data:', error);
+                sessionStorage.removeItem('homeSearchData');
+            }
+        }
+    }, [allDesignCollections, pendingSearch, setPendingSearch, onLoaderPropsChange, handleSubmit]);
 
     useEffect(() => {
         let mounted = true;

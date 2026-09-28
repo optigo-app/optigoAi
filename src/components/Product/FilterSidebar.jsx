@@ -395,8 +395,8 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
 
     const filterLookup = useMemo(() => {
         const map = new Map();
-        filters.forEach(cat => {
-            cat.items.forEach(item => {
+        (filters || []).forEach(cat => {
+            (cat.items || []).forEach(item => {
                 map.set(`${cat.name}-${item.id}`, `${cat.name}-${item.id}`);
                 if (item.name) {
                     map.set(`${cat.name}-${item.name.toLowerCase().trim()}`, `${cat.name}-${item.id}`);
@@ -504,8 +504,8 @@ export default function FilterSidebar({ isOpen, onClose, onApply, appliedFilters
             );
 
             // 2. Add current drawer filters
-            filters.forEach(cat => {
-                cat.items.forEach(it => {
+            (filters || []).forEach(cat => {
+                (cat.items || []).forEach(it => {
                     if (next.has(`${cat.name}-${it.id}`)) {
                         drawerFilters.push({ category: cat.name, item: it });
                     }

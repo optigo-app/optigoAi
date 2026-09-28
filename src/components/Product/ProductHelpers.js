@@ -51,7 +51,7 @@ export function getMatchedDesignCollections(res = [], allDesignCollections = [])
 }
 
 export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm) {
-    let temp = baseDataset;
+    let temp = Array.isArray(baseDataset) ? baseDataset : [];
     const drawerFilters = appliedFilters.filter(
         (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
     );
