@@ -24,7 +24,7 @@ import ProductGrid from "./ProductGrid";
 import ProductListView from "./ProductListView";
 import ProductSummaryCards from "./ProductSummaryCards";
 import SimilarProductsModal from "./SimilarProductsModal";
-import { getMatchedDesignCollections, filterProducts, createSearchChip } from "./ProductHelpers";
+import { getMatchedDesignCollections, filterProducts, createSearchChip, searchLocalCatalog, mergeSearchResults } from "./ProductHelpers";
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -706,19 +706,35 @@ function ProductClientContent({ onInitialLoadComplete, onLoaderPropsChange }) {
                     IsSuccess: "0"
                 }).catch(logErr => console.error("Logging failed:", logErr));
 
-                setSearchResults([]);
+                const localFallback = (effectiveSearchFlag === 1 || effectiveSearchFlag === 3) && searchData.text?.trim()
+                    ? searchLocalCatalog(searchData.text, allDesignCollections || [])
+                    : [];
+                setSearchResults(localFallback);
+                const fallbackChip = localFallback.length ? createSearchChip(searchData) : null;
                 setAppliedFilters((prev) =>
-                    prev.filter(
-                        (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
-                    )
+                    [
+                        ...(fallbackChip ? [fallbackChip] : []),
+                        ...prev.filter(
+                            (f) => !(f && f.item && ["text-search", "image-search", "hybrid-search"].includes(f.item.id))
+                        ),
+                    ]
                 );
                 return;
             }
 
             const sortedMatchedDesigns = getMatchedDesignCollections(res, allDesignCollections || []);
 
+            // Hybrid merge: local catalog matches (metadata the AI index lacks)
+            // rank first, AI visual matches follow — deduped inside mergeSearchResults
+            const localMatches = (effectiveSearchFlag === 1 || effectiveSearchFlag === 3) && searchData.text?.trim()
+                ? searchLocalCatalog(searchData.text, allDesignCollections || [])
+                : [];
+            const mergedResults = localMatches.length
+                ? mergeSearchResults(localMatches, sortedMatchedDesigns)
+                : sortedMatchedDesigns;
+
             // Store search results - drawer filters will be applied on top
-            setSearchResults(sortedMatchedDesigns);
+            setSearchResults(mergedResults);
 
             const searchChip = createSearchChip(searchData);
 

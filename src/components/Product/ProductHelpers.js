@@ -135,6 +135,79 @@ export function filterProducts(baseDataset, appliedFilters, debouncedSearchTerm)
     return temp;
 }
 
+const LOCAL_SEARCH_FIELDS = [
+    'categoryname', 'subcategoryname', 'collectionname', 'producttype',
+    'brandname', 'labname', 'occasionname', 'stylename', 'gendername',
+    'diamondshape', 'metaltype', 'metalcolor'
+];
+
+/**
+ * Local catalog matcher — the keyword channel of the hybrid search.
+ * Scores products against metadata fields the AI image index never saw
+ * (design#, category, collection, metal, ...). Multi-token queries use
+ * AND semantics: every token must hit at least one field.
+ */
+export function searchLocalCatalog(term = "", products = []) {
+    const query = (term || "").trim().toLowerCase();
+    if (query.length < 2 || !Array.isArray(products)) return [];
+
+    const tokens = query.split(/\s+/).filter(Boolean);
+
+    const fieldScore = (token, fieldValues) => {
+        if (fieldValues.some((v) => v === token)) return 2;
+        if (fieldValues.some((v) => v.startsWith(token))) return 1;
+        if (fieldValues.some((v) => v.includes(token))) return 0.5;
+        return 0;
+    };
+
+    return products
+        .map((p) => {
+            const designno = (p.designno || "").replace("#", "").toLowerCase();
+            const autocode = (p.autocode || "").toLowerCase();
+            const fieldValues = LOCAL_SEARCH_FIELDS.map((f) => (p[f] || "").toLowerCase());
+
+            let score = 0;
+            if (designno === query || autocode === query) {
+                score = 100;
+            } else if (designno.startsWith(query) || autocode.startsWith(query)) {
+                score = 50;
+            } else {
+                if (designno.includes(query) || autocode.includes(query)) score += 10;
+                for (const token of tokens) {
+                    const s = Math.max(
+                        fieldScore(token, fieldValues),
+                        designno.includes(token) || autocode.includes(token) ? 0.5 : 0
+                    );
+                    if (s === 0) { score = 0; break; }
+                    score += s;
+                }
+            }
+            return { product: p, score };
+        })
+        .filter((i) => i.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map((i) => i.product);
+}
+
+/**
+ * Fuses local catalog matches with AI visual matches.
+ * Local matches come first (metadata intent is explicit),
+ * AI results follow — deduped by designno/autocode/id.
+ */
+export function mergeSearchResults(localMatches = [], aiMatches = []) {
+    const seen = new Set();
+    const merged = [];
+    for (const p of [...localMatches, ...aiMatches]) {
+        const key = (p.designno || p.autocode || p.id || "").toString().toLowerCase();
+        if (key) {
+            if (seen.has(key)) continue;
+            seen.add(key);
+        }
+        merged.push(p);
+    }
+    return merged;
+}
+
 export function createSearchChip(searchData, isError = false) {
     let chip = null;
     const getImageUrl = (image) => {

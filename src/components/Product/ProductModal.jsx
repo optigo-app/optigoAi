@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCart } from '@/context/CartContext';
 import {
     Dialog,
@@ -163,18 +163,11 @@ export default function ProductModal({ open, onClose, product, products = [], st
         }
     }, [open, startIndex, swiperRef]);
 
-    if (!product) return null;
+    const sliderProducts = useMemo(() => (
+        products.length > 0 ? products.slice(0, 200) : [product]
+    ), [products, product]);
 
-    const sliderProducts = products.length > 0
-        ? products.slice(0, 200)
-        : Array(200).fill().map((_, i) => ({
-            ...product,
-            id: `${product.id || 'product'}-${i}`,
-            thumbUrl: product.thumbUrl,
-            originalUrl: product.originalUrl,
-            image: product.thumbUrl || product.image || "/images/image-not-found.jpg",
-            designno: `${product.designno || 'PROD'}-${i + 1}`
-        }));
+    if (!product) return null;
 
     const handleSlideChange = (swiper) => {
         setActiveIndex(swiper.activeIndex);
@@ -293,12 +286,16 @@ export default function ProductModal({ open, onClose, product, products = [], st
                     style={{ width: '100%', height: '100%' }}
                 >
                     {sliderProducts.map((prod, index) => {
+                        // Only mount slide content near the active slide — mounting all
+                        // slides at once blocks the click handler for ~1s on large lists.
+                        const isNearActive = Math.abs(index - activeIndex) <= 2;
                         // Recalculate conditional flags per product
                         const pDiamonds = (prod.diamondpcs > 0) || (prod.diamondweight > 0);
                         const pStones = (prod.stonepcs > 0) || (prod.stoneweight > 0);
 
                         return (
                             <SwiperSlide key={`${prod.id || 'product'}-${index}`} virtualIndex={index}>
+                                {isNearActive && (
                                 <Grid container sx={{ height: '100%' }}>
                                     {/* Image Section - Priority (Cover + No Shadow) */}
                                     <Grid size={{ xs: 12, md: isFullscreen ? 9.5 : 8 }} sx={{ height: { xs: '50%', md: '100%' } }}>
@@ -503,7 +500,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                             )}
 
                                             {/* Specifications (Conditional) */}
-                                            <Collapse in={showAllDetails}>
+                                            <Collapse in={showAllDetails} unmountOnExit>
                                                 <Box sx={{ mt: 1 }}>
                                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                         {pDiamonds && (
@@ -629,6 +626,7 @@ export default function ProductModal({ open, onClose, product, products = [], st
                                         </Box>
                                     </Grid>
                                 </Grid>
+                                )}
                             </SwiperSlide>
                         );
                     })}

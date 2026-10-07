@@ -96,7 +96,10 @@ const ProductCard = React.memo(function ProductCard({
             data-product-id={product?.id}
             data-product-index={index}
             sx={{ position: 'relative', height: '100%', zIndex: 1 }}
-            onMouseEnter={() => setIsHovered(true)}
+            onMouseEnter={() => {
+                setIsHovered(true);
+                import('./ProductModal');
+            }}
             onMouseLeave={() => setIsHovered(false)}
         >
             <Card
